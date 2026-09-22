@@ -1,0 +1,2104 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Banda de Terrassa · Assistència</title>
+<meta name="description" content="Gestió d'assistència, absències i projectes de la Banda de Terrassa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  /* ── Brand ── */
+  --brand-navy:#102A43; --brand-pink:#F05FA3; --brand-orange:#FCB03C; --brand-black:#0A0A0A; --brand-white:#F8FAFC;
+  /* ── Accent (admin-selectable hue; navy is the brand default) ── */
+  --accent-h:212; --accent-s:32%; --accent-l:15%;
+  --accent:hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  --accent-ink:#FFFFFF;
+  --accent-soft:hsl(var(--accent-h) 50% 95%);
+  --accent-line:hsl(var(--accent-h) 38% 82%);
+  --accent-2:var(--brand-pink);
+  --gold:#D6A84F; --gold-ink:#4A340B;
+  --notice:var(--gold); --notice-ink:var(--gold-ink);
+  /* ── Neutrals — cool, matte, navy-tinted ── */
+  --bg:#F8FAFC; --surface:#FFFFFF; --surface-2:#EEF2F6; --line:#E1E7EF; --line-strong:#C7D1DD;
+  --ink:#10151F; --ink-2:#3A4453; --muted:#67728A;
+  /* ── Semantic status (unchanged meaning: verd/blau/taronja/vermell) ── */
+  --p:#1F9A57; --p-ink:#FFFFFF; --p-soft:#DDF2E5;
+  --r:#3E9DC9; --r-ink:#FFFFFF; --r-soft:#DCEFFA;
+  --fj:var(--gold); --fj-ink:var(--gold-ink); --fj-soft:#F6E8CC;
+  --fnj:#D8433E; --fnj-ink:#FFFFFF; --fnj-soft:#FAE0DF;
+  --np:#948D9A; --np-ink:#FFFFFF; --np-soft:#ECE9EF;
+  --warn-bg:#F6E8CC; --warn-fg:#5C3E0A; --ok-bg:#D8F0E2; --ok-fg:#0D6B3C; --bad-bg:#F9DCDB; --bad-fg:#A3231F; --info-bg:#D7ECF7; --info-fg:#0B4C6B;
+  --overlay:rgba(10,15,23,.46);
+  /* ── Elevation ── */
+  --shadow-sm:0 1px 2px rgba(16,21,31,.06);
+  --shadow:0 1px 2px rgba(16,21,31,.04), 0 18px 38px -10px rgba(16,21,31,.16);
+  --shadow-lg:0 2px 6px rgba(16,21,31,.06), 0 28px 56px -14px rgba(16,21,31,.24);
+  /* ── Motion — spring-like deceleration curves ── */
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  /* ── Type ── */
+  --f-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Hanken Grotesk",system-ui,"Segoe UI",Roboto,sans-serif;
+  --f-display:var(--f-ui); --f-mono:var(--f-ui);
+  --fs-1:11px; --fs-2:12.5px; --fs-3:13.5px; --fs-4:15px; --fs-5:16px; --fs-6:18px; --fs-7:21px; --fs-8:25px; --fs-9:32px;
+  /* ── Shape / rhythm (8px grid) ── */
+  --r-sm:10px; --r-md:16px; --r-lg:24px; --nav-h:64px;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;width:100%;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:var(--fs-4);line-height:1.45;-webkit-tap-highlight-color:transparent;padding-inline:16px;padding-block:0 calc(var(--nav-h) + 24px + env(safe-area-inset-bottom))}
+body.no-nav{padding-block:0 24px}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:760px;margin-inline:auto}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+img,svg{max-width:100%}
+
+/* Splash + login */
+.splash{position:fixed;inset:0;z-index:80;background:var(--bg);display:grid;place-items:center;gap:0;animation:fade .2s ease}
+.splash-in{display:grid;justify-items:center;gap:16px}
+.logo{width:88px;height:88px;border-radius:26px;background:linear-gradient(155deg, var(--brand-navy), hsl(var(--accent-h) var(--accent-s) 14%) 65%);box-shadow:var(--shadow-lg), 0 0 0 1px color-mix(in srgb, var(--line-strong) 70%, transparent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:30px;letter-spacing:.02em;object-fit:cover}
+.splash .t{font-size:var(--fs-6);font-weight:700}
+.splash .s{font-size:var(--fs-3);color:var(--muted);display:flex;align-items:center;gap:8px}
+.dots i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent-2);margin-left:3px;animation:blink 1.1s infinite}
+.dots i:nth-child(2){animation-delay:.18s} .dots i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+.login{min-height:100svh;display:grid;align-content:center;justify-items:center;gap:18px;padding:32px 0;text-align:center}
+.login form{display:grid;gap:12px;width:min(100%,340px);text-align:left}
+.login .h1{font-size:var(--fs-8)}
+.login-foot{font-size:var(--fs-2);color:var(--muted);max-width:34ch}
+.err{background:var(--fnj-soft);color:var(--fnj);border-radius:10px;padding:8px 12px;font-size:var(--fs-3);font-weight:600}
+
+/* App bar + nav */
+.appbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px 10px}
+.brand{min-width:0;display:flex;align-items:center;gap:11px}
+.brand-mark{width:42px;height:42px;flex:none;border-radius:13px;background:linear-gradient(155deg, var(--brand-navy), hsl(var(--accent-h) var(--accent-s) 14%) 70%);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.02em;object-fit:cover;box-shadow:var(--shadow-sm), 0 0 0 1px color-mix(in srgb, var(--line-strong) 70%, transparent)}
+.brand-name{display:block;font-weight:700;font-size:clamp(17px,4.6vw,21px);line-height:1.15;letter-spacing:-.01em;color:var(--ink)}
+.brand-sub{display:block;font-size:var(--fs-2);color:var(--muted)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--ink-2);flex:none}
+.top-actions{display:flex;align-items:center;gap:8px;flex:none}
+.icon-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;color:var(--ink-2);border:1px solid var(--line);background:var(--surface);transition:transform .15s var(--ease-spring),background .15s}
+.icon-btn:active{transform:scale(.9)}
+.icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn.plain{border-color:transparent;background:transparent}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs-in{max-width:760px;margin-inline:auto;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:var(--nav-h)}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:var(--fs-1);font-weight:600;color:var(--muted)}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--accent)}
+.tab[aria-current="page"] .tab-ico{background:var(--accent-soft);transform:translateY(-1px)}
+.tab-ico{position:relative;display:grid;place-items:center;width:52px;height:28px;border-radius:999px;transition:background .2s var(--ease-out),transform .3s var(--ease-spring)}
+.tab-badge{position:absolute;top:-3px;right:6px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--notice);color:var(--notice-ink);font-size:10.5px;font-weight:700;line-height:17px;text-align:center}
+
+/* Common */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:8px 14px;flex-wrap:wrap}
+h1,h2,h3{margin:0;text-wrap:balance}
+.h1{font-weight:700;font-size:var(--fs-8);line-height:1.12;letter-spacing:-.02em}
+.h2{font-weight:700;font-size:var(--fs-6);line-height:1.2;letter-spacing:-.01em}
+.eyebrow{font-size:var(--fs-1);font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:999px;font-weight:600;font-size:var(--fs-3);letter-spacing:-.006em;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);white-space:nowrap;transition:transform .2s var(--ease-spring),opacity .12s ease,box-shadow .2s}
+.btn:active{transform:scale(.955);opacity:.9}
+.btn-primary{background:linear-gradient(180deg, hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 4%)), var(--accent));border-color:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow-sm), 0 8px 20px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.32)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--accent)}
+.btn-danger{background:var(--fnj);border-color:var(--fnj);color:var(--fnj-ink)}
+.btn-danger-ghost{border-color:var(--bad-bg);background:var(--bad-bg);color:var(--fnj)}
+.btn-sm{min-height:34px;padding:0 12px;font-size:var(--fs-2)}
+.btn-block{width:100%}
+.btn-cta{min-height:50px;font-size:var(--fs-5);font-weight:700;gap:8px;background:linear-gradient(180deg, hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 4%)), var(--accent));color:var(--accent-ink);border-color:transparent;box-shadow:var(--shadow-sm), 0 8px 20px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.32)}
+.btn-cta svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.incident-cta{padding:16px;display:grid;gap:12px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-block:2px 12px;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:var(--fs-3);font-weight:600;color:var(--ink-2);white-space:nowrap;transition:transform .15s var(--ease-spring)}
+.chip:active{transform:scale(.95)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
+.section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-block:24px 10px}
+.empty{text-align:center;padding:42px 16px;color:var(--muted)}
+.empty .h2{color:var(--ink);margin-bottom:8px}
+.empty p{max-width:36ch;margin:0 auto 18px}
+.rolepill{display:inline-flex;align-items:center;height:21px;padding:0 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:var(--fs-1);font-weight:700;letter-spacing:.02em}
+.rolepill.dim{background:var(--surface-2);color:var(--muted)}
+
+/* Roll call */
+.ctx{position:sticky;top:0;z-index:20;background:var(--bg);margin-inline:-16px;padding-inline:16px;padding-block:4px 10px}
+.session{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:4px}
+.session-main{text-align:center;padding:6px 4px;border-radius:var(--r-md);min-width:0}
+.session-prod{display:block;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-date{display:block;font-weight:700;font-size:21px;line-height:1.15;letter-spacing:-.01em;margin-block:2px}
+.session-meta{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.badge.soft{background:var(--surface-2);color:var(--ink);font-weight:700;border:1px solid var(--line-strong)}
+.nav-arrow{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);border:1px solid var(--line)}
+.nav-arrow svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-arrow[disabled]{opacity:.3}
+.secs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--shadow);margin-top:14px}
+@media (max-width:420px){.secs{grid-template-columns:repeat(2,1fr)}}
+.sq{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--surface);color:var(--ink);padding:16px 10px;min-height:128px;transition:transform .18s var(--ease-spring),background .15s}
+.sq:active{transform:scale(.97);background:var(--surface-2)}
+.sq:hover{background:var(--surface-2)}
+.q-l{font-weight:800;font-size:var(--fs-9);line-height:1;letter-spacing:.04em;color:var(--accent)}
+.q-n{font-size:13.5px;font-weight:600;margin-top:6px;text-align:center}
+.q-c{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2)}
+.q-c.done{display:inline-flex;align-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;padding:2px 9px;border-radius:999px;margin-top:2px}
+.q-bar{display:block;width:64%;height:5px;margin-top:9px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.q-bar span{display:block;height:100%;background:var(--accent);border-radius:4px}
+.sq.is-done .q-bar span{background:var(--accent)}
+.q-dot{position:absolute;top:12px;right:12px;width:10px;height:10px;border-radius:50%;background:var(--p)}
+.q-dot.pend{right:auto;left:12px;background:var(--fj)}
+.sq.off{background:var(--surface-2)} .sq.off .q-l{color:var(--line-strong)} .sq.off .q-n,.sq.off .q-c{color:var(--muted)}
+.leader{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin-block:14px 8px;flex-wrap:wrap}
+.leader b{color:var(--ink);font-weight:600}
+.tally{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:12px}
+.stack{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--surface-2)}
+.stack span{display:block;height:100%}
+.s-P{background:var(--p)} .s-R{background:var(--r)} .s-FJ{background:var(--fj)} .s-FNJ{background:var(--fnj)} .s-NP{background:var(--np)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.legend i{width:9px;height:9px;border-radius:3px;flex:none}
+.legend b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.i-P{background:var(--p)} .i-R{background:var(--r)} .i-FJ{background:var(--fj)} .i-FNJ{background:var(--fnj)} .i-NP{background:var(--np)} .i-none{background:transparent;border:1.5px dashed var(--line-strong)}
+.tally-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px}
+.tcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;border-radius:var(--r-md);background:var(--surface-2)}
+.tcell.dim{opacity:.7}
+.tcell i{width:8px;height:8px;border-radius:50%;margin-bottom:1px}
+.tcell b{font-family:var(--f-mono);font-weight:600;font-size:19px;line-height:1;color:var(--ink)}
+.tcell span{font-size:11px;color:var(--muted);white-space:nowrap}
+.tally-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.progress-txt{font-size:13px;color:var(--muted)}
+.progress-txt b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.roster{list-style:none;margin:14px 0 0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.row{padding:12px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+.who{display:flex;align-items:baseline;gap:8px;min-width:0;flex-wrap:wrap}
+.name{font-weight:600;font-size:16px;line-height:1.25}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--accent)}
+.part{align-self:center;flex:none;font-family:var(--f-mono);font-size:11px;line-height:18px;padding:0 5px;border-radius:6px;border:1px solid var(--line-strong);color:var(--ink-2);white-space:nowrap}
+.state{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.opt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:46px;padding:4px 2px;border-radius:10px;background:var(--surface-2);font-size:11.5px;font-weight:600;color:var(--ink-2);line-height:1.05;text-align:center;transition:transform .15s var(--ease-spring),background .15s,color .15s}
+.opt i{width:8px;height:8px;border-radius:50%}
+.opt:active{transform:scale(.96)}
+.opt.o-P i{background:var(--p)} .opt.o-R i{background:var(--r)} .opt.o-FJ i{background:var(--fj)} .opt.o-FNJ i{background:var(--fnj)} .opt.o-NP i{background:var(--np)}
+.opt[aria-checked="true"] i{background:currentColor;opacity:.9}
+.opt.o-P[aria-checked="true"]{background:var(--p);color:var(--p-ink)}
+.opt.o-R[aria-checked="true"]{background:var(--r);color:var(--r-ink)}
+.opt.o-FJ[aria-checked="true"]{background:var(--fj);color:var(--fj-ink)}
+.opt.o-FNJ[aria-checked="true"]{background:var(--fnj);color:var(--fnj-ink)}
+.opt.o-NP[aria-checked="true"]{background:var(--np);color:var(--np-ink)}
+.row.has-mark .opt[aria-checked="false"]{opacity:.62}
+.extra{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:10px;border-radius:10px}
+.extra.x-R{background:var(--r-soft)} .extra.x-FJ{background:var(--fj-soft)} .extra.x-FNJ{background:var(--fnj-soft)}
+.extra label{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.mins{display:flex;gap:6px;flex-wrap:wrap}
+.min-chip{min-width:44px;height:34px;padding:0 8px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-family:var(--f-mono);font-size:13px}
+.min-chip.min-custom{width:52px;text-align:center;color:var(--ink)}
+.min-chip.min-custom::-webkit-inner-spin-button{opacity:.6}
+.min-chip[aria-pressed="true"]{background:var(--r);border-color:var(--r);color:var(--r-ink);font-weight:500}
+.note-input{flex:1 1 180px;min-width:0;height:36px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);padding:0 10px;font-size:16px}
+.rowhint{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--warn-bg);color:var(--warn-fg);border:1px solid color-mix(in srgb, var(--warn-fg) 22%, transparent)}
+.rowhint.done{background:var(--ok-bg);color:var(--ok-fg);border-color:color-mix(in srgb, var(--ok-fg) 22%, transparent)}
+
+/* Calendar */
+.cal-month{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:16px 2px 6px}
+.cal-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.cal-row{position:relative;display:flex;align-items:center;background-color:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.cal-arc{position:absolute;left:0;pointer-events:none}
+.cal-row:first-child{border-top:0}
+.cal-main{flex:1;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;padding:10px 14px 10px 12px;text-align:left;min-width:0}
+.cal-date{display:flex;flex-direction:column;align-items:center;line-height:1}
+.cal-date b{font-weight:700;font-size:20px}
+.cal-date small{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin-top:3px}
+.cal-info{min-width:0}
+.cal-type{display:block;font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-type em{font-style:normal;font-family:var(--f-mono);font-weight:400;font-size:12.5px;color:var(--muted);margin-left:4px}
+.cal-place{font-size:12.5px;line-height:1.35;color:var(--muted)}
+.cal-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-right:2px}
+.vmarks{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:96px}
+.vm{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:9px;border:1.5px solid var(--line-strong);color:var(--muted)}
+.vm.full{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.vm.part{border-color:var(--accent);color:var(--accent)}
+.vm.off{border-style:dotted;opacity:.4}
+.cal-pct{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.cal-row.is-today{background-color:var(--accent-soft)}
+.cal-row.is-today .cal-date b{color:var(--accent)}
+.cal-row.is-past .cal-date b{color:var(--ink-2)}
+
+/* Stats */
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:640px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.kpi-v{font-weight:700;font-size:var(--fs-9);line-height:1.05;letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums}
+.kpi-l{font-size:var(--fs-2);color:var(--muted);margin-top:4px}
+.kpi.great{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--p) 24%, var(--surface)) 0%, var(--surface) 78%)}
+.kpi.alert{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--fnj) 15%, var(--surface)) 0%, var(--surface) 72%)}
+.kpi.gold-box{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--gold) 22%, var(--surface)) 0%, var(--surface) 78%)}
+.kpi-details summary{cursor:pointer;list-style:none;position:relative;padding-right:20px}
+.kpi-details summary::-webkit-details-marker{display:none}
+.kpi-details summary::after{content:'';position:absolute;right:2px;top:8px;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);transition:transform .15s var(--ease-out)}
+.kpi-details[open] summary::after{transform:rotate(-135deg)}
+.kpi-breakdown{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.kpi-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.kpi-chip.gold{background:var(--warn-bg);color:var(--warn-fg)}
+.kpi-chip.red{background:var(--bad-bg);color:var(--bad-fg)}
+.kpi.info{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--r) 16%, var(--surface)) 0%, var(--surface) 78%)}
+.mini-kpi.great{background:radial-gradient(130% 130% at 30% 20%, color-mix(in srgb, var(--p) 26%, var(--surface-2)) 0%, var(--surface-2) 80%)}
+.mini-kpi.alert{background:radial-gradient(130% 130% at 30% 20%, color-mix(in srgb, var(--fnj) 18%, var(--surface-2)) 0%, var(--surface-2) 75%)}
+.pill.risk{background:var(--fnj);color:#fff;font-weight:800}
+.bars{display:grid;gap:12px;padding:14px}
+.bar-row{display:grid;grid-template-columns:88px 1fr 44px;align-items:center;gap:10px;font-size:13.5px}
+.bar-row .lbl{display:flex;align-items:baseline;gap:6px;font-weight:600;min-width:0}
+.bar-row .lbl em{font-style:normal;font-weight:800;font-size:12px;letter-spacing:.04em;color:var(--accent)}
+.bar-row .lbl span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .val{font-family:var(--f-mono);font-size:13px;text-align:right}
+.bar-total{padding-bottom:12px;margin-bottom:2px;border-bottom:1px solid var(--line)}
+.bar-total .lbl,.bar-total .val{font-weight:700;color:var(--ink)}
+.stats-norm{font-size:12.5px;color:var(--muted);margin:10px 2px 0}
+.mtable{list-style:none;margin:0;padding:0}
+.mrow{border-top:1px solid var(--line)}
+.mrow:first-child{border-top:0}
+.mrow button{width:100%;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:11px 14px;text-align:left;transition:background .15s}
+.mrow button:active{background:var(--surface-2)}
+.mrow .mname{display:inline-flex;align-items:baseline;gap:6px;min-width:0;font-weight:600;flex-wrap:wrap}
+.mrow .mname span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .sec-tag{font-size:11.5px;font-weight:500;color:var(--muted);white-space:nowrap}
+.mrow .mpct{font-family:var(--f-mono);font-size:14px;font-weight:500;text-align:right}
+.mrow .stack{grid-column:1/-1;height:6px}
+.mrow .mcounts{grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.mrow .mcounts i{width:7px;height:7px;border-radius:2px}
+.mrow .mcounts b{font-family:var(--f-mono);font-weight:500;color:var(--ink-2)}
+.mrow .mcounts span{display:inline-flex;align-items:center;gap:5px}
+.alerts{list-style:none;margin:0;padding:0}
+.alerts li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
+.alerts li:first-child{border-top:0}
+.pill{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.edit-hint{stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;margin-left:2px;opacity:.6}
+.pill.fnj{background:var(--bad-bg);color:var(--bad-fg)}
+.pill.low{background:var(--warn-bg);color:var(--warn-fg)}
+.pill.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.pill.info{background:var(--info-bg);color:var(--info-fg)}
+.hist{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px}
+.hcell{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--f-mono);font-size:9.5px;color:var(--muted)}
+.hcell i{width:100%;height:22px;border-radius:5px;background:var(--surface-2);border:1px dashed var(--line-strong)}
+.hcell i.s-P,.hcell i.s-R,.hcell i.s-FJ,.hcell i.s-FNJ,.hcell i.s-NP{border:0}
+.privacy{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);background:var(--surface-2);font-size:12.5px;color:var(--muted);margin-top:10px}
+
+/* Profile */
+.profile-head{display:flex;align-items:center;gap:14px;padding:16px;flex-wrap:wrap}
+.mini-kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 22px;border-radius:var(--r-md);background:var(--surface-2);flex:none}
+.mini-kpi b{font-family:var(--f-mono);font-weight:700;font-size:28px;line-height:1.1;color:var(--ink)}
+.mini-kpi span{font-size:11.5px;color:var(--muted);margin-top:3px}
+.profile-head .logo{width:60px;height:60px;border-radius:18px;font-size:20px}
+.gauge{display:grid;gap:8px;padding:14px}
+.gauge-bar{position:relative;height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.gauge-bar span{display:block;height:100%;border-radius:999px;background:var(--p)}
+.gauge-bar.low span{background:var(--fnj)}
+.gauge-min{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.55}
+.gauge-legend{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.inc-card{padding:12px 14px;border-top:1px solid var(--line);display:grid;gap:6px}
+.inc-card:first-child{border-top:0}
+.inc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.inc-h b{font-weight:600}
+.inc-m{font-size:12.5px;color:var(--muted)}
+.inc-a{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.st-pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.st-pending{background:var(--warn-bg);color:var(--warn-fg)}
+.st-accepted{background:var(--ok-bg);color:var(--ok-fg)}
+.st-rejected{background:var(--bad-bg);color:var(--bad-fg)}
+
+/* Manage */
+.subtabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;margin-bottom:6px;overflow:hidden}
+.subtab{min-height:36px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.subtab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--notice);color:var(--notice-ink);font-size:10.5px;font-weight:700;line-height:1}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.li{border-top:1px solid var(--line)}
+.li:first-child{border-top:0}
+.li > button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;text-align:left;min-height:52px}
+.li .t{font-weight:600}
+.li .s{font-size:12.5px;color:var(--muted)}
+.li .dim{opacity:.5}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-block:20px 8px;padding-inline:2px}
+.sec-h .h2 em{font-style:normal;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent);margin-right:6px}
+.prod-card > button{display:block;padding:14px;width:100%;text-align:left;transition:background .15s}
+.prod-card > button:active{background:var(--surface-2)}
+.prod-card > div.prod-static{padding:14px}
+.status-badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:700;margin-left:8px;vertical-align:middle}
+.status-badge.ongoing{background:var(--info-bg);color:var(--info-fg)}
+.status-badge.upcoming{background:var(--ok-bg);color:var(--ok-fg)}
+.status-badge.done{background:var(--surface-2);color:var(--muted)}
+.prod-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:12.5px;color:var(--muted)}
+.prod-meta b{font-family:var(--f-mono);font-weight:500;color:var(--ink-2)}
+.setting{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.setting:first-child{border-top:0}
+.setting .t{font-weight:600}
+.setting .s{font-size:12.5px;color:var(--muted);max-width:46ch}
+.search{width:100%;min-height:42px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);padding:0 14px;font-size:16px;margin-bottom:8px}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent}
+.swatch[aria-pressed="true"]{border-color:var(--ink)}
+
+/* Colors de projecte */
+.pdot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;vertical-align:middle;margin-right:5px}
+.projline{display:flex;align-items:center;column-gap:10px;row-gap:4px;justify-content:center;flex-wrap:wrap;white-space:normal;overflow:visible}
+.swatches-sm{display:flex;gap:8px;flex-wrap:wrap}
+.swatch-sm{width:32px;height:32px;border-radius:50%;border:2px solid transparent}
+.swatch-sm[aria-pressed="true"]{border-color:var(--ink)}
+.cal-projs{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+.cal-tagp{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px}
+.cal-tagp.lg{display:inline-flex;align-items:center;height:24px;padding:0 10px;font-size:12px}
+.tagp-row{display:flex;flex-wrap:wrap;gap:8px}
+.kpis-sm .kpi-v{font-size:var(--fs-7)}
+.kpis-sm .kpi{padding:10px 12px}
+
+/* Sheet */
+.sheet-back{position:fixed;inset:0;z-index:50;background:var(--overlay);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s ease}
+.sheet{width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;background:color-mix(in srgb, var(--surface) 96%, transparent);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);color:var(--ink);border-radius:28px 28px 0 0;box-shadow:var(--shadow-lg);animation:up .32s var(--ease-spring)}
+@media (min-width:700px){.sheet-back{align-items:center}.sheet{border-radius:24px;max-height:86vh}}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.sheet-h .h2{font-size:20px}
+.sheet-b{padding:16px;overflow-y:auto;overscroll-behavior:contain;display:grid;gap:14px}
+.sheet-f{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.sheet-f .spacer{flex:1}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}}
+.field{display:grid;gap:6px}
+.pass-wrap{position:relative}
+.pass-wrap .inp{padding-right:44px}
+.pass-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:34px;height:34px}
+.pass-toggle svg{width:18px;height:18px}
+.field > span{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.field small{font-size:12px;color:var(--muted)}
+.inp{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);padding:0 12px;font-size:16px}
+textarea.inp{padding:10px 12px;min-height:100px;resize:vertical;line-height:1.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
+.switch{position:relative;width:48px;height:28px;flex:none}
+.switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--line-strong);transition:background .15s;pointer-events:none}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked + span{background:var(--accent)}
+.switch input:checked + span::after{transform:translateX(20px)}
+.pickers{display:flex;flex-wrap:wrap;gap:6px}
+.pick-group{margin-bottom:12px}
+.pick-group:last-child{margin-bottom:0}
+.pick-group-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.pick{min-height:38px;min-width:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);font-weight:600;font-size:13.5px;color:var(--ink-2)}
+.pick[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pick .vl{font-weight:800;font-size:12px;letter-spacing:.04em;margin-right:5px;color:inherit}
+.picklist{list-style:none;margin:0;padding:0}
+.scroll-list{max-height:300px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:var(--r-md);padding:2px 10px;background:var(--surface)}
+.picklist li + li{border-top:1px solid var(--line)}
+.picklist li.picklist-month{border-top:0;padding:14px 2px 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.picklist li.picklist-month:first-child{padding-top:2px}
+.picklist button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 10px;text-align:left;border-radius:10px}
+.picklist button[aria-current="true"]{color:var(--accent);font-weight:700;background:var(--accent-soft)}
+.picklist .d{font-weight:600}
+.picklist .m{font-size:12.5px;color:var(--muted)}
+.chkrow{width:100%;display:flex;align-items:center;gap:12px;padding:10px;text-align:left;border-radius:10px}
+.chkrow > span:last-child{min-width:0;flex:1;overflow:hidden}
+.chkrow .d{white-space:normal;word-break:break-word}
+.chkrow .m{white-space:normal;word-break:break-word}
+.chkbox{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line-strong);flex:none;display:grid;place-items:center;color:#fff;transition:background .12s,border-color .12s}
+.chkbox svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.chkrow[aria-pressed="true"] .chkbox{background:var(--accent);border-color:var(--accent)}
+.chkrow[aria-pressed="true"]{background:var(--accent-soft)}
+.today-chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);vertical-align:middle;margin-left:4px}
+.summary-pre{width:100%;min-height:200px;font-family:var(--f-mono);font-size:13px;line-height:1.5;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface-2);padding:12px;white-space:pre-wrap;resize:vertical;color:var(--ink)}
+.menu{position:fixed;inset:0;z-index:50;background:var(--overlay)}
+.menu-card{position:absolute;top:64px;right:16px;min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden}
+.menu-card button{width:100%;text-align:left;padding:12px 14px;font-size:14px;border-top:1px solid var(--line)}
+.menu-card button:first-of-type{border-top:0}
+.menu-card .mh{padding:12px 14px;border-bottom:1px solid var(--line)}
+.menu-card .menu-sub{padding:10px 14px 2px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--line)}
+.menu-card .mh b{display:block}
+.toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;max-width:calc(100% - 32px);background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 14px;font-size:14px;box-shadow:var(--shadow);animation:up .2s ease}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="shell"><div class="login"><div class="muted" style="margin-top:40vh;text-align:center">Connectant…</div></div></div></div>
+<nav class="tabs" id="navbar" hidden><div class="tabs-in" id="nav"></div></nav>
+<div id="sheet-root"></div>
+<div id="menu-root"></div>
+<div id="toast-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://crveneipgpopqefszgkw.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNydmVuZWlwZ3BvcHFlZnN6Z2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwOTg4MTMsImV4cCI6MjEwNTY3NDgxM30.p_LwgacANZlxCCoRaRT50pCHlex1XNbSnmbp6EoKi54';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+'use strict';
+
+/* ================= Constants ================= */
+const SECTIONS = [
+  { id: 'FL', name: 'Flautes',   instruments: ['Flauta I', 'Flauta II'] },
+  { id: 'OB', name: 'Oboès',     instruments: ['Oboè'] },
+  { id: 'CL', name: 'Clarinets', instruments: ['Clarinet I', 'Clarinet II', 'Clarinet III', 'Clarinet Baix'] },
+  { id: 'SX', name: 'Saxos',     instruments: ['Saxo Alt I', 'Saxo Alt II', 'Saxo Soprano', 'Saxo Baríton', 'Saxo Tenor'] },
+  { id: 'MT', name: 'Metall',    instruments: ['Trompa', 'Trompeta', 'Bombardí', 'Trombó', 'Tuba'] },
+  { id: 'PC', name: 'Percussió', instruments: ['Bateria', 'Timbales'] },
+];
+const SEC = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
+const STATUS = {
+  P:   { label: 'Present',              short: 'Present' },
+  R:   { label: 'Retard',               short: 'Retard' },
+  FJ:  { label: 'Falta justificada',    short: 'Justif.' },
+  FNJ: { label: 'Falta no justificada', short: 'No just.' },
+  NP:  { label: 'No fa el projecte',    short: 'No fa' },
+};
+const ORDER = ['P', 'R', 'FJ', 'FNJ', 'NP'];
+const TYPES = ['Assaig', 'Assaig extra', 'Assaig general', 'Concert', 'Cercavila', 'Sortida / intercanvi', 'Altres'];
+const LATE_CHIPS = [10, 15, 20, 25, 30];
+const PROJECT_COLORS = [
+  { name: 'Vinaça', v: '#7F3562' }, { name: 'Salvia', v: '#4F6F52' }, { name: 'Terracota', v: '#C65D3A' },
+  { name: 'Rosa fort', v: '#D94F70' }, { name: 'Blau acer', v: '#315C8A' }, { name: 'Marró fosc', v: '#5A4039' },
+];
+const ROLES = {
+  musician: { name: 'Músic',        level: 1 },
+  leader:   { name: 'Cap de secció', level: 2 },
+  director: { name: 'Director',     level: 3 },
+  board:    { name: 'Junta',        level: 4 },
+  admin:    { name: 'Administrador', level: 5 },
+};
+/** Etiqueta a mostrar per a qui no pertany a cap secció musical (director, administració). */
+const STAFF_LABEL = { director: 'Direcció', admin: 'Administració' };
+const PALETTE = [
+  { name: 'Blau marí', h: 209 }, { name: 'Prúnol', h: 275 }, { name: 'Verd bosc', h: 155 },
+  { name: 'Granat', h: 350 }, { name: 'Turquesa', h: 190 }, { name: 'Grafit', h: 220 },
+];
+const LS = 'bt:dades';
+const LS_SESSION = 'bt:sessio';
+const LS_UI = 'bt:ui';
+
+const ICON = {
+  left: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  right: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
+  close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>',
+  help: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.3 2.2c-.7.3-1 .8-1 1.6v.3M12 16.6v.2"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff: '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7c1.7 0 3.2.4 4.5 1M22 12s-3.6 7-10 7c-1.7 0-3.2-.4-4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M4 4l16 16"/></svg>',
+  logout: '<svg viewBox="0 0 24 24"><path d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/><path d="M9 12h11m0 0-3-3m3 3-3 3"/></svg>',
+  swap: '<svg viewBox="0 0 24 24"><path d="M7 4v13M7 17l-3.5-3.5M7 17l3.5-3.5M17 20V7M17 7l3.5 3.5M17 7l-3.5 3.5"/></svg>',
+};
+
+
+/* ================= Utils ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = (p = '') => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const pad = n => String(n).padStart(2, '0');
+const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const TODAY = isoDate(new Date());
+const parseISO = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const fmtD = (s, o) => { try { return new Intl.DateTimeFormat('ca-ES', o).format(parseISO(s)); } catch { return s; } };
+const capz = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+const longDate = s => capz(fmtD(s, { weekday: 'long', day: 'numeric', month: 'long' }));
+const wdShort = s => fmtD(s, { weekday: 'short' }).replace('.', '');
+const monthYear = s => capz(fmtD(s, { month: 'long', year: 'numeric' }));
+const ddmm = s => s ? `${s.slice(8, 10)}/${s.slice(5, 7)}` : '';
+const pct = v => v == null ? '—' : Math.round(v * 100) + '%';
+const byName = (a, b) => a.name.localeCompare(b.name, 'ca');
+const normText = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const timeRange = s => s.time ? (s.end ? `${s.time}–${s.end}` : s.time) : '';
+const initials = n => String(n || '?').split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+const slugUser = n => normText(n).split(/\s+/).slice(0, 2).join('.').replace(/[^a-z0-9.]/g, '');
+const stamp = () => new Date().toISOString();
+const fmtStamp = t => { try { return new Intl.DateTimeFormat('ca-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(t)); } catch { return ''; } };
+
+/* ================= State ================= */
+const DEFAULT_LOGO = 'data:image/jpeg;base64,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';
+const DEFAULT = {
+  config: { name: 'Banda de Terrassa', logo: DEFAULT_LOGO, accentH: 209, minAttendance: 80, minPunctuality: 80, alertFNJ: 3, countLateAsPresent: true, places: ['Aula 0P2', 'Auditori de Terrassa', 'Teatre Principal'] },
+  users: [],        // {id, username, password, name, section, instrument, roles[], active, theme}
+  projects: [],     // {id, name, from, to, repertoire[], info, color}
+  sessions: [],     // {id, projIds[], date, time, end, type, place, note, sections[]}
+  attendance: {},   // "sid|uid" -> {s, min, note, by, at}
+  incidents: [],    // {id, userId, sessionId, kind, min, reason, status, createdAt, reviewedBy, reviewedAt, reviewNote}
+};
+let S = structuredClone(DEFAULT);
+let ME = null;      // user id de la sessió
+let splashing = false;
+const ui = { tab: null, sessionId: null, rollSec: null, calProj: 'all', calPast: false, calMode: 'sessions', llistaMode: 'roll',
+  statsProj: 'all', statsSec: '', statsSort: 'pct', manage: 'usuaris', search: '', incFilter: 'pending' };
+
+function userFromRow(r) {
+  return { id: r.id, username: r.username, name: r.name, section: r.section || '', instrument: r.instrument || '',
+    roles: r.roles && r.roles.length ? r.roles : ['musician'], active: r.active !== false, mustChangePassword: !!r.must_change_password };
+}
+function projectFromRow(r) {
+  return { id: r.id, name: r.name, color: r.color, from: r.from_date || '', to: r.to_date || '',
+    repertoire: r.repertoire || '', excludedIds: r.excluded_ids || [], info: r.info || '' };
+}
+function sessionFromRow(r) {
+  return { id: r.id, projIds: r.proj_ids || [], date: r.date, time: (r.time || '').slice(0, 5), end: (r.end_time || '').slice(0, 5),
+    type: r.type || 'Assaig', place: r.place || '', note: r.note || '' };
+}
+function incidentFromRow(r) {
+  return { id: r.id, userId: r.user_id, sessionId: r.session_id, kind: r.kind, min: r.min == null ? undefined : r.min,
+    reason: r.reason || '', status: r.status, createdAt: r.created_at, reviewedBy: r.reviewed_by || undefined,
+    reviewedAt: r.reviewed_at || undefined, reviewNote: r.review_note || '' };
+}
+function configFromRow(r) {
+  if (!r) return structuredClone(DEFAULT.config);
+  return { name: r.name, logo: r.logo || '', accentH: r.accent_h, minAttendance: r.min_attendance,
+    minPunctuality: r.min_punctuality, alertFNJ: r.alert_fnj, countLateAsPresent: r.count_late_as_present,
+    places: r.places || [] };
+}
+function rowsToAttendance(rows) {
+  const map = {};
+  for (const r of rows) map[`${r.session_id}|${r.user_id}`] = { s: r.status, min: r.min == null ? undefined : r.min, note: r.note || undefined, by: r.marked_by || undefined, at: r.marked_at };
+  return map;
+}
+function attendanceToRows(att) {
+  return Object.entries(att).map(([k, v]) => {
+    const [sessionId, userId] = k.split('|');
+    return { sessionId, userId, s: v.s, min: v.min ?? '', note: v.note || '', by: v.by || '', at: v.at || '' };
+  });
+}
+async function load() {
+  try { Object.assign(ui, JSON.parse(localStorage.getItem(LS_UI) || '{}')); } catch {}
+  try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; } catch {}
+  try {
+    const [{ data: users }, { data: projects }, { data: sessions }, { data: attendance }, { data: incidents }, { data: configRows }] = await Promise.all([
+      sb.from('users_public').select('*'),
+      sb.from('projects').select('*'),
+      sb.from('sessions').select('*'),
+      sb.from('attendance').select('*'),
+      sb.from('incidents').select('*'),
+      sb.from('config').select('*').limit(1),
+    ]);
+    S.users = (users || []).map(userFromRow);
+    S.projects = (projects || []).map(projectFromRow);
+    S.sessions = (sessions || []).map(sessionFromRow);
+    S.attendance = rowsToAttendance(attendance || []);
+    S.incidents = (incidents || []).map(incidentFromRow);
+    S.config = configFromRow(configRows && configRows[0]);
+  } catch (e) { console.warn(e); toast('No s\'ha pogut connectar amb el servidor'); }
+  migrate();
+  if (!S.users.length) await seedAdmin();
+  if (ME && !S.users.some(u => u.id === ME && u.active !== false)) ME = null;
+  ui.sessionId = null; ui.rollSec = null; ui.search = ''; ui.tab = null;
+}
+/** Comprovacions de seguretat mínimes; les dades ja arriben normalitzades des de Supabase. */
+function migrate() {
+  if (!Array.isArray(S.sessions)) S.sessions = [];
+  S.sessions.forEach(s => { if (!Array.isArray(s.projIds)) s.projIds = []; });
+}
+let t1 = null;
+function save() {
+  clearTimeout(t1);
+  t1 = setTimeout(async () => {
+    try {
+      await sb.rpc('sync_data', { p_config: S.config, p_projects: S.projects, p_sessions: S.sessions,
+        p_attendance: attendanceToRows(S.attendance), p_incidents: S.incidents });
+      await sb.rpc('sync_users', { p_users: S.users });
+    } catch (e) { console.warn(e); toast('No s\'han pogut desar els canvis'); }
+  }, 400);
+  try { localStorage.setItem(LS_UI, JSON.stringify({ tab: ui.tab, calProj: ui.calProj, calMode: ui.calMode, llistaMode: ui.llistaMode, statsProj: ui.statsProj, manage: ui.manage, incFilter: ui.incFilter })); } catch {}
+}
+function saveSession() {
+  try { localStorage.setItem(LS_SESSION, JSON.stringify(ME ? { userId: ME } : null)); } catch {}
+}
+async function seedAdmin() {
+  try {
+    const { data: id, error } = await sb.rpc('create_user', { p_username: 'admin', p_password: '1234', p_name: 'Administració', p_section: '', p_instrument: '', p_roles: ['admin'] });
+    if (!error && id) S.users.push({ id, username: 'admin', name: 'Administració', section: '', instrument: '', roles: ['admin'], active: true, mustChangePassword: true });
+  } catch (e) { console.warn(e); }
+}
+
+/* ================= Usuaris, rols i permisos ================= */
+const me = () => S.users.find(u => u.id === ME) || null;
+const userById = id => S.users.find(u => u.id === id) || null;
+const rolesOf = u => (u && u.roles && u.roles.length ? u.roles : ['musician']);
+const hasRole = (u, r) => rolesOf(u).includes(r);
+const level = u => Math.max(...rolesOf(u).map(r => (ROLES[r] || { level: 1 }).level));
+const topRole = u => rolesOf(u).slice().sort((a, b) => ROLES[b].level - ROLES[a].level)[0];
+const roleNames = u => rolesOf(u).slice().sort((a, b) => ROLES[b].level - ROLES[a].level).map(r => ROLES[r].name);
+/** Distintiu de cap de secció en color d'accent; el de Junta, més discret. */
+const roleBadges = u => rolesOf(u).slice().sort((a, b) => ROLES[b].level - ROLES[a].level)
+  .map(r => `<span class="rolepill">${ROLES[r].name}</span>`).join('');
+/** Director i administrador no computen al cens d'assistència. */
+const inCensus = u => !!u && u.active !== false && !!u.section && !hasRole(u, 'director') && !hasRole(u, 'admin');
+/** Nom a mostrar com a "secció": la real si en té, o el càrrec (Direcció/Administració) si no. */
+function sectionLabel(u) {
+  if (u.section) return SEC[u.section].name;
+  return STAFF_LABEL[topRole(u)] || 'Sense secció';
+}
+const censusUsers = () => S.users.filter(inCensus).sort(byName);
+const membersOf = sec => censusUsers().filter(u => u.section === sec);
+const leaderOf = sec => S.users.find(u => u.active !== false && u.section === sec && hasRole(u, 'leader')) || null;
+
+/** El director és un rol de només consulta (excepte el repertori dels projectes). */
+const viewOnly = u => topRole(u) === 'director';
+const can = {
+  passList: () => { const u = me(); return !!u && level(u) >= 2 && !viewOnly(u); },
+  section: sec => { const u = me(); if (!u || viewOnly(u)) return false; return level(u) >= 3 || (hasRole(u, 'leader') && u.section === sec); },
+  manageUsers: () => { const u = me(); return !!u && level(u) >= 2 && !viewOnly(u); },
+  createUsers: () => level(me()) >= 5,
+  manageProjects: () => level(me()) >= 4,
+  /** Editar el repertori: només qui gestiona projectes (Junta/administració). El director ho pot consultar, no editar. */
+  repertoire: () => level(me()) >= 4,
+  appConfig: () => level(me()) >= 5,
+  attendanceConfig: () => level(me()) >= 5,
+  reviewIncident: inc => { const u = me(); if (!u) return false; const t = userById(inc.userId); return level(u) >= 4 || (hasRole(u, 'leader') && t && t.section === u.section); },
+  /** Consultar (sense poder actuar): també el director, com a responsable general de la banda. */
+  viewIncidents: inc => level(me()) >= 3 || can.reviewIncident(inc),
+  /** Credencials: només la Junta les pot canviar. */
+  credentials: target => {
+    const u = me(); if (!u || !target) return false;
+    return hasRole(u, 'board');
+  },
+  /** Qui pot saber que una persona concreta està en risc. */
+  seeRisk: target => {
+    const u = me(); if (!u || !target) return false;
+    if (u.id === target.id) return true;
+    if (level(u) >= 3) return true;
+    return hasRole(u, 'leader') && target.section === u.section;
+  },
+  seeMember: target => { const u = me(); if (!u || !target) return false; return u.id === target.id || level(u) >= 3 || (hasRole(u, 'leader') && target.section === u.section); },
+};
+const statsScope = () => { const u = me(); if (!u) return 'none'; if (level(u) >= 3) return 'global'; if (hasRole(u, 'leader')) return 'section'; return 'self'; };
+
+/* ================= Sessions i assistència ================= */
+const projById = id => S.projects.find(p => p.id === id) || null;
+const projsOf = s => (s.projIds || []).map(projById).filter(Boolean);
+const sessionsOfProj = pid => S.sessions.filter(s => (s.projIds || []).includes(pid)).sort((a, b) => a.date.localeCompare(b.date));
+/** Estat d'un projecte segons les seves dates (o, si no en té, les de les seves sessions). */
+const PROJECT_STATUS_LABEL = { done: 'Acabat', ongoing: 'En curs', upcoming: 'Proper' };
+function projectStatus(p) {
+  const ss = sessionsOfProj(p.id).map(s => s.date);
+  const from = p.from || ss[0] || null;
+  const to = p.to || ss[ss.length - 1] || null;
+  if (to && to < TODAY) return 'done';
+  if (from && from > TODAY) return 'upcoming';
+  return 'ongoing';
+}
+function decorate(s) {
+  const ps = projsOf(s);
+  return { ...s, projs: ps, projName: ps.map(p => p.name).join(' + ') || 'Sense projecte', color: (ps[0] && ps[0].color) || '' };
+}
+/** Barra lateral del calendari: un color sol, o una banda per projecte quan la sessió en té més d'un. */
+function barGradient(projs) {
+  if (!projs.length) return '';
+  if (projs.length === 1) return projs[0].color;
+  const n = projs.length;
+  return `linear-gradient(to bottom, ${projs.map((p, i) => `${p.color} ${i / n * 100}%, ${p.color} ${(i + 1) / n * 100}%`).join(', ')})`;
+}
+function allSessions() {
+  return S.sessions.map(decorate).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+}
+const sessionById = id => allSessions().find(s => s.id === id) || null;
+/** Totes les seccions són sempre convocades a cada sessió. */
+const convoked = () => true;
+/** Un músic queda fora d'una sessió només si està descartat de TOTS els projectes als quals pertany la sessió. */
+function excludedFrom(s, u) {
+  const ps = projsOf(s);
+  if (!ps.length) return false;
+  return ps.every(p => (p.excludedIds || []).includes(u.id));
+}
+const inSession = (s, u) => inCensus(u) && !excludedFrom(s, u);
+const aKey = (sid, uidv) => `${sid}|${uidv}`;
+const mark = (sid, u) => S.attendance[aKey(sid, u)] || null;
+function setMark(sid, userId, val) {
+  const k = aKey(sid, userId);
+  if (!val) delete S.attendance[k];
+  else S.attendance[k] = { ...val, by: ME, at: stamp() };
+  save();
+}
+const emptyCounts = () => ({ P: 0, R: 0, FJ: 0, FNJ: 0, NP: 0, none: 0, total: 0 });
+function countsFor(session, sec) {
+  const c = emptyCounts();
+  if (!session) return c;
+  for (const u of membersOf(sec)) {
+    if (!inSession(session, u)) continue;
+    c.total++;
+    const mk = mark(session.id, u.id);
+    if (mk && STATUS[mk.s]) c[mk.s]++; else c.none++;
+  }
+  return c;
+}
+function rate(c) {
+  const present = c.P + (S.config.countLateAsPresent ? c.R : 0);
+  const den = c.P + c.R + c.FJ + c.FNJ;
+  return den ? present / den : null;
+}
+/** Puntualitat: dels assajos on ha vingut, quants ha arribat a l'hora (no comptant les faltes). */
+function punctualityRate(c) {
+  const den = c.P + c.R;
+  return den ? c.P / den : null;
+}
+/** De les faltes, quantes han quedat justificades. */
+function justifiedRate(c) {
+  const den = c.FJ + c.FNJ;
+  return den ? c.FJ / den : null;
+}
+/** Barra de dos colors per a Estadístiques: assisteix + retard en verd, faltes (justificades o no) en vermell. */
+function statBar(c) {
+  const good = c.P + c.R, bad = c.FJ + c.FNJ, den = good + bad || 1;
+  return `<div class="stack"><span class="s-P" style="width:${good / den * 100}%"></span><span class="s-FNJ" style="width:${bad / den * 100}%"></span></div>`;
+}
+/** Un únic requadre de faltes (justificades + no justificades), amb el desglossament amagat fins que es toca. Per a vistes personals. */
+function faltesBox(c) {
+  const total = c.FJ + c.FNJ;
+  return `<details class="kpi kpi-details"><summary><div class="kpi-v">${total}</div><div class="kpi-l">Faltes</div></summary>
+    <div class="kpi-breakdown"><span class="kpi-chip gold">${c.FJ} justificades</span><span class="kpi-chip red">${c.FNJ} no justificades</span></div></details>`;
+}
+/** Dos requadres en percentatge (justificades en groc, no justificades en vermell). Per a vistes agregades (secció/banda). */
+function faltesPctBoxes(c) {
+  const total = c.FJ + c.FNJ;
+  const pj = total ? c.FJ / total : null, pnj = total ? c.FNJ / total : null;
+  return `<div class="kpi gold-box"><div class="kpi-v">${pj == null ? '—' : pct(pj)}</div><div class="kpi-l">Faltes justificades</div></div>
+    <div class="kpi alert"><div class="kpi-v">${pnj == null ? '—' : pct(pnj)}</div><div class="kpi-l">Faltes no justificades</div></div>`;
+}
+function projStatsChips() {
+  return `<div class="chips"><button class="chip" aria-pressed="${ui.statsProj === 'all'}" data-act="stats-proj" data-id="all">Tot el curs</button>
+    ${S.projects.map(p => `<button class="chip" aria-pressed="${ui.statsProj === p.id}" data-act="stats-proj" data-id="${p.id}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}</div>`;
+}
+function sessionCounts(session) {
+  const c = emptyCounts();
+  for (const x of SECTIONS) { if (!convoked(session, x.id)) continue; const s = countsFor(session, x.id); for (const k of Object.keys(c)) c[k] += s[k]; }
+  return c;
+}
+const hasData = (session, sec) => { const c = countsFor(session, sec); return c.total > 0 && c.none < c.total; };
+function doneSessions(projFilter) {
+  return allSessions().filter(s => (!projFilter || projFilter === 'all' || (s.projIds || []).includes(projFilter)) && s.date <= TODAY
+    && SECTIONS.some(x => convoked(s, x.id) && hasData(s, x.id)));
+}
+function userStats(u, sessions) {
+  const c = emptyCounts(); const hist = [];
+  for (const s of sessions) {
+    if (!inSession(s, u)) continue;
+    const mk = mark(s.id, u.id); if (!mk) continue;
+    c[mk.s]++; c.total++; hist.push({ date: s.date, s: mk.s, sid: s.id });
+  }
+  return { c, hist, pct: rate(c) };
+}
+const minRate = () => (S.config.minAttendance || 80) / 100;
+const minPunctRate = () => (S.config.minPunctuality || 80) / 100;
+const atRisk = st => st.pct != null && st.pct < minRate();
+/** Etiqueta d'instrument reutilitzada arreu (mateixa mida i espaiat a totes les llistes de músics). */
+const instrumentBadge = inst => inst ? ` <span class="part">${esc(inst)}</span>` : '';
+/** Classe per tenyir el fons d'un requadre segons si el valor és de risc (vermell) o no (verd) — sense zona neutra. Només per a assistència. */
+const attClass = st => st.pct == null ? '' : atRisk(st) ? 'alert' : 'great';
+/** Igual que attClass, però a partir d'una fracció 0-1 ja calculada (per a requadres d'assistència que no parteixen d'un userStats). */
+const rateClass = r => r == null ? '' : r < minRate() ? 'alert' : 'great';
+/** Puntualitat: blau per defecte, vermell només per sota del mínim configurat — sense verd, per no acumular massa color. */
+const punctClass = r => r == null ? '' : r < minPunctRate() ? 'alert' : 'info';
+/** Faltes no justificades: blanc per defecte, vermell només quan n'hi ha prou perquè calgui parar-hi atenció. */
+const fnjClass = n => n >= (S.config.alertFNJ || 3) ? 'alert' : '';
+function pendingIncidents() {
+  return S.incidents.filter(i => i.status === 'pending' && can.reviewIncident(i));
+}
+function currentSession() {
+  const list = allSessions(); if (!list.length) return null;
+  if (ui.sessionId) { const f = list.find(s => s.id === ui.sessionId); if (f) return f; }
+  return list.find(s => s.date >= TODAY) || list[list.length - 1];
+}
+
+/* ================= Render ================= */
+function applyTheme() {
+  document.documentElement.style.setProperty('--accent-h', String(S.config.accentH || 209));
+}
+function navFor(u) {
+  const lvl = level(u); const vo = viewOnly(u);
+  const items = [];
+  // El perfil (des d'on es notifiquen les incidències) és la primera pestanya per a tothom excepte administració i direcció.
+  if (!hasRole(u, 'admin') && !vo) items.push({ id: 'perfil', name: 'Perfil', ico: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.7-3.4 3.4-5.2 7-5.2s6.3 1.8 7 5.2"/></svg>' });
+  if (lvl >= 2) items.push({ id: 'llista', name: 'Llista', ico: '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>' });
+  items.push({ id: 'calendari', name: 'Calendari', ico: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/></svg>' });
+  items.push({ id: 'estadistiques', name: 'Estadístiques', ico: '<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>' });
+  if (lvl >= 2 && !vo) items.push({ id: 'gestio', name: 'Gestió', ico: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.9-4.6 5.5-4.6S14 16 14.5 19"/><path d="M17 9h4M17 13h4M17 17h4"/></svg>' });
+  return items;
+}
+function render() {
+  applyTheme();
+  const u = me();
+  if (!u) { $('#navbar').hidden = true; document.body.classList.add('no-nav'); $('#shell').innerHTML = viewLogin(); return; }
+  document.body.classList.remove('no-nav');
+  const nav = navFor(u);
+  if (!nav.some(n => n.id === ui.tab)) ui.tab = nav[0].id;
+  const y = window.scrollY;
+  const pend = pendingIncidents().length;
+  $('#navbar').hidden = false;
+  $('#nav').innerHTML = nav.map(t => `<button class="tab" data-act="tab" data-tab="${t.id}" ${ui.tab === t.id ? 'aria-current="page"' : ''}>
+    <span class="tab-ico">${t.ico}${t.id === 'llista' && pend ? `<span class="tab-badge">${pend}</span>` : ''}</span><span>${t.name}</span></button>`).join('');
+  const view = { llista: viewRoll, calendari: viewCal, estadistiques: viewStats, gestio: viewManage, perfil: viewProfile }[ui.tab] || viewCal;
+  $('#shell').innerHTML = appbar(u) + view();
+  window.scrollTo(0, y);
+}
+function logoHTML(cls) {
+  const c = S.config;
+  const logo = c.logo || DEFAULT_LOGO;
+  return logo.startsWith('data:')
+    ? `<img class="${cls}" src="${logo}" alt="">`
+    : `<div class="${cls}">${esc(logo || initials(c.name))}</div>`;
+}
+function appbar(u) {
+  return `<header class="appbar">
+    <div class="brand">${logoHTML('brand-mark')}
+      <div style="min-width:0"><span class="brand-name">${esc(S.config.name)}</span>
+      <span class="brand-sub">${esc(u.name)} · ${esc(ROLES[topRole(u)].name)}</span></div></div>
+    <div class="top-actions">
+      ${hasRole(u, 'admin') ? `<button class="icon-btn" data-act="impersonate" aria-label="Canvia de rol">${ICON.swap}</button>` : ''}
+      <button class="icon-btn" data-act="logout" aria-label="Tanca la sessió">${ICON.logout}</button>
+    </div></header>`;
+}
+
+/* ---------- Login + splash ---------- */
+function passField(id, placeholder, value) {
+  return `<div class="pass-wrap"><input class="inp" id="${id}" type="password" placeholder="${placeholder || '••••'}" value="${esc(value || '')}" autocomplete="off">
+    <button type="button" class="icon-btn plain pass-toggle" data-act="toggle-pass" data-target="${id}" aria-label="Mostra la contrasenya" aria-pressed="false">${ICON.eye}</button></div>`;
+}
+function viewLogin(err) {
+  return `<div class="login">${logoHTML('logo')}
+    <div><h1 class="h1">${esc(S.config.name)}</h1><p class="muted" style="margin:4px 0 0">Gestió d'assistència</p></div>
+    <form id="loginf" autocomplete="on">
+      ${err ? `<div class="err">${esc(err)}</div>` : ''}
+      <div class="field"><span>Usuari</span><input class="inp" id="lg-user" placeholder="nom.cognom" autocapitalize="none" autocorrect="off"></div>
+      <div class="field"><span>Contrasenya</span>${passField('lg-pass')}</div>
+      <label class="toggle-row" style="min-height:36px"><span style="font-size:13.5px">Mantenir la sessió iniciada</span>
+        <span class="switch"><input type="checkbox" id="lg-keep" checked><span></span></span></label>
+      <button class="btn btn-primary btn-block" type="submit">Entra</button>
+    </form>
+    <p class="login-foot">Si no recordes les credencials, parla amb la Junta.</p></div>`;
+}
+function splash(then) {
+  splashing = true;
+  document.body.insertAdjacentHTML('beforeend', `<div class="splash" id="splash"><div class="splash-in">${logoHTML('logo')}
+    <div class="t">${esc(S.config.name)}</div>
+    <div class="s">Connectant<span class="dots"><i></i><i></i><i></i></span></div></div></div>`);
+  setTimeout(() => { const el = $('#splash'); if (el) el.remove(); splashing = false; then(); }, 1100);
+}
+
+/* ---------- Llista ---------- */
+function viewRoll() {
+  const u = me();
+  const pend = pendingIncidents().length;
+  const bar = `<div class="subtabs"><button class="subtab" aria-selected="${ui.llistaMode !== 'avisos'}" data-act="llista-mode" data-id="roll">Assistència</button>
+    <button class="subtab" aria-selected="${ui.llistaMode === 'avisos'}" data-act="llista-mode" data-id="avisos">Avisos${pend ? ` <span class="count-badge">${pend}</span>` : ''}</button></div>`;
+  if (ui.llistaMode === 'avisos') return `<div class="page-head"><h1 class="h1">Llista</h1></div>${bar}${manageIncidents()}`;
+  if (!S.sessions.length) return `<div class="page-head"><h1 class="h1">Llista</h1></div>${bar}<div class="empty"><h2 class="h2">Encara no hi ha sessions</h2>
+    <p>${can.manageProjects() ? 'Crea un projecte i afegeix-hi assajos per poder passar llista.' : 'Quan es programin assajos, aquí hi podràs passar llista.'}</p>
+    ${can.manageProjects() ? '<button class="btn btn-primary" data-act="new-proj">+ Nou projecte</button>' : ''}</div>`;
+  const cur = currentSession();
+  if (!cur) return `<div class="page-head"><h1 class="h1">Llista</h1></div>${bar}<div class="empty"><h2 class="h2">Cap sessió</h2><p>Afegeix assajos al projecte des del Calendari.</p></div>`;
+  const list = allSessions(); const i = list.findIndex(s => s.id === cur.id);
+  const head = `<div class="ctx"><div class="session">
+    <button class="nav-arrow" data-act="sess-prev" ${i <= 0 ? 'disabled' : ''} aria-label="Anterior">${ICON.left}</button>
+    <button class="session-main" data-act="sess-pick"><span class="session-prod projline">${cur.projs.map(p => `<span class="cal-tagp" style="background:${esc(p.color)}22;color:${esc(p.color)}">${esc(p.name)}</span>`).join(' ') || 'Sense projecte'}</span>
+      <span class="session-date">${longDate(cur.date)}</span>
+      <span class="session-meta"><span class="badge soft">${esc(cur.type || 'Assaig')}</span>
+      ${timeRange(cur) ? `<span class="mono">${esc(timeRange(cur))}</span>` : ''}${cur.place ? `<span>· ${esc(cur.place)}</span>` : ''}</span></button>
+    <button class="nav-arrow" data-act="sess-next" ${i >= list.length - 1 ? 'disabled' : ''} aria-label="Següent">${ICON.right}</button></div></div>`;
+
+  const mySec = hasRole(u, 'leader') && level(u) < 3 ? u.section : null;
+  const body = mySec ? rollSection(cur, mySec, true) : (!ui.rollSec ? rollOverview(cur) : rollSection(cur, ui.rollSec, false));
+  return `<div class="page-head"><h1 class="h1">Llista</h1></div>${bar}${head}${body}`;
+}
+function rollOverview(cur) {
+  const cards = SECTIONS.map(x => {
+    const on = convoked(cur, x.id); const c = countsFor(cur, x.id);
+    const done = on && c.total > 0 && c.none === 0;
+    const pend = S.incidents.some(inc => inc.sessionId === cur.id && inc.status === 'pending' && (userById(inc.userId) || {}).section === x.id);
+    return `<button class="sq ${on ? '' : 'off'}" data-act="open-sec" data-sec="${x.id}" ${on ? '' : 'disabled'}>
+      ${pend ? '<span class="q-dot pend" title="Incidències pendents"></span>' : ''}
+      <span class="q-l">${x.id}</span><span class="q-n">${x.name}</span>
+      <span class="q-c ${done ? 'done' : ''}">${on ? `${c.total - c.none}/${c.total}` : 'no convocada'}</span></button>`;
+  }).join('');
+  const c = sessionCounts(cur);
+  const started = c.total > 0 && c.none < c.total;
+  const showPanel = started || can.manageProjects();
+  return `<div class="secs">${cards}</div>
+    ${showPanel ? `<div class="tally" style="margin-top:16px">${started ? tallyGrid(c) : ''}
+      ${started ? `<div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-top:12px"><div class="kpi ${rateClass(rate(c))}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div></div>` : ''}
+      ${can.manageProjects() ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm" data-act="sess-edit" data-sid="${cur.id}">Edita la sessió</button></div>` : ''}</div>` : ''}`;
+}
+function stackBar(c) {
+  const den = c.total || 1;
+  return `<div class="stack">${ORDER.map(k => c[k] ? `<span class="s-${k}" style="width:${(c[k] / den) * 100}%"></span>` : '').join('')}</div>`;
+}
+/** Resum numèric per estat (en comptes d'una barra de colors amb amplades relatives, més difícil de llegir d'un cop d'ull). */
+function tallyGrid(c) {
+  const cells = ORDER.filter(k => c[k]).map(k => `<div class="tcell"><i class="i-${k}"></i><b>${c[k]}</b><span>${STATUS[k].short}</span></div>`).join('');
+  const pending = c.none ? `<div class="tcell dim"><i class="i-none"></i><b>${c.none}</b><span>Per marcar</span></div>` : '';
+  return `<div class="tally-grid">${cells}${pending}</div>`;
+}
+function rollSection(cur, sec, fixed) {
+  const ms = membersOf(sec).filter(u => inSession(cur, u));
+  const c = countsFor(cur, sec);
+  const started = c.total > 0 && c.none < c.total;
+  const head = `<div class="leader"><span>Secció: <b>${esc(SEC[sec].name)}</b></span>
+    ${fixed ? '' : '<button class="btn btn-sm" data-act="close-sec">← Totes les seccions</button>'}</div>`;
+  if (!convoked(cur, sec)) return head + `<div class="empty"><h2 class="h2">Secció no convocada</h2><p>Aquesta sessió no convoca ${esc(SEC[sec].name.toLowerCase())}.</p></div>`;
+  if (!ms.length) return head + `<div class="empty"><h2 class="h2">Cap músic</h2><p>Afegeix músics a aquesta secció des de Gestió.</p></div>`;
+  const showPanel = started || (c.none && can.section(sec));
+  return head + `${showPanel ? `<div class="tally">${started ? tallyGrid(c) : ''}
+      ${started ? `<div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-top:12px"><div class="kpi ${rateClass(rate(c))}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div></div>` : ''}
+      ${c.none && can.section(sec) ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="rest-present" data-sec="${sec}">Marca tots els músics com a presents</button></div>` : ''}</div>` : ''}
+    <ul class="roster">${ms.map(m => rollRow(cur, m)).join('')}</ul>`;
+}
+function statusPill(mk) {
+  if (!mk) return '<span class="state">Per marcar</span>';
+  const cls = mk.s === 'P' ? 'ok' : mk.s === 'R' ? 'info' : mk.s === 'FNJ' ? 'fnj' : 'low';
+  return `<span class="pill ${cls}">${STATUS[mk.s].label}${mk.s === 'R' && mk.min ? ` ${mk.min}′` : ''}</span>`;
+}
+function rollRow(session, m) {
+  const mk = mark(session.id, m.id); const s = mk?.s || 'none';
+  const canMark = can.section(m.section);
+  const inc = S.incidents.find(i => i.sessionId === session.id && i.userId === m.id);
+  const opts = ORDER.filter(k => k !== 'NP').map(k => `<button class="opt o-${k}" role="radio" aria-checked="${s === k}" data-act="mark" data-mid="${m.id}" data-s="${k}"><i></i><span>${STATUS[k].short}</span></button>`).join('');
+  let extra = '';
+  if (s === 'R') extra = `<div class="extra x-R"><label>Minuts</label><div class="mins">
+      ${LATE_CHIPS.map(n => `<button class="min-chip" aria-pressed="${mk.min === n}" data-act="min" data-mid="${m.id}" data-min="${n}">${n}′</button>`).join('')}
+      <input type="number" class="min-chip min-custom" inputmode="numeric" min="1" max="180" placeholder="+" value="${mk.min && !LATE_CHIPS.includes(mk.min) ? mk.min : ''}" data-act="min-custom" data-mid="${m.id}"></div>
+      <input class="note-input" placeholder="Nota (opcional)" data-act="note" data-mid="${m.id}" value="${esc(mk.note || '')}"></div>`;
+  else if (s === 'FJ') extra = `<div class="extra x-FJ"><label>Motiu</label>
+      <input class="note-input" placeholder="Feina, malaltia, examen…" data-act="note" data-mid="${m.id}" value="${esc(mk.note || '')}"></div>`;
+  return `<li class="row ${mk ? 'has-mark' : ''}" data-s="${s}">
+    <div class="row-top"><span class="who"><span class="name">${esc(m.name)}</span>
+      ${m.instrument ? `<span class="part">${esc(m.instrument)}</span>` : ''}${hasRole(m, 'leader') ? '<span class="tag">Cap de secció</span>' : ''}
+      ${inc ? `<button class="rowhint ${inc.status === 'pending' ? '' : 'done'}" data-act="inc-open" data-id="${inc.id}">${inc.status === 'pending' ? 'Avís pendent' : inc.kind === 'late' ? 'Retard avisat' : 'Absència avisada'}</button>` : ''}</span>
+      ${statusPill(mk)}</div>
+    ${canMark ? `<div class="seg" role="radiogroup">${opts}</div>${extra}` : ''}</li>`;
+}
+
+/* ---------- Calendari ---------- */
+function viewCal() {
+  const u = me();
+  const bar = `<div class="subtabs"><button class="subtab" aria-selected="${ui.calMode !== 'projects'}" data-act="cal-mode" data-id="sessions">Sessions</button>
+    <button class="subtab" aria-selected="${ui.calMode === 'projects'}" data-act="cal-mode" data-id="projects">Projectes</button></div>`;
+  if (ui.calMode === 'projects') {
+    return `<div class="page-head"><h1 class="h1">Calendari</h1>
+      ${can.manageProjects() ? '<button class="btn btn-sm btn-primary" data-act="new-proj">+ Projecte</button>' : ''}</div>${bar}${viewProjects()}`;
+  }
+  const all = allSessions();
+  if (!all.length) return `<div class="page-head"><h1 class="h1">Calendari</h1></div>${bar}
+    <div class="empty"><h2 class="h2">Sense sessions</h2><p>Encara no hi ha assajos ni concerts programats.</p>
+    ${can.manageProjects() ? '<button class="btn btn-primary" data-act="new-proj">+ Nou projecte</button>' : ''}</div>`;
+  const chips = `<div class="chips"><button class="chip" aria-pressed="${ui.calProj === 'all'}" data-act="cal-proj" data-id="all">Tot</button>
+    ${S.projects.map(p => `<button class="chip" aria-pressed="${ui.calProj === p.id}" data-act="cal-proj" data-id="${p.id}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}
+    <button class="chip" aria-pressed="${ui.calPast}" data-act="cal-past">Anteriors</button></div>`;
+  let list = all.filter(s => ui.calProj === 'all' || (s.projIds || []).includes(ui.calProj));
+  if (!ui.calPast) list = list.filter(s => s.date >= TODAY);
+  let out = '', month = '';
+  for (const s of list) {
+    const my = monthYear(s.date);
+    if (my !== month) { out += (month ? '</ul>' : '') + `<div class="cal-month">${my}</div><ul class="cal-list">`; month = my; }
+    const mine = inSession(s, u);
+    const mk = inCensus(u) ? mark(s.id, u.id) : null;
+    let right = '';
+    if (mk) right += `<span class="pill ${mk.s === 'P' ? 'ok' : mk.s === 'R' ? 'info' : mk.s === 'FNJ' ? 'fnj' : 'low'}">${STATUS[mk.s].short}</span>`;
+    else if (inCensus(u) && !mine) right += `<span class="cal-pct muted">No hi toques</span>`;
+    if (viewOnly(u) && s.date < TODAY) { const c = sessionCounts(s); if (c.total > 0 && c.none < c.total) right += `<span class="cal-pct">${pct(rate(c))}</span>`; }
+    const n = s.projs.length;
+    const arcs = s.projs.map((p, i) => {
+      const topPct = (i / n * 100).toFixed(3), heightPct = (100 / n).toFixed(3);
+      const br = `${i === 0 ? 'var(--r-lg)' : '0'} 0 0 ${i === n - 1 ? 'var(--r-lg)' : '0'}`;
+      return `<span class="cal-arc" style="top:${topPct}%;height:${heightPct}%;border-left:7px solid ${esc(p.color)};border-radius:${br}"></span>`;
+    }).join('');
+    out += `<li class="cal-row ${s.date === TODAY ? 'is-today' : ''} ${s.date < TODAY ? 'is-past' : ''}">
+      ${arcs}
+      <button class="cal-main" data-act="sess-info" data-sid="${s.id}">
+        <span class="cal-date"><b>${Number(s.date.slice(8, 10))}</b><small>${wdShort(s.date)}</small></span>
+        <span class="cal-info"><span class="cal-type">${esc(s.type || 'Assaig')}<em>${esc(timeRange(s))}</em></span>
+          ${s.place ? `<span class="cal-place">${esc(s.place)}</span>` : ''}
+          <span class="cal-projs">${s.projs.map(pr => `<span class="cal-tagp" style="background:${esc(pr.color)}22;color:${esc(pr.color)}">${esc(pr.name)}</span>`).join('')}</span></span>
+        <span class="cal-right">${right}</span></button></li>`;
+  }
+  out += list.length ? '</ul>' : '<div class="empty"><p>Cap sessió amb aquests filtres.</p></div>';
+  return `<div class="page-head"><h1 class="h1">Calendari</h1>
+    ${can.manageProjects() ? '<button class="btn btn-sm btn-primary" data-act="new-session">+ Sessió</button>' : ''}</div>${bar}${chips}${out}`;
+}
+/** Llista de projectes: gestió completa per a Junta/administració, consulta amb estat per a la resta. */
+function viewProjects() {
+  const editable = can.manageProjects();
+  const head = `<div class="sec-h"><span class="muted" style="font-size:13px">${S.projects.length} projectes</span></div>`;
+  if (!S.projects.length) return head + `<div class="empty"><h2 class="h2">Cap projecte</h2>
+    <p>Un projecte agrupa les dates, el repertori, els músics implicats i els assajos.</p></div>`;
+  return head + S.projects.map(p => {
+    const ss = sessionsOfProj(p.id);
+    const rehearsals = ss.filter(s => s.type !== 'Concert');
+    const done = rehearsals.filter(s => s.date <= TODAY).length;
+    const st = projectStatus(p);
+    const inner = `<span class="h2"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}<span class="status-badge ${st}">${PROJECT_STATUS_LABEL[st]}</span></span>
+        <span class="prod-meta">${p.from ? `<span>${esc(ddmm(p.from))}${p.to ? ' – ' + esc(ddmm(p.to)) : ''}</span>` : ''}
+          <span>${done}/${rehearsals.length} Assajos</span>
+          <span>${p.repertoire ? 'Repertori enllaçat' : 'Sense repertori'}</span>
+          </span>`;
+    return `<div class="panel prod-card" style="margin-bottom:12px;border-left:7px solid ${esc(p.color)}">
+      <button data-act="${editable ? 'edit-proj' : 'view-proj'}" data-pid="${p.id}">${inner}</button>
+      ${editable ? `<div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px">
+        <button class="btn btn-sm" data-act="repeat-sessions" data-pid="${p.id}">Assajos setmanals</button>
+        <button class="btn btn-sm btn-ghost" data-act="list-sessions" data-pid="${p.id}">Sessions</button></div>` : ''}</div>`;
+  }).join('');
+}
+
+/* ---------- Estadístiques ---------- */
+function viewStats() {
+  const scope = statsScope();
+  const u = me();
+  if (scope === 'self') return statsSelf(u);
+  if (scope === 'section') return viewStatsLeader(u);
+  const sessions = doneSessions(ui.statsProj);
+  if (!sessions.length) return `<div class="page-head"><h1 class="h1">Estadístiques</h1></div>
+    <div class="empty"><h2 class="h2">Encara no hi ha dades</h2><p>Quan es passi llista d'algun assaig, aquí hi haurà l'assistència.</p></div>`;
+  const chips = projStatsChips();
+  const total = emptyCounts();
+  for (const s of sessions) { const c = sessionCounts(s); for (const k of Object.keys(total)) total[k] += c[k]; }
+  const stats = censusUsers().map(m => ({ m, ...userStats(m, sessions) })).filter(x => x.c.total);
+  // Norma de risc: assistència per sota del mínim configurat (independentment de si les faltes són justificades).
+  const risky = stats.filter(atRisk);
+  const kpis = `<div class="kpis">
+    <div class="kpi ${rateClass(rate(total))}"><div class="kpi-v">${pct(rate(total))}</div><div class="kpi-l">Assistència</div></div>
+    <div class="kpi ${punctClass(punctualityRate(total))}"><div class="kpi-v">${pct(punctualityRate(total))}</div><div class="kpi-l">Puntualitat</div></div>
+    ${faltesPctBoxes(total)}</div>`;
+
+  const globalBlock = `<div class="section-title"><h2 class="h2">Global</h2><span class="eyebrow">assistència</span></div>
+    <div class="panel bars">
+      <div class="bar-row bar-total"><span class="lbl"><span>General</span></span>${statBar(total)}<span class="val">${pct(rate(total))}</span></div>
+      ${SECTIONS.map(x => {
+        const c = emptyCounts();
+        for (const m of membersOf(x.id)) { const st = userStats(m, sessions); for (const k of Object.keys(c)) c[k] += st.c[k]; }
+        return `<div class="bar-row"><span class="lbl"><span>${x.name}</span></span>${statBar(c)}<span class="val">${pct(rate(c))}</span></div>`;
+      }).join('')}</div>`;
+
+  const named = risky.filter(x => can.seeRisk(x.m));
+  const hidden = risky.length - named.length;
+  const riskBlock = risky.length ? `<div class="section-title"><h2 class="h2">En risc</h2><span class="eyebrow">${risky.length}</span></div>
+    <ul class="alerts panel">${named.sort((a, b) => (a.pct ?? 1) - (b.pct ?? 1)).map(x => `<li>
+      <span class="mname"><span>${esc(x.m.name)}</span>${instrumentBadge(x.m.instrument)}</span>
+      <span class="pill low">${pct(x.pct)}</span></li>`).join('')}
+      ${hidden ? `<li><span class="muted">${hidden} músic${hidden > 1 ? 's' : ''} d'altres seccions en risc</span><span class="pill low">reservat</span></li>` : ''}</ul>
+      ${hidden ? '<div class="privacy">Els noms dels músics en risc només els veuen la persona afectada, el seu cap de secció, la direcció, la Junta i l\'administració.</div>' : ''}` : '';
+
+  const rows = stats.filter(x => can.seeMember(x.m) && (!ui.statsSec || x.m.section === ui.statsSec)).sort((a, b) => (a.pct ?? 1) - (b.pct ?? 1))
+    .map(x => `<li class="mrow"><button data-act="member-detail" data-mid="${x.m.id}">
+      <span class="mname"><span>${esc(x.m.name)}</span>${x.m.instrument ? `<span class="part">${esc(x.m.instrument)}</span>` : ''}</span>
+      <span class="mpct" style="${atRisk(x) ? 'color:var(--fnj)' : ''}">${pct(x.pct)}</span>${statBar(x.c)}
+      <span class="mcounts"><span><i class="i-P"></i>Assistència <b>${x.c.P + x.c.R}</b></span><span><i class="i-FNJ"></i>Faltes <b>${x.c.FJ + x.c.FNJ}</b></span></span></button></li>`).join('');
+  const secChips = `<div class="chips"><button class="chip" aria-pressed="${!ui.statsSec}" data-act="stats-sec" data-sec="">Totes</button>
+    ${SECTIONS.map(x => `<button class="chip" aria-pressed="${ui.statsSec === x.id}" data-act="stats-sec" data-sec="${x.id}">${x.name}</button>`).join('')}</div>`;
+
+  const mineBlock = inCensus(u) ? (() => {
+    const st = userStats(u, sessions);
+    return `<div class="section-title"><h2 class="h2">Les meves dades</h2></div>${statsSelfKpis(st)}`;
+  })() : '';
+
+  return `<div class="page-head"><h1 class="h1">Estadístiques</h1><span class="eyebrow">Banda</span></div>
+    ${chips}${mineBlock}
+    <div class="section-title"><h2 class="h2">General</h2></div>${kpis}${globalBlock}${riskBlock}
+    <div class="section-title"><h2 class="h2">Per músic</h2></div>
+    ${secChips}<ul class="mtable panel">${rows || '<li class="empty">Cap músic amb dades.</li>'}</ul>`;
+}
+/** Per a caps de secció: la seva vista personal i la de la seva secció, a la mateixa pàgina, sense pestanyes. */
+function viewStatsLeader(u) {
+  const chips = projStatsChips();
+  const sessions = doneSessions(ui.statsProj);
+  if (!sessions.length) return `<div class="page-head"><h1 class="h1">Estadístiques</h1></div>${chips}<div class="empty"><p>Encara no hi ha dades amb aquest filtre.</p></div>`;
+
+  const st = userStats(u, sessions);
+  const secC = emptyCounts();
+  for (const m of membersOf(u.section)) { const x = userStats(m, sessions); for (const k of Object.keys(secC)) secC[k] += x.c[k]; }
+  const mineKpis = statsSelfKpis(st);
+
+  const stats = membersOf(u.section).map(m => ({ m, ...userStats(m, sessions) })).filter(x => x.c.total);
+  const sectionKpis = `<div class="kpis">
+    <div class="kpi ${rateClass(rate(secC))}"><div class="kpi-v">${pct(rate(secC))}</div><div class="kpi-l">Assistència</div></div>
+    <div class="kpi ${punctClass(punctualityRate(secC))}"><div class="kpi-v">${pct(punctualityRate(secC))}</div><div class="kpi-l">Puntualitat</div></div>
+    ${faltesPctBoxes(secC)}</div>`;
+  const rows = stats.slice().sort((a, b) => (a.pct ?? 1) - (b.pct ?? 1))
+    .map(x => `<li class="mrow"><button data-act="member-detail" data-mid="${x.m.id}">
+      <span class="mname"><span>${esc(x.m.name)}</span>${x.m.instrument ? `<span class="part">${esc(x.m.instrument)}</span>` : ''}</span>
+      <span class="mpct" style="${atRisk(x) ? 'color:var(--fnj)' : ''}">${pct(x.pct)}</span>${statBar(x.c)}</button></li>`).join('');
+  const sectionBlock = sectionKpis + `<div class="panel bars" style="margin-top:10px"><ul class="mtable" style="margin:0">${rows || '<li class="empty">Cap músic amb dades.</li>'}</ul></div>`;
+
+  return `<div class="page-head"><h1 class="h1">Estadístiques</h1></div>${chips}
+    <div class="section-title"><h2 class="h2">Les meves dades</h2></div>${mineKpis}
+    <div class="section-title"><h2 class="h2">La meva secció</h2><span class="eyebrow">${SEC[u.section]?.name || ''}</span></div>${sectionBlock}`;
+}
+function statsSelf(u) {
+  const chips = projStatsChips();
+  const sessions = doneSessions(ui.statsProj);
+  const st = userStats(u, sessions);
+  return `<div class="page-head"><h1 class="h1">Les meves dades</h1></div>${chips}${statsSelfKpis(st)}`;
+}
+/** Els tres requadres personals (assistència, puntualitat, faltes) — sense el desglossament ni el comparatiu. */
+function statsSelfKpis(st) {
+  return `<div class="kpis"><div class="kpi ${attClass(st)}"><div class="kpi-v">${pct(st.pct)}</div><div class="kpi-l">Assistència${atRisk(st) ? ' <span class="pill risk">En risc</span>' : ''}</div></div>
+      <div class="kpi ${punctClass(punctualityRate(st.c))}"><div class="kpi-v">${pct(punctualityRate(st.c))}</div><div class="kpi-l">Puntualitat</div></div>
+      ${faltesBox(st.c)}</div>`;
+}
+
+/* ---------- Perfil ---------- */
+function viewProfile(targetId) {
+  const u = targetId ? userById(targetId) : me();
+  if (!u) return '';
+  const own = u.id === ME;
+  const incs = S.incidents.filter(i => i.userId === u.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const st = inCensus(u) ? userStats(u, doneSessions('all')) : null;
+  return `<div class="page-head"><h1 class="h1">Perfil</h1></div>
+    <div class="panel profile-head">
+      <div style="min-width:0;flex:1"><div class="h2">${esc(u.name)}</div>
+        <div class="muted" style="font-size:13px">${esc(sectionLabel(u))}${u.instrument ? ' · ' + esc(u.instrument) : ''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${roleBadges(u)}
+        ${inCensus(u) ? '' : '<span class="rolepill dim">No compta a l\'assistència</span>'}</div></div>
+      ${st ? `<div class="mini-kpi ${attClass(st)}"><b>${pct(st.pct)}</b><span>Assistència</span></div>` : ''}</div>
+    ${own && inCensus(u) ? `<div class="panel incident-cta" style="margin-top:16px">
+        <button class="btn btn-primary btn-block btn-cta" data-act="new-incident">Comunica una absència o un retard</button>
+        <span class="muted" style="font-size:13.5px">Avisa aquí si no pots venir a un assaig o arribaràs tard.</span></div>` : ''}
+    <div class="section-title"><h2 class="h2">Les meves incidències</h2><span class="eyebrow">${incs.length}</span></div>
+    <div class="panel">${incs.length ? incs.map(i => incCard(i, false)).join('') : '<div class="empty" style="padding:24px"><p>Cap absència ni retard comunicats.</p></div>'}</div>
+    ${(() => {
+      if (!own || !u.section) return '';
+      const nextSess = allSessions().find(s => s.date >= TODAY && inSession(s, u));
+      if (!nextSess) return '';
+      const justified = S.incidents.filter(i => i.sessionId === nextSess.id && i.status === 'accepted' && i.userId !== u.id && (userById(i.userId) || {}).section === u.section);
+      if (!justified.length) return '';
+      return `<div class="section-title"><h2 class="h2">Pròxim assaig</h2><span class="eyebrow">${capz(ddmm(nextSess.date))}</span></div>
+        <div class="panel" style="padding:14px"><div class="muted" style="font-size:13px;margin-bottom:8px">Ja han justificat que no hi seran:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">${justified.map(i => `<span class="part">${esc(userById(i.userId).name)}</span>`).join('')}</div></div>`;
+    })()}
+    ${own && u.section ? `<div class="section-title"><h2 class="h2">La meva secció</h2><span class="eyebrow">${SEC[u.section].name}</span></div>
+      <ul class="list">${(() => {
+        const insts = SEC[u.section]?.instruments || [];
+        const ordered = membersOf(u.section).slice().sort((a, b) => {
+          const ia = insts.indexOf(a.instrument), ib = insts.indexOf(b.instrument);
+          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib) || byName(a, b);
+        });
+        return ordered.map(m => `<li class="li" style="padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center">
+          <span><span class="t">${esc(m.name)}</span>${m.instrument ? ` <span class="part">${esc(m.instrument)}</span>` : ''}</span>
+          <span style="font-size:12.5px">${[hasRole(m, 'leader') ? '<b style="color:var(--accent)">Cap de secció</b>' : '', hasRole(m, 'board') ? '<b style="color:var(--accent)">Junta</b>' : ''].filter(Boolean).join(', ')}</span></li>`).join('') || '<li class="li" style="padding:14px"><span class="muted">Ets l\'únic músic d\'aquesta secció.</span></li>';
+      })()}</ul>` : ''}
+    ${own ? `<div class="section-title"><h2 class="h2">Compte</h2></div>
+      <div class="panel"><div class="setting"><div><div class="t">Credencials</div><div class="s">Usuari <b class="mono">${esc(u.username)}</b>. El nom d'usuari només el pot canviar la Junta.</div></div>
+          <button class="btn btn-sm" data-act="change-password">Canvia la contrasenya</button></div>
+        <div class="setting"><div><div class="t">Sessió</div><div class="s">Tanca la sessió en aquest dispositiu.</div></div>
+          <button class="btn btn-sm" data-act="logout">Surt</button></div></div>` : ''}`;
+}
+function incCard(i, review) {
+  const u = userById(i.userId); const s = sessionById(i.sessionId);
+  const rev = i.reviewedBy ? userById(i.reviewedBy) : null;
+  const canAct = can.reviewIncident(i);
+  return `<div class="inc-card"><div class="inc-h"><b>${esc(u ? u.name : '—')}${review && u && u.instrument ? ` <span class="part">${esc(u.instrument)}</span>` : ''}</b>
+      <span class="st-pill st-${i.status}">${i.status === 'pending' ? 'Pendent' : i.status === 'accepted' ? 'Justificada' : 'No justificada'}</span></div>
+    <div class="inc-m">${i.kind === 'late' ? `Retard${i.min ? ` de ${i.min}′` : ''}` : 'Absència'} · ${s ? `${capz(longDate(s.date))} · ${esc(s.type || '')}` : 'sessió eliminada'}</div>
+    ${i.reason && i.status !== 'rejected' ? `<div style="font-size:13.5px">${esc(i.reason)}</div>` : ''}
+    <div class="inc-m">Comunicat el ${fmtStamp(i.createdAt)}${rev ? ` · revisat per ${esc(rev.name)} el ${fmtStamp(i.reviewedAt)}` : ''}</div>
+    ${i.reviewNote ? `<div class="inc-m">Nota: ${esc(i.reviewNote)}</div>` : ''}
+    ${review && canAct && i.status === 'pending' ? `<div class="inc-a">
+      <button class="btn btn-sm btn-primary" data-act="inc-accept" data-id="${i.id}">Justifica</button>
+      <button class="btn btn-sm btn-danger-ghost" data-act="inc-reject" data-id="${i.id}">Denega</button></div>` : ''}
+    ${review && canAct && i.status !== 'pending' ? `<div class="inc-a"><button class="btn btn-sm btn-ghost" data-act="inc-reopen" data-id="${i.id}">Torna-la a pendent</button></div>` : ''}</div>`;
+}
+
+/* ---------- Gestió ---------- */
+function viewManage() {
+  const u = me(); const lvl = level(u);
+  const tabs = [['usuaris', lvl >= 3 ? 'Usuaris' : 'La meva secció']];
+  if (can.appConfig()) tabs.push(['config', 'Configuració']);
+  if (!tabs.some(t => t[0] === ui.manage)) ui.manage = 'usuaris';
+  const bar = tabs.length > 1 ? `<div class="subtabs">${tabs.map(([id, n]) => `<button class="subtab" aria-selected="${ui.manage === id}" data-act="manage" data-id="${id}">${n}</button>`).join('')}</div>` : '';
+  const body = { usuaris: manageUsers, config: manageConfig }[ui.manage]();
+  return `<div class="page-head"><h1 class="h1">Gestió</h1><span class="eyebrow">${esc(ROLES[topRole(u)].name)}</span></div>${bar}${body}`;
+}
+function manageUsers() {
+  const u = me(); const lvl = level(u);
+  const secs = lvl >= 3 ? SECTIONS.map(x => x.id) : [u.section];
+  const q = normText(ui.search);
+  const head = `<div class="sec-h"><span class="muted" style="font-size:13px">${lvl >= 3 ? `${S.users.filter(x => x.active !== false).length} usuaris · ${censusUsers().length} al cens` : `${membersOf(u.section).length} músics a la teva secció`}</span>
+    <span style="display:flex;gap:6px">${can.createUsers() ? '<button class="btn btn-sm btn-primary" data-act="new-user">+ Usuari</button>' : ''}</span></div>
+    <input class="search" id="usearch" placeholder="Cerca…" value="${esc(ui.search)}">`;
+  const blocks = secs.map(sid => {
+    const list = S.users.filter(x => x.section === sid && (!q || normText(x.name).includes(q) || normText(x.username).includes(q))).sort(byName);
+    if (!list.length && q) return '';
+    return `<div class="sec-h"><h2 class="h2">${SEC[sid].name}</h2>
+        <span style="display:flex;align-items:center;gap:10px"><span class="muted mono" style="font-size:12.5px">${list.length}</span>
+        ${can.createUsers() ? `<button class="btn btn-sm btn-ghost" data-act="new-user" data-sec="${sid}">+ Afegeix-ne</button>` : ''}</span></div>
+      ${list.length ? `<ul class="list">${list.map(userRow).join('')}</ul>`
+        : `<div class="panel" style="padding:14px;color:var(--muted);font-size:13.5px">Cap músic en aquesta secció.</div>`}`;
+  }).join('');
+  const staff = lvl >= 3 ? (() => {
+    const dirs = S.users.filter(x => !x.section && topRole(x) === 'director' && (!q || normText(x.name).includes(q))).sort(byName);
+    const adms = S.users.filter(x => !x.section && topRole(x) === 'admin' && (!q || normText(x.name).includes(q))).sort(byName);
+    const block = (title, list) => list.length ? `<div class="sec-h"><h2 class="h2">${title}</h2><span class="muted mono" style="font-size:12.5px">${list.length}</span></div>
+      <ul class="list">${list.map(userRow).join('')}</ul>` : '';
+    return block('Direcció', dirs) + block('Administració', adms);
+  })() : '';
+  return head + blocks + staff;
+}
+function userRow(x) {
+  const shown = rolesOf(x).filter(r => r !== 'musician');
+  const roleHtml = shown.length
+    ? ' · ' + shown.map(r => r === 'leader' || r === 'board' ? `<b style="color:var(--accent)">${ROLES[r].name}</b>` : ROLES[r].name).join(', ')
+    : '';
+  const meta = `${roleHtml}${x.active === false ? (roleHtml ? ' · ' : '') + 'inactiu' : ''}`;
+  return `<li class="li"><button data-act="edit-user" data-uid="${x.id}">
+    <span class="${x.active === false ? 'dim' : ''}" style="min-width:0"><span class="t">${esc(x.name)}</span>
+      ${x.instrument ? ` <span class="part">${esc(x.instrument)}</span>` : ''}
+      ${meta ? `<span class="s">${meta}</span>` : ''}</span>
+    <span class="icon-btn plain">${ICON.edit}</span></button></li>`;
+}
+function manageIncidents() {
+  const mine = S.incidents.filter(i => can.viewIncidents(i)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const list = ui.incFilter === 'all' ? mine : mine.filter(i => i.status === ui.incFilter);
+  return `<div class="chips">${[['pending', 'Pendents'], ['accepted', 'Justificades'], ['rejected', 'No justificades'], ['all', 'Totes']]
+      .map(([v, n]) => `<button class="chip" aria-pressed="${ui.incFilter === v}" data-act="inc-filter" data-v="${v}">${n}</button>`).join('')}</div>
+    <div class="panel">${list.length ? list.map(i => incCard(i, true)).join('')
+      : '<div class="empty" style="padding:28px"><p>Cap incidència en aquest estat.</p></div>'}</div>
+    <div class="privacy">Quan acceptes una incidència, la falta queda marcada com a justificada (o com a retard) a la llista de la sessió corresponent.</div>`;
+}
+
+function manageConfig() {
+  const c = S.config;
+  return `<div class="panel" style="margin-top:10px">
+      <div class="setting"><div><div class="t">Nom de la banda</div><div class="s">${esc(c.name)}</div></div>
+        <button class="btn btn-sm" data-act="edit-identity">Edita</button></div>
+      <div class="setting"><div><div class="t">Logotip</div><div class="s">Una imatge o bé unes inicials / emoji.</div></div>
+        <span style="display:flex;align-items:center;gap:8px">${logoHTML('avatar')}<button class="btn btn-sm" data-act="edit-identity">Canvia</button></span></div></div>
+    <div class="section-title"><h2 class="h2">Sistema d'assistència</h2></div>
+    <div class="panel">
+      <div class="setting"><div><div class="t">Assistència mínima</div><div class="s">Per sota d'aquest percentatge, un músic queda en situació de risc. El canvi recalcula estadístiques i indicadors immediatament.</div></div>
+        <span style="display:flex;align-items:center;gap:8px"><span class="mono" style="font-size:18px">${c.minAttendance}%</span>
+        <button class="btn btn-sm" data-act="edit-rules">Edita</button></span></div>
+      <div class="setting"><div><div class="t">Puntualitat mínima</div><div class="s">Per sota d'aquest percentatge, el requadre de puntualitat es pinta de vermell.</div></div>
+        <span style="display:flex;align-items:center;gap:8px"><span class="mono" style="font-size:18px">${c.minPunctuality || 80}%</span>
+        <button class="btn btn-sm" data-act="edit-rules">Edita</button></span></div>
+      <div class="setting"><div><div class="t">Els retards compten com a assistència</div><div class="s">Si el desactives, un retard resta en el percentatge.</div></div>
+        <label class="switch"><input type="checkbox" data-act="toggle-late" ${c.countLateAsPresent ? 'checked' : ''}><span></span></label></div>
+      <div class="setting"><div><div class="t">Cens d'assistència</div><div class="s">Director i administració no hi computen. Ara mateix: ${censusUsers().length} músics al cens.</div></div></div></div>
+    <div class="section-title"><h2 class="h2">Llocs d'assaig</h2></div>
+    <div class="panel">
+      <div class="setting"><div><div class="t">Llocs disponibles</div><div class="s">${(c.places || []).join(' · ') || 'Cap definit'}</div></div>
+        <button class="btn btn-sm" data-act="edit-places">Edita</button></div></div>
+    <div class="section-title"><h2 class="h2">Dades</h2></div>
+    <div class="panel">
+      <div class="setting"><div><div class="t">Còpia de seguretat</div><div class="s">En aquesta fase les dades viuen en aquest navegador. Exporta-les sovint; quan connectem Supabase, aquest fitxer servirà per migrar-les.</div></div>
+        <span style="display:flex;gap:6px"><button class="btn btn-sm" data-act="export">Descarrega</button><button class="btn btn-sm btn-ghost" data-act="export-copy">Copia</button></span></div>
+      <div class="setting"><div><div class="t">Importa</div><div class="s">Substitueix les dades actuals.</div></div><button class="btn btn-sm" data-act="import">Importa</button></div>
+      <div class="setting"><div><div class="t">Entra com un altre usuari</div><div class="s">Eina de proves: canvia de rol sense contrasenya per revisar les vistes.</div></div>
+        <button class="btn btn-sm" data-act="impersonate">Prova rols</button></div>
+      <div class="setting"><div><div class="t">Esborra-ho tot</div><div class="s">Usuaris, projectes, llistes i incidències.</div></div>
+        <button class="btn btn-sm btn-danger-ghost" data-act="wipe">Esborra</button></div></div>`;
+}
+
+/* ================= Sheets ================= */
+let sheetSave = null;
+let scrollLockY = 0;
+function lockScroll() {
+  scrollLockY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${scrollLockY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+}
+function unlockScroll() {
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  window.scrollTo(0, scrollLockY);
+}
+function sheet({ title, body, foot }) {
+  $('#sheet-root').innerHTML = `<div class="sheet-back" data-act="sheet-back"><div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-h"><h2 class="h2">${title}</h2><button class="icon-btn plain" data-act="sheet-close">${ICON.close}</button></div>
+    <div class="sheet-b">${body}</div>${foot ? `<div class="sheet-f">${foot}</div>` : ''}</div></div>`;
+  lockScroll();
+}
+const closeSheet = () => { $('#sheet-root').innerHTML = ''; sheetSave = null; unlockScroll(); };
+function toast(msg) { $('#toast-root').innerHTML = `<div class="toast">${esc(msg)}</div>`; setTimeout(() => { $('#toast-root').innerHTML = ''; }, 2600); }
+
+function userSheet(x) {
+  const isNew = !x.id;
+  const editCred = isNew ? can.createUsers() : can.credentials(x);
+  const editRoles = can.createUsers();
+  const editSection = level(me()) >= 3 || can.createUsers();
+  const editActive = level(me()) >= 3;
+  const insts = SEC[x.section]?.instruments || [];
+  let staffOnly = rolesOf(x).every(r => r === 'admin' || r === 'director');
+  sheet({
+    title: isNew ? 'Nou usuari' : esc(x.name),
+    body: `<div class="field"><span>Nom i cognoms</span><input class="inp" id="u-name" value="${esc(x.name || '')}" ${level(me()) >= 2 ? '' : 'disabled'}></div>
+      ${editSection ? `<div class="field" id="u-sec-wrap" ${staffOnly ? 'hidden' : ''}><span>Secció</span><div class="pickers" id="u-sec">
+        ${SECTIONS.map(s => `<button type="button" class="pick" data-sec="${s.id}" aria-pressed="${x.section === s.id}">${s.name}</button>`).join('')}</div></div>
+      <div class="field" id="u-inst-wrap" ${staffOnly ? 'hidden' : ''}><span>Instrument</span><div class="pickers" id="u-inst">
+        <button type="button" class="pick" data-inst="" aria-pressed="${!x.instrument}">Sense</button>
+        ${insts.map(i => `<button type="button" class="pick" data-inst="${esc(i)}" aria-pressed="${x.instrument === i}">${esc(i)}</button>`).join('')}</div></div>
+      <div class="field" id="u-staff-note" ${staffOnly ? '' : 'hidden'}><small class="muted">Aquest càrrec no pertany a cap secció.</small></div>` : ''}
+      ${editRoles ? `<div class="field"><span>Rols</span><div class="pickers" id="u-roles">
+        ${Object.entries(ROLES).map(([k, v]) => `<button type="button" class="pick" data-role="${k}" aria-pressed="${rolesOf(x).includes(k)}">${v.name}</button>`).join('')}</div>
+        <small>Es poden combinar (per exemple, Junta i Cap de secció alhora).</small></div>`
+        : `<div class="field"><span>Rols</span><div>${roleBadges(x)}</div></div>`}
+      ${editCred ? `<fieldset style="border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:12px">
+        <legend style="padding:0 6px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">Credencials</legend>
+        <div class="field"><span>Usuari</span><input class="inp" id="u-user" value="${esc(x.username || '')}" placeholder="nom.cognom" autocapitalize="none"></div>
+        <div class="field"><span>${isNew ? 'Contrasenya' : 'Contrasenya nova'}</span>${passField('u-pass', isNew ? undefined : 'Estableix-ne una de nova', isNew ? '1234' : '')}
+          ${isNew ? '' : '<small class="muted">Per seguretat, no es pot mostrar la contrasenya actual; només se\'n pot establir una de nova.</small>'}</div></fieldset>`
+        : ''}
+      ${editActive ? `<div class="toggle-row"><span><b>Actiu</b><br><span class="muted" style="font-size:12.5px">Els inactius no surten a les llistes ni poden entrar</span></span>
+        <label class="switch"><input type="checkbox" id="u-active" ${x.active !== false ? 'checked' : ''}><span></span></label></div>` : ''}`,
+    foot: `${!isNew && can.createUsers() && x.id !== ME ? `<button class="btn btn-sm btn-danger-ghost" data-act="del-user" data-uid="${x.id}">Elimina</button>` : ''}
+      <span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button>
+      <button class="btn btn-primary" data-act="sheet-save">${isNew ? 'Crea' : 'Desa'}</button>`,
+  });
+  const draft = { ...x, roles: rolesOf(x).slice(), section: staffOnly ? '' : (x.section || ''), instrument: staffOnly ? '' : (x.instrument || '') };
+  const secBox = $('#u-sec');
+  if (secBox) secBox.addEventListener('click', e => {
+    const b = e.target.closest('[data-sec]'); if (!b) return;
+    draft.section = b.dataset.sec;
+    $$('#u-sec .pick').forEach(p => p.setAttribute('aria-pressed', p.dataset.sec === draft.section));
+    const list = SEC[draft.section]?.instruments || [];
+    $('#u-inst').innerHTML = `<button type="button" class="pick" data-inst="" aria-pressed="true">Sense</button>`
+      + list.map(i => `<button type="button" class="pick" data-inst="${esc(i)}" aria-pressed="false">${esc(i)}</button>`).join('');
+    draft.instrument = '';
+  });
+  $('#u-inst').addEventListener('click', e => {
+    const b = e.target.closest('[data-inst]'); if (!b) return;
+    draft.instrument = b.dataset.inst;
+    $$('#u-inst .pick').forEach(p => p.setAttribute('aria-pressed', p.dataset.inst === draft.instrument));
+  });
+  const rolesBox = $('#u-roles');
+  if (rolesBox) rolesBox.addEventListener('click', e => {
+    const b = e.target.closest('[data-role]'); if (!b) return;
+    const r = b.dataset.role;
+    if (draft.roles.includes(r)) draft.roles = draft.roles.filter(v => v !== r); else draft.roles.push(r);
+    if (!draft.roles.length) draft.roles = ['musician'];
+    $$('#u-roles .pick').forEach(p => p.setAttribute('aria-pressed', draft.roles.includes(p.dataset.role)));
+    const wasStaffOnly = staffOnly;
+    staffOnly = draft.roles.every(v => v === 'admin' || v === 'director');
+    if ($('#u-sec-wrap')) $('#u-sec-wrap').hidden = staffOnly;
+    if ($('#u-inst-wrap')) $('#u-inst-wrap').hidden = staffOnly;
+    if ($('#u-staff-note')) $('#u-staff-note').hidden = !staffOnly;
+    if (staffOnly && !wasStaffOnly) { draft.section = ''; draft.instrument = ''; }
+  });
+  sheetSave = async () => {
+    const name = $('#u-name').value.trim();
+    if (!name) { toast('Falta el nom'); return false; }
+    if (secBox && !staffOnly && !draft.section) { toast('Tria una secció'); return false; }
+    const isNewUser = !x.id;
+    const rec = {
+      id: x.id, name,
+      section: secBox ? draft.section : (x.section || ''),
+      instrument: draft.instrument || '',
+      roles: draft.roles, active: editActive ? $('#u-active').checked : x.active !== false,
+      username: x.username,
+    };
+    if (isNewUser) {
+      const un = $('#u-user').value.trim().toLowerCase();
+      const pw = $('#u-pass').value.trim();
+      if (!un || !pw) { toast('Usuari i contrasenya no poden ser buits'); return false; }
+      if (S.users.some(o => o.username === un)) { toast('Aquest usuari ja existeix'); return false; }
+      let newId = null;
+      try {
+        const r = await sb.rpc('create_user', { p_username: un, p_password: pw, p_name: name, p_section: rec.section, p_instrument: rec.instrument, p_roles: rec.roles });
+        if (!r.error) newId = r.data;
+      } catch (e) { console.warn(e); }
+      if (!newId) { toast('No s\'ha pogut crear l\'usuari'); return false; }
+      rec.id = newId; rec.username = un;
+    } else if (editCred) {
+      const un = $('#u-user').value.trim().toLowerCase();
+      const pw = $('#u-pass').value.trim();
+      if (!un || !pw) { toast('Usuari i contrasenya no poden ser buits'); return false; }
+      if (S.users.some(o => o.id !== rec.id && o.username === un)) { toast('Aquest usuari ja existeix'); return false; }
+      let ok = false;
+      try { const r = await sb.rpc('admin_set_credentials', { p_user_id: rec.id, p_username: un, p_new_password: pw }); ok = !r.error && r.data === true; }
+      catch (e) { console.warn(e); }
+      if (!ok) { toast('No s\'han pogut actualitzar les credencials'); return false; }
+      rec.username = un;
+    }
+    if (rec.roles.includes('leader') && rec.section) S.users.forEach(o => { if (o.id !== rec.id && o.section === rec.section && hasRole(o, 'leader')) o.roles = rolesOf(o).filter(r => r !== 'leader'); });
+    const i = S.users.findIndex(o => o.id === rec.id);
+    if (i >= 0) S.users[i] = { ...S.users[i], ...rec }; else S.users.push({ ...rec, mustChangePassword: true });
+    save(); return true;
+  };
+}
+
+function projSheet(p) {
+  const isNew = !p.id;
+  let color = p.color || PROJECT_COLORS[S.projects.length % PROJECT_COLORS.length].v;
+  const excluded = new Set(p.excludedIds || []);
+  sheet({
+    title: isNew ? 'Nou projecte' : 'Edita el projecte',
+    body: `<div class="field"><span>Títol</span><input class="inp" id="p-name" value="${esc(p.name || '')}" placeholder="Concert de Nadal, 25è aniversari…"></div>
+      <div class="field"><span>Color del projecte</span><div class="swatches-sm" id="p-color">
+        ${PROJECT_COLORS.map(c => `<button type="button" class="swatch-sm" data-v="${c.v}" title="${c.name}" style="background:${c.v}" aria-pressed="${color === c.v}"></button>`).join('')}</div>
+        <small>Identifica el projecte al calendari i a les llistes.</small></div>
+      <div class="row2"><div class="field"><span>Des de</span><input class="inp" type="date" id="p-from" value="${esc(p.from || '')}"></div>
+        <div class="field"><span>Fins a</span><input class="inp" type="date" id="p-to" value="${esc(p.to || '')}"></div></div>
+      <div class="field"><span>Repertori</span><input class="inp" id="p-rep" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures">
+        <small>Enllaç a la carpeta o document amb les partitures del projecte.</small></div>
+      <div class="field"><span>Informació complementària</span><textarea class="inp" id="p-info" placeholder="Vestuari, notes de producció…">${esc(p.info || '')}</textarea></div>
+      <div class="field"><span>No fan el projecte</span>
+        <div class="scroll-list" style="max-height:260px" id="p-excluded">${SECTIONS.map(sec => {
+          const members = membersOf(sec.id);
+          if (!members.length) return '';
+          return `<div class="pick-group"><div class="pick-group-title">${sec.name}</div><div class="pickers">${members.map(m => `<button type="button" class="pick" data-mid="${m.id}" aria-pressed="${excluded.has(m.id)}">${esc(m.name)}</button>`).join('')}</div></div>`;
+        }).join('')}</div>
+        <small>Toca per marcar els músics que no toquen en aquest projecte.</small></div>`,
+    foot: `${isNew ? '' : `<button class="btn btn-sm btn-danger-ghost" data-act="del-proj" data-pid="${p.id}">Elimina</button>`}
+      <span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button>
+      <button class="btn btn-primary" data-act="sheet-save">${isNew ? 'Crea' : 'Desa'}</button>`,
+  });
+  $('#p-color').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if (!b) return;
+    color = b.dataset.v;
+    $$('#p-color .swatch-sm').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === color));
+  });
+  $('#p-excluded').addEventListener('click', e => {
+    const b = e.target.closest('[data-mid]'); if (!b) return;
+    const on = b.getAttribute('aria-pressed') === 'true';
+    if (on) excluded.delete(b.dataset.mid); else excluded.add(b.dataset.mid);
+    b.setAttribute('aria-pressed', String(!on));
+  });
+  sheetSave = () => {
+    const name = $('#p-name').value.trim();
+    if (!name) { toast('Falta el títol'); return false; }
+    const rec = { id: p.id || uid('p'), name, color, from: $('#p-from').value, to: $('#p-to').value,
+      repertoire: $('#p-rep').value.trim(), excludedIds: [...excluded], info: $('#p-info').value.trim() };
+    const i = S.projects.findIndex(x => x.id === rec.id);
+    if (i >= 0) S.projects[i] = { ...S.projects[i], ...rec }; else S.projects.push(rec);
+    save(); return true;
+  };
+}
+
+function repertoireSheet(pid) {
+  const p = S.projects.find(x => x.id === pid); if (!p) return;
+  const editable = can.repertoire();
+  sheet({
+    title: esc(p.name),
+    body: `<div class="field"><span>Repertori</span>${editable
+        ? `<input class="inp" id="rp-list" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures"><small>Enllaç a la carpeta o document amb les partitures.</small>`
+        : (p.repertoire ? `<div><a href="${esc(p.repertoire)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(p.repertoire)}</a></div>` : '<div class="muted">Encara no hi ha cap enllaç.</div>')}</div>
+      ${p.info ? `<div class="field"><span>Informació del projecte</span><div class="muted" style="font-size:13.5px">${esc(p.info)}</div></div>` : ''}`,
+    foot: editable
+      ? `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`
+      : '',
+  });
+  sheetSave = () => {
+    if (!can.repertoire()) { toast('Sense permisos'); return false; }
+    p.repertoire = $('#rp-list').value.trim();
+    save(); toast('Repertori actualitzat'); return true;
+  };
+}
+
+function sessionSheet(s, pid) {
+  const isNew = !s.id;
+  const chosen = new Set(s.projIds && s.projIds.length ? s.projIds : (pid ? [pid] : (S.projects[0] ? [S.projects[0].id] : [])));
+  const places = S.config.places || [];
+  sheet({
+    title: isNew ? 'Nova sessió' : 'Edita la sessió',
+    body: `<div class="field"><span>Projectes</span><div class="pickers" id="s-projs">
+        ${S.projects.map(p => `<button type="button" class="pick" data-pid="${p.id}" aria-pressed="${chosen.has(p.id)}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}</div>
+        <small>Un mateix assaig pot pertànyer a més d'un projecte.</small></div>
+      <div class="field"><span>Data</span><input class="inp" type="date" id="s-date" value="${esc(s.date || TODAY)}"></div>
+      <div class="row2"><div class="field"><span>Inici</span><input class="inp" type="time" id="s-time" value="${esc(s.time || '20:00')}"></div>
+        <div class="field"><span>Fi</span><input class="inp" type="time" id="s-end" value="${esc(s.end || '22:00')}"></div></div>
+      <div class="field"><span>Tipus</span><select class="inp" id="s-type">${TYPES.map(t => `<option ${t === (s.type || 'Assaig') ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><span>Lloc</span><select class="inp" id="s-place">
+        <option value="" ${!s.place ? 'selected' : ''}>Sense especificar</option>
+        ${places.map(pl => `<option value="${esc(pl)}" ${s.place === pl ? 'selected' : ''}>${esc(pl)}</option>`).join('')}</select></div>
+      <div class="field"><span>Nota</span><input class="inp" id="s-note" value="${esc(s.note || '')}" placeholder="Porteu faristol, prova de vestuari…"></div>`,
+    foot: `${isNew ? '' : `<button class="btn btn-sm btn-danger-ghost" data-act="del-session" data-sid="${s.id}">Elimina</button>`}
+      <span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button>
+      <button class="btn btn-primary" data-act="sheet-save">${isNew ? 'Crea' : 'Desa'}</button>`,
+  });
+  const toggle = (box, set, attr) => $(box).addEventListener('click', e => {
+    const b = e.target.closest('[data-' + attr + ']'); if (!b) return;
+    const v = b.dataset[attr]; const on = b.getAttribute('aria-pressed') === 'true';
+    if (on) set.delete(v); else set.add(v);
+    b.setAttribute('aria-pressed', String(!on));
+  });
+  toggle('#s-projs', chosen, 'pid');
+  sheetSave = () => {
+    const date = $('#s-date').value;
+    if (!date) { toast('Falta la data'); return false; }
+    if (!chosen.size) { toast('Tria almenys un projecte'); return false; }
+    const rec = { id: s.id || uid('s'), projIds: [...chosen], date, time: $('#s-time').value, end: $('#s-end').value,
+      type: $('#s-type').value, place: $('#s-place').value, note: $('#s-note').value.trim() };
+    const i = S.sessions.findIndex(x => x.id === rec.id);
+    if (i >= 0) S.sessions[i] = rec; else S.sessions.push(rec);
+    ui.sessionId = rec.id; save(); return true;
+  };
+}
+
+function repeatSheet(pid) {
+  const p = S.projects.find(x => x.id === pid);
+  sheet({
+    title: 'Genera assajos setmanals',
+    body: `<div class="field"><span>Dia</span><select class="inp" id="r-wd">
+        ${[['1', 'Dilluns'], ['2', 'Dimarts'], ['3', 'Dimecres'], ['4', 'Dijous'], ['5', 'Divendres'], ['6', 'Dissabte'], ['0', 'Diumenge']]
+          .map(([v, n]) => `<option value="${v}" ${v === '5' ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="row2"><div class="field"><span>Des de</span><input class="inp" type="date" id="r-from" value="${esc((p && p.from) || TODAY)}"></div>
+        <div class="field"><span>Fins a</span><input class="inp" type="date" id="r-to" value="${esc((p && p.to) || '')}"></div></div>
+      <div class="row2"><div class="field"><span>Inici</span><input class="inp" type="time" id="r-time" value="21:30"></div>
+        <div class="field"><span>Fi</span><input class="inp" type="time" id="r-end" value="00:00"></div></div>
+      <div class="field"><span>Lloc</span><select class="inp" id="r-place">
+        <option value="">Sense especificar</option>
+        ${(S.config.places || []).map(pl => `<option value="${esc(pl)}" ${pl === 'Aula 0P2' ? 'selected' : ''}>${esc(pl)}</option>`).join('')}</select></div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Genera</button>`,
+  });
+  sheetSave = () => {
+    const p = S.projects.find(x => x.id === pid);
+    const from = $('#r-from').value, to = $('#r-to').value, wd = Number($('#r-wd').value);
+    if (!p || !from || !to || to < from) { toast('Revisa les dates'); return false; }
+    const time = $('#r-time').value, end = $('#r-end').value, place = $('#r-place').value;
+    let d = parseISO(from), n = 0, guard = 0;
+    while (d.getDay() !== wd && guard++ < 8) d.setDate(d.getDate() + 1);
+    while (isoDate(d) <= to && n < 120) {
+      const date = isoDate(d);
+      const ex = S.sessions.find(s => s.date === date && s.time === time);
+      if (ex) { if (!ex.projIds.includes(p.id)) { ex.projIds.push(p.id); n++; } }
+      else { S.sessions.push({ id: uid('s'), projIds: [p.id], date, time, end, type: 'Assaig', place, note: '' }); n++; }
+      d.setDate(d.getDate() + 7);
+    }
+    save(); toast(n ? `${n} assajos afegits` : 'Cap sessió nova'); return true;
+  };
+}
+
+function incidentSheet() {
+  const u = me();
+  const next = allSessions().filter(s => s.date >= TODAY && inSession(s, u));
+  if (!next.length) { toast('No tens cap convocatòria pendent'); return; }
+  const chosen = new Set([next[0].id]);
+  const sessRow = s => `<button type="button" class="chkrow" data-sid="${s.id}" aria-pressed="${chosen.has(s.id)}">
+      <span class="chkbox">${chosen.has(s.id) ? ICON.check : ''}</span>
+      <span><span class="d">${capz(longDate(s.date))}</span><br><span class="m">${esc(s.type || 'Assaig')} ${esc(timeRange(s))}</span></span></button>`;
+  sheet({
+    title: 'Comunica una absència o un retard',
+    body: `<div class="field"><span>Sessions</span><div class="scroll-list"><ul class="picklist" id="i-sess">${next.map(s => `<li>${sessRow(s)}</li>`).join('')}</ul></div>
+        <small>Pots seleccionar-ne més d'una si afecta diversos assajos.</small></div>
+      <div class="field"><span>Què passa?</span><div class="pickers" id="i-kind">
+        <button type="button" class="pick" data-kind="absence" aria-pressed="true">No hi puc ser</button>
+        <button type="button" class="pick" data-kind="late" aria-pressed="false">Arribaré tard</button></div></div>
+      <div class="field" id="i-minwrap" hidden><span>Minuts de retard previstos</span><div class="pickers" id="i-min">
+        ${LATE_CHIPS.map((n, i) => `<button type="button" class="pick" data-min="${n}" aria-pressed="${i === 0}">${n}′</button>`).join('')}
+        <input type="number" class="pick min-custom" id="i-min-custom" inputmode="numeric" min="1" max="180" placeholder="+"></div></div>
+      <div class="field"><span>Motiu</span><textarea class="inp" id="i-reason" placeholder="Explica-ho breument perquè es pugui justificar"></textarea></div>
+      <div class="privacy">L'avís s'enviarà al cap de secció i a la Junta.</div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Envia</button>`,
+  });
+  let kind = 'absence', min = LATE_CHIPS[0];
+  $('#i-sess').addEventListener('click', e => {
+    const b = e.target.closest('[data-sid]'); if (!b) return;
+    const sid = b.dataset.sid;
+    if (chosen.has(sid)) chosen.delete(sid); else chosen.add(sid);
+    const s = next.find(x => x.id === sid);
+    b.outerHTML = sessRow(s);
+  });
+  $('#i-kind').addEventListener('click', e => {
+    const b = e.target.closest('[data-kind]'); if (!b) return;
+    kind = b.dataset.kind;
+    $$('#i-kind .pick').forEach(p => p.setAttribute('aria-pressed', p.dataset.kind === kind));
+    $('#i-minwrap').hidden = kind !== 'late';
+  });
+  $('#i-min').addEventListener('click', e => {
+    const b = e.target.closest('[data-min]'); if (!b) return;
+    min = Number(b.dataset.min);
+    $$('#i-min .pick[data-min]').forEach(p => p.setAttribute('aria-pressed', Number(p.dataset.min) === min));
+    $('#i-min-custom').value = '';
+  });
+  $('#i-min-custom').addEventListener('change', e => {
+    const n = Number(e.target.value);
+    if (!n || n < 1) return;
+    min = Math.min(180, n);
+    $$('#i-min .pick[data-min]').forEach(p => p.setAttribute('aria-pressed', false));
+  });
+  sheetSave = () => {
+    if (!chosen.size) { toast('Tria almenys una sessió'); return false; }
+    const reason = $('#i-reason').value.trim();
+    if (!reason) { toast('Escriu el motiu'); return false; }
+    for (const sid of chosen) {
+      S.incidents = S.incidents.filter(i => !(i.userId === ME && i.sessionId === sid && i.status === 'pending'));
+      S.incidents.push({ id: uid('i'), userId: ME, sessionId: sid, kind, min: kind === 'late' ? min : null,
+        reason, status: 'pending', createdAt: stamp(), reviewedBy: null, reviewedAt: null, reviewNote: '' });
+    }
+    save(); toast(chosen.size > 1 ? `Avís enviat per a ${chosen.size} sessions` : 'Avís enviat'); return true;
+  };
+}
+function reviewIncident(id, accept) {
+  const inc = S.incidents.find(i => i.id === id); if (!inc || !can.reviewIncident(inc)) return;
+  inc.status = accept ? 'accepted' : 'rejected';
+  inc.reviewedBy = ME; inc.reviewedAt = stamp(); inc.reviewNote = '';
+  // Una falta no justificada no arrossega cap motiu.
+  const val = accept
+    ? (inc.kind === 'late' ? { s: 'R', min: inc.min || 10, note: inc.reason } : { s: 'FJ', note: inc.reason })
+    : { s: 'FNJ' };
+  setMark(inc.sessionId, inc.userId, val);
+  save(); closeSheet(); render();
+  toast(accept ? 'Incidència justificada' : 'Marcada com a no justificada');
+}
+function incidentDetail(id) {
+  const inc = S.incidents.find(i => i.id === id); if (!inc) return;
+  sheet({ title: 'Incidència', body: `<div class="panel">${incCard(inc, can.reviewIncident(inc))}</div>` });
+}
+
+function sessionPicker() {
+  const list = allSessions();
+  const cur = currentSession();
+  let month = '', rows = '';
+  for (const s of list) {
+    const my = monthYear(s.date);
+    if (my !== month) { rows += `<li class="picklist-month">${my}</li>`; month = my; }
+    const isCur = !!(cur && s.id === cur.id);
+    rows += `<li><button data-act="pick-sess" data-sid="${s.id}" aria-current="${isCur}">
+      <span><span class="d">${capz(longDate(s.date))}${s.date === TODAY ? '<span class="today-chip">Avui</span>' : ''}</span><br>
+      <span class="m">${esc(s.projName)} · ${esc(s.type || '')} ${esc(timeRange(s))}</span></span>
+      <span class="mono">${ddmm(s.date)}</span></button></li>`;
+  }
+  sheet({ title: 'Tria una sessió', body: `<div class="scroll-list" style="max-height:60vh"><ul class="picklist">${rows || '<li class="muted" style="padding:14px 0">Encara no hi ha sessions.</li>'}</ul></div>` });
+  const curBtn = cur && document.querySelector(`[data-act="pick-sess"][data-sid="${cur.id}"]`);
+  if (curBtn) curBtn.scrollIntoView({ block: 'center' });
+}
+function listSessionsSheet(pid) {
+  const p = S.projects.find(x => x.id === pid); if (!p) return;
+  const ss = sessionsOfProj(p.id);
+  sheet({ title: esc(p.name), body: ss.length ? `<div class="scroll-list" style="max-height:55vh"><ul class="picklist">${ss.map(s => `<li><button data-act="sess-edit" data-sid="${s.id}">
+      <span><span class="d">${capz(longDate(s.date))}</span><br><span class="m">${esc(s.type || '')} ${esc(timeRange(s))}${s.place ? ' · ' + esc(s.place) : ''}</span></span>
+      <span class="icon-btn plain">${ICON.edit}</span></button></li>`).join('')}</ul></div>` : '<p class="muted">Encara no hi ha sessions.</p>',
+    foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="new-session" data-pid="${p.id}">+ Sessió</button>` });
+}
+function sessionInfo(sid) {
+  const s = sessionById(sid); if (!s) return;
+  const ps = s.projs; const u = me(); const mk = mark(s.id, u.id);
+  const lvl = level(u);
+  const hasData = (() => { const c = sessionCounts(s); return c.total > 0 && c.none < c.total; })();
+  let statsBlock = '';
+  if (hasData) {
+    if (lvl >= 3) {
+      const c = sessionCounts(s);
+      statsBlock = `<div class="kpis kpis-sm"><div class="kpi ${rateClass(rate(c))}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència general</div></div>
+        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat general</div></div></div>`;
+    } else if (lvl === 2 && u.section) {
+      const c = countsFor(s, u.section);
+      statsBlock = `<div class="kpis kpis-sm"><div class="kpi ${rateClass(rate(c))}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div></div>`;
+    }
+  }
+  sheet({ title: capz(longDate(s.date)),
+    body: `<div class="field"><span>${esc(s.type || 'Assaig')}</span><div>${esc(timeRange(s))}${s.place ? ' · ' + esc(s.place) : ''}</div></div>
+      <div class="field"><span>Projecte${ps.length > 1 ? 's' : ''}</span><div class="tagp-row">${ps.map(pr => `<span class="cal-tagp lg" style="background:${esc(pr.color)}22;color:${esc(pr.color)}">${esc(pr.name)}</span>`).join('') || '—'}</div></div>
+      ${s.note ? `<div class="field"><span>Nota</span><div>${esc(s.note)}</div></div>` : ''}
+      ${ps.some(pr => pr.repertoire) ? `<div class="field"><span>Repertori</span><div>${ps.map(pr => pr.repertoire ? `<a href="${esc(pr.repertoire)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(pr.repertoire)}</a>` : '').filter(Boolean).join('<br>')}</div></div>` : ''}
+      ${inSession(s, u) && mk ? `<div class="field"><span>Assistència</span><div>${statusPill(mk)}</div></div>` : ''}
+      ${(() => {
+        if (!inCensus(u) || !u.section) return '';
+        const justified = S.incidents.filter(i => i.sessionId === s.id && i.status === 'accepted' && i.userId !== u.id && (userById(i.userId) || {}).section === u.section);
+        if (!justified.length) return '';
+        return `<div class="field"><span>De la teva secció, ja han justificat que no hi seran</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">${justified.map(i => `<span class="part">${esc(userById(i.userId).name)}</span>`).join('')}</div></div>`;
+      })()}
+      ${statsBlock}`,
+    foot: `<span class="spacer"></span>${inSession(s, u) && s.date >= TODAY && level(u) < 2 ? '<button class="btn" data-act="new-incident">Comunica una absència</button>' : ''}
+      ${can.passList() ? `<button class="btn" data-act="goto-sess" data-sid="${s.id}">Consulta la llista</button>` : ''}
+      ${can.manageProjects() ? `<button class="btn btn-primary" data-act="sess-edit" data-sid="${s.id}">Edita</button>` : ''}` });
+}
+function memberDetail(mid) {
+  const m = userById(mid); if (!m || !can.seeMember(m)) { toast('No tens permís per veure aquesta fitxa'); return; }
+  const sessions = doneSessions(ui.statsProj);
+  const st = userStats(m, sessions);
+  const incs = S.incidents.filter(i => i.userId === m.id).slice(-5).reverse();
+  sheet({
+    title: esc(m.name),
+    body: `<div style="display:flex;gap:6px;flex-wrap:wrap">${roleBadges(m)}</div>
+      <div class="kpis"><div class="kpi ${attClass(st)}"><div class="kpi-v">${pct(st.pct)}</div><div class="kpi-l">Assistència${atRisk(st) ? ' <span class="pill risk">En risc</span>' : ''}</div></div>
+        <div class="kpi ${punctClass(punctualityRate(st.c))}"><div class="kpi-v">${pct(punctualityRate(st.c))}</div><div class="kpi-l">Puntualitat</div></div>
+        ${faltesBox(st.c)}</div>
+      ${incs.length ? `<div class="field"><span>Últimes incidències</span><div class="panel">${incs.map(i => incCard(i, false)).join('')}</div></div>` : ''}`,
+    foot: `<span class="spacer"></span>${can.manageUsers() && can.seeMember(m) ? `<button class="btn btn-primary" data-act="edit-user" data-uid="${m.id}">Fitxa d'usuari</button>` : ''}`,
+  });
+}
+function identitySheet() {
+  sheet({
+    title: 'Identitat de la banda',
+    body: `<div class="field"><span>Nom</span><input class="inp" id="c-name" value="${esc(S.config.name)}"></div>
+      <div class="field"><span>Logotip (inicials o emoji)</span><input class="inp" id="c-logo" value="${esc(S.config.logo && !S.config.logo.startsWith('data:') ? S.config.logo : '')}" placeholder="BT"></div>
+      <div class="field"><span>…o puja una imatge</span><input class="inp" type="file" id="c-file" accept="image/*"><small>Es guarda dins les dades de l'aplicació; fes servir una imatge petita.</small></div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  let dataUrl = null;
+  $('#c-file').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 400000) { toast('Imatge massa gran (màxim 400 kB)'); return; }
+    const r = new FileReader(); r.onload = () => { dataUrl = r.result; toast('Imatge carregada'); }; r.readAsDataURL(f);
+  });
+  sheetSave = () => {
+    S.config.name = $('#c-name').value.trim() || 'Banda';
+    const txt = $('#c-logo').value.trim();
+    S.config.logo = dataUrl || (txt ? txt : (S.config.logo && S.config.logo.startsWith('data:') ? S.config.logo : ''));
+    save(); return true;
+  };
+}
+/** Canvi de contrasenya: pròpia iniciativa (des del perfil) o forçat en el primer accés. */
+function changePasswordSheet(forced) {
+  const u = me();
+  sheet({
+    title: forced ? 'Estableix una contrasenya nova' : 'Canvia la contrasenya',
+    body: `${forced ? '<p class="muted" style="font-size:13.5px;margin:0">És el teu primer accés. Per seguretat, estableix una contrasenya nova abans de continuar.</p>' : ''}
+      <div class="field"><span>Contrasenya actual</span>${passField('cp-old')}</div>
+      <div class="field"><span>Contrasenya nova</span>${passField('cp-new')}</div>
+      <div class="field"><span>Repeteix la contrasenya nova</span>${passField('cp-new2')}</div>`,
+    foot: `<span class="spacer"></span>${forced ? '<button class="btn" data-act="sheet-close">Ara no</button>' : '<button class="btn" data-act="sheet-close">Cancel·la</button>'}<button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  sheetSave = async () => {
+    const oldP = $('#cp-old').value, newP = $('#cp-new').value, newP2 = $('#cp-new2').value;
+    if (!newP || newP.length < 4) { toast('La contrasenya nova ha de tenir almenys 4 caràcters'); return false; }
+    if (newP !== newP2) { toast('Les contrasenyes noves no coincideixen'); return false; }
+    if (newP === oldP) { toast('La contrasenya nova ha de ser diferent de l\'actual'); return false; }
+    let ok = false;
+    try { const r = await sb.rpc('change_password', { p_user_id: u.id, p_old_password: oldP, p_new_password: newP }); ok = !r.error && r.data === true; }
+    catch (e) { console.warn(e); }
+    if (!ok) { toast('La contrasenya actual no és correcta'); return false; }
+    u.mustChangePassword = false;
+    toast('Contrasenya actualitzada'); return true;
+  };
+}
+function rulesSheet() {
+  sheet({
+    title: 'Regles d\'assistència',
+    body: `<div class="row2"><div class="field"><span>Assistència mínima (%)</span><input class="inp" type="number" min="0" max="100" id="c-min" value="${S.config.minAttendance}"></div>
+      <div class="field"><span>Puntualitat mínima (%)</span><input class="inp" type="number" min="0" max="100" id="c-punct" value="${S.config.minPunctuality || 80}"></div></div>
+      <div class="privacy">En canviar els mínims es recalculen automàticament els percentatges, els indicadors i qui està en situació de risc.</div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  sheetSave = () => {
+    S.config.minAttendance = Math.min(100, Math.max(0, Number($('#c-min').value) || 80));
+    S.config.minPunctuality = Math.min(100, Math.max(0, Number($('#c-punct').value) || 80));
+    save(); toast('Regles actualitzades'); return true;
+  };
+}
+function placesSheet() {
+  sheet({
+    title: 'Llocs d\'assaig',
+    body: `<div class="field"><span>Un lloc per línia</span><textarea class="inp" id="c-places">${esc((S.config.places || []).join('\n'))}</textarea>
+      <small>Aquests llocs surten al desplegable en crear o editar una sessió.</small></div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  sheetSave = () => {
+    S.config.places = $('#c-places').value.split('\n').map(v => v.trim()).filter(Boolean);
+    save(); toast('Llocs actualitzats'); return true;
+  };
+}
+function impersonateSheet() {
+  sheet({ title: 'Prova rols', body: `<ul class="picklist">${S.users.filter(u => u.active !== false).sort(byName).map(u => `<li>
+      <button data-act="impersonate-go" data-uid="${u.id}" aria-current="${u.id === ME}">
+        <span><span class="d">${esc(u.name)}</span><br><span class="m">${roleNames(u).join(', ')}${u.section ? ' · ' + SEC[u.section].name : ''}</span></span>
+        <span class="mono">${esc(u.username)}</span></button></li>`).join('')}</ul>` });
+}
+function summarySheet(sec) {
+  const cur = currentSession(); if (!cur) return;
+  const secs = sec ? [sec] : SECTIONS.map(x => x.id).filter(id => convoked(cur, id) && (can.section(id) || level(me()) >= 3));
+  let txt = `${S.config.name} · ${capz(longDate(cur.date))}\n${cur.type || 'Assaig'}${timeRange(cur) ? ' ' + timeRange(cur) : ''}${cur.place ? ' · ' + cur.place : ''}\n`;
+  const tot = emptyCounts();
+  for (const id of secs) {
+    const ms = membersOf(id).filter(u => inSession(cur, u)); if (!ms.length) continue;
+    const c = countsFor(cur, id); for (const k of Object.keys(tot)) tot[k] += c[k];
+    txt += `\n${SEC[id].name.toUpperCase()} (${c.P + c.R}/${c.total})\n`;
+    for (const k of ORDER) {
+      if (k === 'P') continue;
+      const names = ms.filter(m => mark(cur.id, m.id)?.s === k);
+      if (names.length) txt += `  ${STATUS[k].short}: ${names.map(m => { const mk = mark(cur.id, m.id); return m.name + (mk.note ? ` (${mk.note})` : ''); }).join(', ')}\n`;
+    }
+    const pend = ms.filter(m => !mark(cur.id, m.id));
+    if (pend.length) txt += `  Per marcar: ${pend.map(m => m.name).join(', ')}\n`;
+  }
+  txt += `\nTotal: ${tot.P + tot.R} de ${tot.total}${rate(tot) != null ? ` (${pct(rate(tot))})` : ''}`;
+  sheet({ title: 'Resum de la llista', body: `<textarea class="summary-pre" id="sum-txt" readonly>${esc(txt)}</textarea>`,
+    foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="copy-sum">Copia</button>` });
+}
+function importSheet() {
+  sheet({ title: 'Importa dades', body: `<div class="field"><span>Enganxa el contingut del fitxer exportat</span><textarea class="inp" id="imp"></textarea>
+      <small>Substituirà tot el que hi ha ara.</small></div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Importa</button>` });
+  sheetSave = () => {
+    try {
+      const d = JSON.parse($('#imp').value);
+      if (!d || !Array.isArray(d.users)) throw new Error('format');
+      S = Object.assign(structuredClone(DEFAULT), d);
+      S.config = Object.assign(structuredClone(DEFAULT.config), d.config || {});
+      if (!S.users.some(u => u.id === ME)) { ME = null; saveSession(); }
+      save(); toast('Dades importades'); return true;
+    } catch { toast('El text no té el format correcte'); return false; }
+  };
+}
+async function doExport(copyOnly) {
+  const data = JSON.stringify(S, null, 2);
+  const filename = `banda-terrassa-${TODAY}.json`;
+  if (!copyOnly) {
+    try { const dl = window.claude && await window.claude.use('downloads'); if (dl) { await dl.save({ filename, data }); toast('Fitxer desat'); return; } } catch {}
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+      a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast('Fitxer descarregat'); return;
+    } catch {}
+  }
+  try { await navigator.clipboard.writeText(data); toast('Dades copiades'); }
+  catch { sheet({ title: 'Còpia manual', body: `<textarea class="summary-pre">${esc(data)}</textarea>`, foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Tanca</button>` }); }
+}
+function helpSheet() {
+  sheet({ title: 'Com funciona', body: `
+    <p style="margin:0">Cada <b>projecte</b> té dates, repertori, seccions implicades i les seves <b>sessions</b> (assajos, generals, concert).</p>
+    <p style="margin:0">Els <b>caps de secció</b> passen llista de la seva secció; <b>direcció, Junta i administració</b> de totes. Els <b>músics</b> consulten el seu perfil i comuniquen absències i retards, que queden <b>pendents</b> fins que algú amb permisos les revisa.</p>
+    <div class="field"><span>Els cinc estats</span><div class="legend" style="margin:0">${ORDER.map(k => `<span><i class="i-${k}"></i>${STATUS[k].label}</span>`).join('')}</div></div>
+    <p style="margin:0" class="muted">L'assistència és (presents${S.config.countLateAsPresent ? ' + retards' : ''}) sobre el total de convocats. El mínim actual és del ${S.config.minAttendance}%.</p>
+    <p style="margin:0" class="muted">Director i administració no computen al cens d'assistència.</p>`,
+  });
+}
+
+/* ================= Dades d'exemple ================= */
+function demo() {
+  const people = {
+    FL: ['Aina Ribas', 'Clara Bonet', 'Nil Vives'],
+    OB: ['Roger Camps', 'Mar Ferré'],
+    CL: ['Anna Puig', 'Marc Soler', 'Júlia Ferrer', 'Pau Estruch', 'Berta Nogué', 'Oriol Riera'],
+    SX: ['Laia Munt', 'Guim Solé', 'Nora Bagués', 'Arnau Piqué'],
+    MT: ['Jordi Palau', 'Teresa Coll', 'Xavier Amat', 'Sergi Balcells', 'Emma Roig'],
+    PC: ['Pere Alsina', 'Lluc Comas', 'Ivet Sala'],
+  };
+  S.users = S.users.filter(u => hasRole(u, 'admin'));
+  const mk = (name, section, instrument, roles) => {
+    let un = slugUser(name), k = 2;
+    while (S.users.some(u => u.username === un)) un = slugUser(name) + k++;
+    const u = { id: uid('u'), name, username: un, password: '1234', section, instrument, roles, active: true, theme: 'auto' };
+    S.users.push(u); return u;
+  };
+  for (const [sec, list] of Object.entries(people))
+    list.forEach((n, i) => mk(n, sec, SEC[sec].instruments[i % SEC[sec].instruments.length], i === 0 ? ['leader'] : ['musician']));
+  mk('Elena Vidal', '', '', ['director']);
+  const junta = S.users.find(u => u.name === 'Teresa Coll'); if (junta) junta.roles = ['board'];
+  // Demostra que un mateix usuari pot ser Junta i Cap de secció alhora.
+  const claLeader = S.users.find(u => u.section === 'CL' && hasRole(u, 'leader'));
+  if (claLeader) claLeader.roles = ['leader', 'board'];
+  const p = { id: uid('p'), name: 'Concert de tardor', color: PROJECT_COLORS[0].v, from: '', to: '',
+    repertoire: 'https://app.box.com/s/concert-de-tardor', excludedIds: [], info: 'Vestuari negre. Assaig general al mateix auditori.' };
+  const p2 = { id: uid('p'), name: 'Cercavila de Sant Jordi', color: PROJECT_COLORS[4].v, from: '', to: '',
+    repertoire: '', excludedIds: [], info: 'Repertori de carrer.' };
+  const oboista = S.users.find(u => u.section === 'OB');
+  if (oboista) p2.excludedIds = [oboista.id];
+  S.projects = [p, p2]; S.sessions = []; S.attendance = {}; S.incidents = [];
+  const d = new Date(); d.setDate(d.getDate() - 35);
+  while (d.getDay() !== 5) d.setDate(d.getDate() + 1);
+  for (let i = 0; i < 10; i++) {
+    // Alguns assajos serveixen per als dos projectes alhora.
+    S.sessions.push({ id: uid('s'), projIds: i >= 4 && i <= 6 ? [p.id, p2.id] : [p.id], date: isoDate(d), time: '20:00', end: '22:00',
+      type: i === 9 ? 'Concert' : i === 8 ? 'Assaig general' : 'Assaig',
+      place: i >= 8 ? S.config.places[1] : S.config.places[0], note: '' });
+    d.setDate(d.getDate() + 7);
+  }
+  for (const s of S.sessions) {
+    if (s.date > TODAY) continue;
+    for (const u of S.users.filter(x => inCensus(x) && inSession(s, x))) {
+      const r = Math.random();
+      const st = r < .76 ? 'P' : r < .85 ? 'R' : r < .94 ? 'FJ' : 'FNJ';
+      S.attendance[aKey(s.id, u.id)] = st === 'R' ? { s: st, min: 10 } : st === 'FJ' ? { s: st, note: 'Feina' } : { s: st };
+    }
+  }
+  const next = S.sessions.find(s => s.date >= TODAY);
+  const anna = S.users.find(u => u.name === 'Anna Puig');
+  if (next && anna) S.incidents.push({ id: uid('i'), userId: anna.id, sessionId: next.id, kind: 'absence', min: null,
+    reason: 'Viatge de feina, torno divendres a la nit.', status: 'pending', createdAt: stamp(), reviewedBy: null, reviewedAt: null, reviewNote: '' });
+  save(); toast('Dades d\'exemple carregades. Prova admin/1234 o anna.puig/1234');
+  render();
+}
+
+/* ================= Events ================= */
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'loginf') return;
+  e.preventDefault();
+  const un = $('#lg-user').value.trim().toLowerCase();
+  const pw = $('#lg-pass').value;
+  const btn = e.target.querySelector('button[type=submit]');
+  if (btn) btn.disabled = true;
+  let row = null;
+  try {
+    const { data, error } = await sb.rpc('login', { p_username: un, p_password: pw });
+    if (!error && data && data.length) row = data[0];
+  } catch (e) { console.warn(e); }
+  if (btn) btn.disabled = false;
+  if (!row) { $('#shell').innerHTML = viewLogin('Usuari o contrasenya incorrectes'); return; }
+  if (row.active === false) { $('#shell').innerHTML = viewLogin('Aquest usuari està desactivat'); return; }
+  const u = { id: row.id, username: row.username, name: row.name, section: row.section || '', instrument: row.instrument || '',
+    roles: row.roles && row.roles.length ? row.roles : ['musician'], active: row.active !== false, mustChangePassword: !!row.must_change_password };
+  const i = S.users.findIndex(x => x.id === u.id);
+  if (i >= 0) S.users[i] = u; else S.users.push(u);
+  ME = u.id;
+  if ($('#lg-keep').checked) saveSession(); else { try { localStorage.removeItem(LS_SESSION); } catch {} }
+  ui.tab = null;
+  splash(() => { render(); if (u.mustChangePassword) changePasswordSheet(true); });
+});
+
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act;
+  const cur = currentSession();
+  switch (a) {
+    case 'tab': ui.tab = el.dataset.tab; ui.rollSec = null; save(); render(); window.scrollTo(0, 0); return;
+    case 'help': return helpSheet();
+    case 'logout': ME = null; saveSession(); ui.tab = null; render(); return;
+    case 'demo': return demo();
+
+    /* llista */
+    case 'sess-prev': case 'sess-next': {
+      const list = allSessions(); const i = list.findIndex(s => s.id === (cur && cur.id));
+      const j = a === 'sess-prev' ? i - 1 : i + 1;
+      if (list[j]) { ui.sessionId = list[j].id; ui.rollSec = null; render(); } return;
+    }
+    case 'sess-pick': return sessionPicker();
+    case 'pick-sess': ui.sessionId = el.dataset.sid; ui.rollSec = null; closeSheet(); render(); return;
+    case 'goto-sess': closeSheet(); ui.sessionId = el.dataset.sid; ui.rollSec = null; ui.tab = 'llista'; ui.llistaMode = 'roll'; save(); render(); window.scrollTo(0, 0); return;
+    case 'sess-info': return sessionInfo(el.dataset.sid);
+    case 'open-sec': ui.rollSec = el.dataset.sec; render(); window.scrollTo(0, 0); return;
+    case 'close-sec': ui.rollSec = null; render(); window.scrollTo(0, 0); return;
+    case 'mark': {
+      if (!cur || !can.passList()) return;
+      const mid = el.dataset.mid, s = el.dataset.s;
+      const target = userById(mid);
+      if (!can.section(target.section)) { toast('Només pots passar llista de la teva secció'); return; }
+      const prev = mark(cur.id, mid);
+      if (prev && prev.s === s) setMark(cur.id, mid, null);
+      else setMark(cur.id, mid, { s, ...(s === 'R' ? { min: prev?.min || 10 } : {}), ...(prev?.note && s !== 'P' ? { note: prev.note } : {}) });
+      render(); return;
+    }
+    case 'min': { if (!cur) return; const mk = mark(cur.id, el.dataset.mid); if (!mk) return;
+      setMark(cur.id, el.dataset.mid, { ...mk, min: Number(el.dataset.min) }); render(); return; }
+    case 'rest-present': {
+      if (!cur || !can.section(el.dataset.sec)) return;
+      for (const m of membersOf(el.dataset.sec)) if (inSession(cur, m) && !mark(cur.id, m.id)) setMark(cur.id, m.id, { s: 'P' });
+      render(); toast('Llista completada'); return;
+    }
+    case 'summary': return summarySheet(el.dataset.sec || null);
+    case 'copy-sum': { const t = $('#sum-txt');
+      navigator.clipboard.writeText(t.value).then(() => toast('Resum copiat')).catch(() => { t.removeAttribute('readonly'); t.select(); }); return; }
+
+    /* calendari + estadístiques */
+    case 'cal-proj': ui.calProj = el.dataset.id; save(); render(); return;
+    case 'cal-past': ui.calPast = !ui.calPast; render(); return;
+    case 'cal-mode': ui.calMode = el.dataset.id; save(); render(); window.scrollTo(0, 0); return;
+    case 'stats-proj': ui.statsProj = el.dataset.id; save(); render(); return;
+    case 'stats-sec': ui.statsSec = el.dataset.sec; render(); return;
+    case 'member-detail': return memberDetail(el.dataset.mid);
+
+    /* incidències */
+    case 'new-incident': return incidentSheet();
+    case 'inc-filter': ui.incFilter = el.dataset.v; save(); render(); return;
+    case 'inc-accept': return reviewIncident(el.dataset.id, true);
+    case 'inc-reject': return reviewIncident(el.dataset.id, false);
+    case 'inc-open': return incidentDetail(el.dataset.id);
+    case 'inc-reopen': { const i = S.incidents.find(x => x.id === el.dataset.id);
+      if (i && can.reviewIncident(i)) { i.status = 'pending'; i.reviewedBy = null; i.reviewedAt = null; save(); closeSheet(); render(); } return; }
+
+    /* gestió */
+    case 'manage': ui.manage = el.dataset.id; ui.search = ''; save(); render(); return;
+    case 'llista-mode': ui.llistaMode = el.dataset.id; ui.rollSec = null; save(); render(); window.scrollTo(0, 0); return;
+    case 'new-user': return userSheet({ section: el.dataset.sec || '', roles: ['musician'], active: true });
+    case 'edit-user': { const x = userById(el.dataset.uid); if (x && can.seeMember(x)) userSheet({ ...x }); return; }
+    case 'del-user': {
+      if (!confirm('Eliminar aquest usuari i totes les seves dades d\'assistència?')) return;
+      const id = el.dataset.uid;
+      S.users = S.users.filter(u => u.id !== id);
+      S.incidents = S.incidents.filter(i => i.userId !== id);
+      for (const k of Object.keys(S.attendance)) if (k.endsWith('|' + id)) delete S.attendance[k];
+      save(); closeSheet(); render(); toast('Usuari eliminat'); return;
+    }
+    case 'new-proj': return projSheet({});
+    case 'edit-proj': { const p = S.projects.find(x => x.id === el.dataset.pid); if (p) projSheet({ ...p }); return; }
+    case 'view-proj': return repertoireSheet(el.dataset.pid);
+    case 'del-proj': {
+      if (!confirm('Eliminar el projecte? Les sessions que només pertanyien a aquest projecte també s\'eliminaran.')) return;
+      const pid = el.dataset.pid;
+      const orphans = [];
+      for (const s of S.sessions) { s.projIds = (s.projIds || []).filter(x => x !== pid); if (!s.projIds.length) orphans.push(s.id); }
+      for (const sid of orphans) {
+        for (const k of Object.keys(S.attendance)) if (k.startsWith(sid + '|')) delete S.attendance[k];
+        S.incidents = S.incidents.filter(i => i.sessionId !== sid);
+      }
+      S.sessions = S.sessions.filter(s => !orphans.includes(s.id));
+      S.projects = S.projects.filter(x => x.id !== pid);
+      save(); closeSheet(); render(); return;
+    }
+    case 'new-session': { if (!S.projects.length) { toast('Crea primer un projecte'); return projSheet({}); } return sessionSheet({}, el.dataset.pid); }
+    case 'sess-edit': { const s = sessionById(el.dataset.sid); if (s && can.manageProjects()) sessionSheet({ ...s }); return; }
+    case 'del-session': {
+      if (!confirm('Eliminar la sessió i la seva llista?')) return;
+      const sid = el.dataset.sid;
+      S.sessions = S.sessions.filter(x => x.id !== sid);
+      for (const k of Object.keys(S.attendance)) if (k.startsWith(sid + '|')) delete S.attendance[k];
+      S.incidents = S.incidents.filter(i => i.sessionId !== sid);
+      if (ui.sessionId === sid) ui.sessionId = null;
+      save(); closeSheet(); render(); return;
+    }
+    case 'list-sessions': return listSessionsSheet(el.dataset.pid);
+    case 'repeat-sessions': return repeatSheet(el.dataset.pid);
+    case 'edit-identity': return identitySheet();
+    case 'edit-rules': return rulesSheet();
+    case 'edit-places': return placesSheet();
+    case 'export': return doExport(false);
+    case 'export-copy': return doExport(true);
+    case 'import': return importSheet();
+    case 'impersonate': return impersonateSheet();
+    case 'impersonate-go': ME = el.dataset.uid; saveSession(); closeSheet(); ui.tab = null; ui.rollSec = null; render(); window.scrollTo(0, 0); return;
+    case 'wipe': {
+      if (!confirm('Esborrar tots els usuaris, projectes, llistes i incidències?')) return;
+      S = structuredClone(DEFAULT); await seedAdmin(); ME = null; saveSession(); save(); render(); return;
+    }
+
+    /* sheet */
+    case 'change-password': return changePasswordSheet(false);
+    case 'toggle-pass': {
+      const inp = document.getElementById(el.dataset.target); if (!inp) return;
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      el.setAttribute('aria-pressed', String(show));
+      el.innerHTML = show ? ICON.eyeOff : ICON.eye;
+      return;
+    }
+    case 'sheet-back': if (e.target === el) closeSheet(); return;
+    case 'sheet-close': return closeSheet();
+    case 'sheet-save': { const ok = sheetSave && await sheetSave(); if (ok !== false) { closeSheet(); render(); } return; }
+  }
+});
+
+document.addEventListener('change', e => {
+  if (e.target.dataset && e.target.dataset.act === 'toggle-late') { S.config.countLateAsPresent = e.target.checked; save(); render(); }
+  if (e.target.dataset && e.target.dataset.act === 'min-custom') {
+    const cur = currentSession(); if (!cur) return;
+    const mid = e.target.dataset.mid; const mk = mark(cur.id, mid); if (!mk) return;
+    const n = Number(e.target.value);
+    if (!n || n < 1) return;
+    setMark(cur.id, mid, { ...mk, min: Math.min(180, n) });
+    render();
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.id === 'usearch') { ui.search = el.value; const v = el.value; render(); const s = $('#usearch'); if (s) { s.value = v; s.focus(); s.setSelectionRange(v.length, v.length); } return; }
+  if (el.dataset && el.dataset.act === 'note') {
+    const cur = currentSession(); if (!cur) return;
+    const mk = mark(cur.id, el.dataset.mid); if (!mk) return;
+    S.attendance[aKey(cur.id, el.dataset.mid)] = { ...mk, note: el.value, by: ME, at: stamp() };
+    save();
+  }
+});
+
+/* ================= Init ================= */
+(async () => {
+  await load();
+  if (ME) splash(() => { render(); const u = me(); if (u && u.mustChangePassword) changePasswordSheet(true); }); else render();
+})();
+})();
+</script>
+</body>
+</html>
