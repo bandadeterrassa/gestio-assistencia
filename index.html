@@ -415,6 +415,18 @@ textarea.inp{padding:10px 12px;min-height:100px;resize:vertical;line-height:1.4}
 .picklist li.picklist-month:first-child{padding-top:2px}
 .picklist button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 10px;text-align:left;border-radius:10px}
 .picklist button svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sec-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.sec-reorder{display:flex;flex-direction:column;gap:1px;flex:none}
+.sec-reorder button{width:30px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted)}
+.sec-reorder button:disabled{opacity:.25}
+.sec-reorder button:not(:disabled):active{background:var(--surface-2)}
+.sec-reorder svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.sec-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;text-align:left;padding:4px 2px}
+.sec-icon{width:42px;height:42px;flex:none;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:var(--ink-2)}
+.sec-name{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sec-name b{font-size:15px}
+.sec-name .muted{font-size:12.5px}
+.sec-chevron{width:18px;height:18px;flex:none;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .picklist button[aria-current="true"]{color:var(--accent);font-weight:700;background:var(--accent-soft)}
 .picklist .d{font-weight:600}
 .picklist .m{font-size:12.5px;color:var(--muted)}
@@ -1391,8 +1403,10 @@ function userSheet(x) {
       ${editCred ? `<fieldset style="border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:12px">
         <legend style="padding:0 6px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)">Credencials</legend>
         <div class="field"><span>Usuari</span><input class="inp" id="u-user" value="${esc(x.username || '')}" placeholder="nom.cognom" autocapitalize="none"></div>
-        <div class="field"><span>${isNew ? 'Contrasenya' : 'Contrasenya nova'}</span>${passField('u-pass', isNew ? undefined : 'Estableix-ne una de nova', isNew ? '1234' : '')}
-          ${isNew ? '' : '<small class="muted">Per seguretat, no es pot mostrar la contrasenya actual; només se\'n pot establir una de nova.</small>'}</div></fieldset>`
+        <div class="field"><span>Contrasenya</span><div id="u-pass-wrap">${isNew
+          ? passField('u-pass', undefined, '1234')
+          : `<div style="display:flex;gap:8px;align-items:center"><input class="inp" value="••••••••" disabled style="flex:1;letter-spacing:3px;color:var(--muted)"><button type="button" class="btn btn-sm" data-act="unlock-pass">Edita</button></div>`}</div>
+          ${isNew ? '' : '<small class="muted">Es manté igual tret que la canviïs expressament.</small>'}</div></fieldset>`
         : ''}
       ${editActive ? `<div class="toggle-row"><span><b>Actiu</b><br><span class="muted" style="font-size:12.5px">Els inactius no surten a les llistes ni poden entrar</span></span>
         <label class="switch"><input type="checkbox" id="u-active" ${x.active !== false ? 'checked' : ''}><span></span></label></div>` : ''}`,
@@ -1457,11 +1471,12 @@ function userSheet(x) {
       rec.id = newId; rec.username = un;
     } else if (editCred) {
       const un = $('#u-user').value.trim().toLowerCase();
-      const pw = $('#u-pass').value.trim();
-      if (!un || !pw) { toast('Usuari i contrasenya no poden ser buits'); return false; }
+      const passInp = document.getElementById('u-pass');
+      const pw = passInp ? passInp.value.trim() : '';
+      if (!un) { toast('L\'usuari no pot ser buit'); return false; }
       if (S.users.some(o => o.id !== rec.id && o.username === un)) { toast('Aquest usuari ja existeix'); return false; }
       let ok = false;
-      try { const r = await sb.rpc('admin_set_credentials', { p_user_id: rec.id, p_username: un, p_new_password: pw }); ok = !r.error && r.data === true; }
+      try { const r = await sb.rpc('admin_set_credentials', { p_user_id: rec.id, p_username: un, p_new_password: pw || null }); ok = !r.error && r.data === true; }
       catch (e) { console.warn(e); }
       if (!ok) { toast('No s\'han pogut actualitzar les credencials'); return false; }
       rec.username = un;
@@ -1854,15 +1869,20 @@ function placesSheet() {
 function sectionsSheet() {
   sheet({
     title: 'Seccions',
-    body: `<ul class="picklist">${SECTIONS.map((s, i) => `<li style="display:flex;align-items:center;gap:6px;padding:8px 4px">
-      <span style="display:flex;flex-direction:column">
-        <button type="button" class="icon-btn plain" data-act="sec-move" data-dir="-1" data-i="${i}" aria-label="Mou amunt" ${i === 0 ? 'disabled style="opacity:.3"' : ''}><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
-        <button type="button" class="icon-btn plain" data-act="sec-move" data-dir="1" data-i="${i}" aria-label="Mou avall" ${i === SECTIONS.length - 1 ? 'disabled style="opacity:.3"' : ''}><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-      </span>
-      <button data-act="edit-section" data-id="${s.id}" style="flex:1;display:flex;align-items:center;gap:10px;padding:8px;text-align:left;border-radius:10px">
-        <span style="font-size:20px;width:28px;text-align:center">${esc(s.icon) || esc(s.id)}</span>
-        <span><b>${esc(s.name)}</b><br><span class="muted" style="font-size:12.5px">${s.instruments.length} instrument${s.instruments.length === 1 ? '' : 's'} · ${membersOf(s.id).length} músic${membersOf(s.id).length === 1 ? '' : 's'}</span></span></button></li>`).join('')}</ul>
-      <button class="btn btn-block" data-act="new-section" style="margin-top:8px">+ Secció nova</button>`,
+    body: `<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">${SECTIONS.map((s, i) => {
+      const n = membersOf(s.id).length;
+      return `<li class="panel sec-row">
+        <div class="sec-reorder">
+          <button type="button" data-act="sec-move" data-dir="-1" data-i="${i}" aria-label="Mou amunt" ${i === 0 ? 'disabled' : ''}><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+          <button type="button" data-act="sec-move" data-dir="1" data-i="${i}" aria-label="Mou avall" ${i === SECTIONS.length - 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        </div>
+        <button class="sec-main" data-act="edit-section" data-id="${s.id}">
+          <span class="sec-icon">${esc(s.icon) || esc(s.id)}</span>
+          <span class="sec-name"><b>${esc(s.name)}</b><span class="muted">${s.instruments.length} instrument${s.instruments.length === 1 ? '' : 's'} · ${n} músic${n === 1 ? '' : 's'}</span></span>
+          <svg class="sec-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+        </button></li>`;
+    }).join('')}</ul>
+      <button class="btn btn-block" data-act="new-section" style="margin-top:12px">+ Secció nova</button>`,
     foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Tanca</button>`,
   });
 }
@@ -2188,6 +2208,11 @@ document.addEventListener('click', async e => {
 
     /* sheet */
     case 'change-password': return changePasswordSheet(false);
+    case 'unlock-pass': {
+      const wrap = document.getElementById('u-pass-wrap'); if (!wrap) return;
+      wrap.innerHTML = passField('u-pass', 'Estableix-ne una de nova', '');
+      return;
+    }
     case 'toggle-pass': {
       const inp = document.getElementById(el.dataset.target); if (!inp) return;
       const show = inp.type === 'password';
