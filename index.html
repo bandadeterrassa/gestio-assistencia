@@ -127,6 +127,8 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding-block:2px 12px}
 .chip{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:var(--fs-3);font-weight:600;color:var(--ink-2);white-space:nowrap;transition:transform .15s var(--ease-spring)}
+.chip-dd{display:inline-flex;align-items:center;gap:6px}
+.chip-caret{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 .chip:active{transform:scale(.95)}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
@@ -412,6 +414,7 @@ textarea.inp{padding:10px 12px;min-height:100px;resize:vertical;line-height:1.4}
 .picklist li.picklist-month{border-top:0;padding:14px 2px 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .picklist li.picklist-month:first-child{padding-top:2px}
 .picklist button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 10px;text-align:left;border-radius:10px}
+.picklist button svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .picklist button[aria-current="true"]{color:var(--accent);font-weight:700;background:var(--accent-soft)}
 .picklist .d{font-weight:600}
 .picklist .m{font-size:12.5px;color:var(--muted)}
@@ -451,17 +454,25 @@ textarea.inp{padding:10px 12px;min-height:100px;resize:vertical;line-height:1.4}
 'use strict';
 
 /* ================= Constants ================= */
-const SECTIONS = [
-  { id: 'FL', name: 'Flautes',   instruments: ['Flauta I', 'Flauta II'] },
-  { id: 'OB', name: 'Oboès',     instruments: ['Oboè'] },
-  { id: 'CL', name: 'Clarinets', instruments: ['Clarinet I', 'Clarinet II', 'Clarinet III', 'Clarinet Baix'] },
-  { id: 'SX', name: 'Saxos',     instruments: ['Saxo Soprano', 'Saxo Alt I', 'Saxo Alt II', 'Saxo Tenor', 'Saxo Baríton'] },
-  { id: 'MT', name: 'Metall',    instruments: ['Trompeta', 'Trompa', 'Trombó', 'Bombardí', 'Tuba'] },
-  { id: 'PC', name: 'Percussió', instruments: ['Bateria', 'Làmines', 'Timbales'] },
+let SECTIONS = [
+  { id: 'FL', name: 'Flautes', icon: '', instruments: ['Flauta I', 'Flauta II'] },
+  { id: 'OB', name: 'Oboès', icon: '', instruments: ['Oboè'] },
+  { id: 'CL', name: 'Clarinets', icon: '', instruments: ['Clarinet I', 'Clarinet II', 'Clarinet III', 'Clarinet Baix'] },
+  { id: 'SX', name: 'Saxos', icon: '', instruments: ['Saxo Soprano', 'Saxo Alt I', 'Saxo Alt II', 'Saxo Tenor', 'Saxo Baríton'] },
+  { id: 'MT', name: 'Metall', icon: '', instruments: ['Trompeta', 'Trompa', 'Trombó', 'Bombardí', 'Tuba'] },
+  { id: 'PC', name: 'Percussió', icon: '', instruments: ['Bateria', 'Làmines', 'Timbales'] },
 ];
-const SEC = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
-/** Instruments d'una secció: els predefinits + els que l'administrador hagi afegit a Configuració. */
-const instrumentsFor = sec => [...(SEC[sec]?.instruments || []), ...((S.config.extraInstruments || {})[sec] || [])];
+let SEC = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
+/** Actualitza SECTIONS/SEC en memòria a partir de les files carregades (o desades) de Supabase. */
+function applySections(rows) {
+  if (rows && rows.length) {
+    SECTIONS = rows.slice().sort((a, b) => a.sort_order - b.sort_order)
+      .map(r => ({ id: r.id, name: r.name, icon: r.icon || '', instruments: r.instruments || [] }));
+    SEC = Object.fromEntries(SECTIONS.map(s => [s.id, s]));
+  }
+}
+/** Instruments d'una secció, en l'ordre configurat (d'agut a greu). */
+const instrumentsFor = sec => SEC[sec]?.instruments || [];
 const STATUS = {
   P:   { label: 'Present',              short: 'Present' },
   R:   { label: 'Retard',               short: 'Retard' },
@@ -503,6 +514,7 @@ const ICON = {
   check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
   eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
   eyeOff: '<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7c1.7 0 3.2.4 4.5 1M22 12s-3.6 7-10 7c-1.7 0-3.2-.4-4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M4 4l16 16"/></svg>',
+  caret: '<svg class="chip-caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
   logout: '<svg viewBox="0 0 24 24"><path d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/><path d="M9 12h11m0 0-3-3m3 3-3 3"/></svg>',
   swap: '<svg viewBox="0 0 24 24"><path d="M7 4v13M7 17l-3.5-3.5M7 17l3.5-3.5M17 20V7M17 7l3.5 3.5M17 7l-3.5 3.5"/></svg>',
 };
@@ -548,7 +560,7 @@ const fmtStamp = t => { try { return new Intl.DateTimeFormat('ca-ES', { day: '2-
 /* ================= State ================= */
 const DEFAULT_LOGO = 'data:image/jpeg;base64,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';
 const DEFAULT = {
-  config: { name: 'Banda de Terrassa', logo: DEFAULT_LOGO, accentH: 209, minAttendance: 80, minPunctuality: 80, alertFNJ: 3, countLateAsPresent: true, places: ['Aula 0P2', 'Auditori de Terrassa', 'Teatre Principal'], extraInstruments: {} },
+  config: { name: 'Banda de Terrassa', logo: DEFAULT_LOGO, accentH: 209, minAttendance: 80, minPunctuality: 80, alertFNJ: 3, countLateAsPresent: true, places: ['Aula 0P2', 'Auditori de Terrassa', 'Teatre Principal'] },
   users: [],        // {id, username, password, name, section, instrument, roles[], active, theme}
   projects: [],     // {id, name, from, to, repertoire[], info, color}
   sessions: [],     // {id, projIds[], date, time, end, type, place, note, sections[]}
@@ -582,7 +594,7 @@ function configFromRow(r) {
   if (!r) return structuredClone(DEFAULT.config);
   return { name: r.name, logo: r.logo || '', accentH: r.accent_h, minAttendance: r.min_attendance,
     minPunctuality: r.min_punctuality, alertFNJ: r.alert_fnj, countLateAsPresent: r.count_late_as_present,
-    places: r.places || [], extraInstruments: r.extra_instruments || {} };
+    places: r.places || [] };
 }
 function rowsToAttendance(rows) {
   const map = {};
@@ -599,13 +611,14 @@ async function load() {
   try { Object.assign(ui, JSON.parse(localStorage.getItem(LS_UI) || '{}')); } catch {}
   try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; } catch {}
   try {
-    const [{ data: users }, { data: projects }, { data: sessions }, { data: attendance }, { data: incidents }, { data: configRows }] = await Promise.all([
+    const [{ data: users }, { data: projects }, { data: sessions }, { data: attendance }, { data: incidents }, { data: configRows }, { data: sectionRows }] = await Promise.all([
       sb.from('users_public').select('*'),
       sb.from('projects').select('*'),
       sb.from('sessions').select('*'),
       sb.from('attendance').select('*'),
       sb.from('incidents').select('*'),
       sb.from('config').select('*').limit(1),
+      sb.from('sections').select('*'),
     ]);
     S.users = (users || []).map(userFromRow);
     S.projects = (projects || []).map(projectFromRow);
@@ -613,6 +626,7 @@ async function load() {
     S.attendance = rowsToAttendance(attendance || []);
     S.incidents = (incidents || []).map(incidentFromRow);
     S.config = configFromRow(configRows && configRows[0]);
+    applySections(sectionRows);
   } catch (e) { console.warn(e); toast('No s\'ha pogut connectar amb el servidor'); }
   migrate();
   if (!S.users.length) await seedAdmin();
@@ -707,6 +721,8 @@ const projsOf = s => (s.projIds || []).map(projById).filter(Boolean);
 const sessionsOfProj = pid => S.sessions.filter(s => (s.projIds || []).includes(pid)).sort((a, b) => a.date.localeCompare(b.date));
 /** Estat d'un projecte segons les seves dates (o, si no en té, les de les seves sessions). */
 const PROJECT_STATUS_LABEL = { done: 'Acabat', ongoing: 'En curs', upcoming: 'Proper' };
+/** El projecte en curs (si n'hi ha) — s'usa com a suggeriment per defecte al desplegable de filtres. */
+const ongoingProject = () => S.projects.find(p => projectStatus(p) === 'ongoing') || null;
 function projectStatus(p) {
   const ss = sessionsOfProj(p.id).map(s => s.date);
   const from = p.from || ss[0] || null;
@@ -793,8 +809,9 @@ function faltesPctBoxes(c) {
     <div class="kpi alert"><div class="kpi-v">${pnj == null ? '—' : pct(pnj)}</div><div class="kpi-l">Faltes no justificades</div></div>`;
 }
 function projStatsChips() {
+  const p = S.projects.find(x => x.id === ui.statsProj) || (ui.statsProj === 'all' ? ongoingProject() : null);
   return `<div class="chips"><button class="chip" aria-pressed="${ui.statsProj === 'all'}" data-act="stats-proj" data-id="all">Tot el curs</button>
-    ${S.projects.map(p => `<button class="chip" aria-pressed="${ui.statsProj === p.id}" data-act="stats-proj" data-id="${p.id}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}</div>`;
+    ${S.projects.length ? `<button class="chip chip-dd" data-act="pick-proj" data-scope="stats">${p ? `<span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}` : 'Un projecte'}${ICON.caret}</button>` : ''}</div>`;
 }
 function sessionCounts(session) {
   const c = emptyCounts();
@@ -946,7 +963,7 @@ function rollOverview(cur) {
     const pend = S.incidents.some(inc => inc.sessionId === cur.id && inc.status === 'pending' && (userById(inc.userId) || {}).section === x.id);
     return `<button class="sq ${on ? '' : 'off'}" data-act="open-sec" data-sec="${x.id}" ${on ? '' : 'disabled'}>
       ${pend ? '<span class="q-dot pend" title="Incidències pendents"></span>' : ''}
-      <span class="q-l">${x.id}</span><span class="q-n">${x.name}</span>
+      <span class="q-l">${esc(x.icon) || x.id}</span><span class="q-n">${x.name}</span>
       <span class="q-c ${done ? 'done' : ''}">${on ? `${c.total - c.none}/${c.total}` : 'no convocada'}</span></button>`;
   }).join('');
   const c = sessionCounts(cur);
@@ -999,7 +1016,7 @@ function rollRow(session, m) {
   let extra = '';
   if (s === 'R') extra = `<div class="extra x-R"><label>Minuts</label><div class="mins">
       ${LATE_CHIPS.map(n => `<button class="min-chip" aria-pressed="${mk.min === n}" data-act="min" data-mid="${m.id}" data-min="${n}">${n}′</button>`).join('')}
-      <input type="number" class="min-chip min-custom" inputmode="numeric" min="1" max="180" placeholder="+" value="${mk.min && !LATE_CHIPS.includes(mk.min) ? mk.min : ''}" data-act="min-custom" data-mid="${m.id}"></div>
+      <input type="number" class="min-chip min-custom" aria-pressed="${mk.min && !LATE_CHIPS.includes(mk.min) ? 'true' : 'false'}" inputmode="numeric" min="1" max="180" placeholder="+" value="${mk.min && !LATE_CHIPS.includes(mk.min) ? mk.min : ''}" data-act="min-custom" data-mid="${m.id}"></div>
       <input class="note-input" placeholder="Nota (opcional)" data-act="note" data-mid="${m.id}" value="${esc(mk.note || '')}"></div>`;
   else if (s === 'FJ') extra = `<div class="extra x-FJ"><label>Motiu</label>
       <input class="note-input" placeholder="Feina, malaltia, examen…" data-act="note" data-mid="${m.id}" value="${esc(mk.note || '')}"></div>`;
@@ -1024,8 +1041,9 @@ function viewCal() {
   if (!all.length) return `<div class="page-head"><h1 class="h1">Calendari</h1></div>${bar}
     <div class="empty"><h2 class="h2">Sense sessions</h2><p>Encara no hi ha assajos ni concerts programats.</p>
     ${can.manageProjects() ? '<button class="btn btn-primary" data-act="new-proj">+ Nou projecte</button>' : ''}</div>`;
+  const cp = S.projects.find(x => x.id === ui.calProj) || (ui.calProj === 'all' ? ongoingProject() : null);
   const chips = `<div class="chips"><button class="chip" aria-pressed="${ui.calProj === 'all'}" data-act="cal-proj" data-id="all">Tot</button>
-    ${S.projects.map(p => `<button class="chip" aria-pressed="${ui.calProj === p.id}" data-act="cal-proj" data-id="${p.id}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}
+    ${S.projects.length ? `<button class="chip chip-dd" data-act="pick-proj" data-scope="cal">${cp ? `<span class="pdot" style="background:${esc(cp.color)}"></span>${esc(cp.name)}` : 'Un projecte'}${ICON.caret}</button>` : ''}
     <button class="chip" aria-pressed="${ui.calPast}" data-act="cal-past">Anteriors</button></div>`;
   let list = all.filter(s => ui.calProj === 'all' || (s.projIds || []).includes(ui.calProj));
   if (!ui.calPast) list = list.filter(s => s.date >= TODAY);
@@ -1083,9 +1101,9 @@ function viewStats() {
   if (scope === 'self') return statsSelf(u);
   if (scope === 'section') return viewStatsLeader(u);
   const sessions = doneSessions(ui.statsProj);
-  if (!sessions.length) return `<div class="page-head"><h1 class="h1">Estadístiques</h1></div>
-    <div class="empty"><h2 class="h2">Encara no hi ha dades</h2><p>Quan es passi llista d'algun assaig, aquí hi haurà l'assistència.</p></div>`;
   const chips = projStatsChips();
+  if (!sessions.length) return `<div class="page-head"><h1 class="h1">Estadístiques</h1></div>${chips}
+    <div class="empty"><h2 class="h2">Encara no hi ha dades</h2><p>Quan es passi llista d'algun assaig, aquí hi haurà l'assistència.</p></div>`;
   const total = emptyCounts();
   for (const s of sessions) { const c = sessionCounts(s); for (const k of Object.keys(total)) total[k] += c[k]; }
   const stats = censusUsers().map(m => ({ m, ...userStats(m, sessions) })).filter(x => x.c.total);
@@ -1279,7 +1297,7 @@ function userRow(x) {
 function manageIncidents() {
   const mine = S.incidents.filter(i => can.viewIncidents(i)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const list = ui.incFilter === 'all' ? mine : mine.filter(i => i.status === ui.incFilter);
-  return `<div class="chips">${[['pending', 'Pendents'], ['accepted', 'Justificades'], ['rejected', 'No justificades'], ['all', 'Totes']]
+  return `<div class="chips">${[['pending', 'Pendents'], ['accepted', 'Justificades'], ['all', 'Totes']]
       .map(([v, n]) => `<button class="chip" aria-pressed="${ui.incFilter === v}" data-act="inc-filter" data-v="${v}">${n}</button>`).join('')}</div>
     <div class="panel">${list.length ? list.map(i => incCard(i, true)).join('')
       : '<div class="empty" style="padding:28px"><p>Cap incidència en aquest estat.</p></div>'}</div>
@@ -1308,10 +1326,10 @@ function manageConfig() {
     <div class="panel">
       <div class="setting"><div><div class="t">Llocs disponibles</div><div class="s">${(c.places || []).join(' · ') || 'Cap definit'}</div></div>
         <button class="btn btn-sm" data-act="edit-places">Edita</button></div></div>
-    <div class="section-title"><h2 class="h2">Instruments</h2></div>
+    <div class="section-title"><h2 class="h2">Seccions</h2></div>
     <div class="panel">
-      <div class="setting"><div><div class="t">Etiquetes addicionals</div><div class="s">Afegeix instruments que no surtin a la llista habitual de cada secció.</div></div>
-        <button class="btn btn-sm" data-act="edit-instruments">Edita</button></div></div>
+      <div class="setting"><div><div class="t">Seccions i instruments</div><div class="s">${SECTIONS.length} seccions. Afegeix, edita, reordena o elimina seccions i els seus instruments.</div></div>
+        <button class="btn btn-sm" data-act="edit-instruments">Gestiona</button></div></div>
     <div class="section-title"><h2 class="h2">Dades</h2></div>
     <div class="panel">
       <div class="setting"><div><div class="t">Còpia de seguretat</div><div class="s">Les dades viuen a Supabase i es comparteixen entre tothom. Descarrega aquesta còpia de tant en tant per tenir-ne una de reserva pròpia.</div></div>
@@ -1503,6 +1521,17 @@ function projSheet(p) {
   };
 }
 
+/** Desplegable (en full) per triar un projecte concret als filtres de Calendari i Estadístiques. */
+function projectPickerSheet(scope) {
+  const raw = scope === 'cal' ? ui.calProj : ui.statsProj;
+  const current = raw !== 'all' ? raw : (ongoingProject() || {}).id;
+  sheet({
+    title: 'Tria un projecte',
+    body: `<ul class="picklist">${S.projects.map(p => `<li>
+      <button data-act="proj-pick-go" data-scope="${scope}" data-id="${p.id}" aria-current="${current === p.id}">
+        <span style="display:flex;align-items:center;gap:8px"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</span>${current === p.id ? `<span style="color:var(--accent)">${ICON.check}</span>` : ''}</button></li>`).join('') || '<li class="empty">Encara no hi ha cap projecte.</li>'}</ul>`,
+  });
+}
 function repertoireSheet(pid) {
   const p = S.projects.find(x => x.id === pid); if (!p) return;
   const editable = can.repertoire();
@@ -1614,7 +1643,7 @@ function incidentSheet() {
         <button type="button" class="pick" data-kind="late" aria-pressed="false">Arribaré tard</button></div></div>
       <div class="field" id="i-minwrap" hidden><span>Minuts de retard previstos</span><div class="pickers" id="i-min">
         ${LATE_CHIPS.map((n, i) => `<button type="button" class="pick" data-min="${n}" aria-pressed="${i === 0}">${n}′</button>`).join('')}
-        <input type="number" class="pick min-custom" id="i-min-custom" inputmode="numeric" min="1" max="180" placeholder="+"></div></div>
+        <input type="number" class="pick min-custom" id="i-min-custom" aria-pressed="false" inputmode="numeric" min="1" max="180" placeholder="+"></div></div>
       <div class="field"><span>Motiu</span><textarea class="inp" id="i-reason" placeholder="Explica-ho breument perquè es pugui justificar"></textarea></div>
       <div class="privacy">L'avís s'enviarà al cap de secció i a la Junta.</div>`,
     foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Envia</button>`,
@@ -1637,13 +1666,14 @@ function incidentSheet() {
     const b = e.target.closest('[data-min]'); if (!b) return;
     min = Number(b.dataset.min);
     $$('#i-min .pick[data-min]').forEach(p => p.setAttribute('aria-pressed', Number(p.dataset.min) === min));
-    $('#i-min-custom').value = '';
+    $('#i-min-custom').value = ''; $('#i-min-custom').setAttribute('aria-pressed', 'false');
   });
   $('#i-min-custom').addEventListener('change', e => {
     const n = Number(e.target.value);
     if (!n || n < 1) return;
     min = Math.min(180, n);
     $$('#i-min .pick[data-min]').forEach(p => p.setAttribute('aria-pressed', false));
+    e.target.setAttribute('aria-pressed', 'true');
   });
   sheetSave = () => {
     if (!chosen.size) { toast('Tria almenys una sessió'); return false; }
@@ -1820,24 +1850,54 @@ function placesSheet() {
     save(); toast('Llocs actualitzats'); return true;
   };
 }
-function instrumentsSheet() {
-  const extra = S.config.extraInstruments || {};
+/** Gestió de seccions: llista amb edició, reordenació i eliminació (si no té músics). */
+function sectionsSheet() {
   sheet({
-    title: 'Etiquetes d\'instrument',
-    body: `<div class="scroll-list" style="max-height:60vh">${SECTIONS.map(s => `<div class="field">
-        <span>${s.name}</span><textarea class="inp" id="ci-${s.id}" rows="2" placeholder="Un instrument per línia">${esc((extra[s.id] || []).join('\n'))}</textarea>
-        <small class="muted">Ja hi ha: ${s.instruments.join(', ')}</small></div>`).join('')}</div>`,
-    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+    title: 'Seccions',
+    body: `<ul class="picklist">${SECTIONS.map((s, i) => `<li style="display:flex;align-items:center;gap:6px;padding:8px 4px">
+      <span style="display:flex;flex-direction:column">
+        <button type="button" class="icon-btn plain" data-act="sec-move" data-dir="-1" data-i="${i}" aria-label="Mou amunt" ${i === 0 ? 'disabled style="opacity:.3"' : ''}><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+        <button type="button" class="icon-btn plain" data-act="sec-move" data-dir="1" data-i="${i}" aria-label="Mou avall" ${i === SECTIONS.length - 1 ? 'disabled style="opacity:.3"' : ''}><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      </span>
+      <button data-act="edit-section" data-id="${s.id}" style="flex:1;display:flex;align-items:center;gap:10px;padding:8px;text-align:left;border-radius:10px">
+        <span style="font-size:20px;width:28px;text-align:center">${esc(s.icon) || esc(s.id)}</span>
+        <span><b>${esc(s.name)}</b><br><span class="muted" style="font-size:12.5px">${s.instruments.length} instrument${s.instruments.length === 1 ? '' : 's'} · ${membersOf(s.id).length} músic${membersOf(s.id).length === 1 ? '' : 's'}</span></span></button></li>`).join('')}</ul>
+      <button class="btn btn-block" data-act="new-section" style="margin-top:8px">+ Secció nova</button>`,
+    foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Tanca</button>`,
+  });
+}
+function sectionEditSheet(id) {
+  const isNew = !id;
+  const s = isNew ? { id: '', name: '', icon: '', instruments: [] } : SEC[id];
+  sheet({
+    title: isNew ? 'Secció nova' : `Edita ${s.name}`,
+    body: `${isNew ? `<div class="field"><span>Codi intern</span><input class="inp" id="sec-id" placeholder="p. ex. PC2" maxlength="8" style="text-transform:uppercase"></div>
+      <div class="privacy">El codi no es pot canviar un cop creat.</div>` : ''}
+      <div class="field"><span>Nom</span><input class="inp" id="sec-name" value="${esc(s.name)}" placeholder="Nom de la secció"></div>
+      <div class="field"><span>Icona (emoji o inicials)</span><input class="inp" id="sec-icon" value="${esc(s.icon)}" maxlength="4" placeholder="🎺 o MT"></div>
+      <div class="field"><span>Instruments</span><textarea class="inp" id="sec-insts" rows="4" placeholder="Un instrument per línia, d'agut a greu">${esc(s.instruments.join('\n'))}</textarea>
+        <small class="muted">L'ordre de les línies és l'ordre d'agut a greu que s'usarà a les llistes.</small></div>`,
+    foot: `${!isNew ? `<button class="btn btn-sm btn-danger-ghost" data-act="del-section" data-id="${esc(id)}">Elimina</button>` : ''}
+      <span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
   });
   sheetSave = () => {
-    const next = {};
-    for (const s of SECTIONS) {
-      const vals = $(`#ci-${s.id}`).value.split('\n').map(v => v.trim()).filter(Boolean);
-      if (vals.length) next[s.id] = vals;
+    const name = $('#sec-name').value.trim();
+    if (!name) { toast('Falta el nom'); return false; }
+    const insts = $('#sec-insts').value.split('\n').map(v => v.trim()).filter(Boolean);
+    if (isNew) {
+      const id = $('#sec-id').value.trim().toUpperCase();
+      if (!id) { toast('Falta el codi'); return false; }
+      if (SEC[id]) { toast('Ja existeix una secció amb aquest codi'); return false; }
+      SECTIONS.push({ id, name, icon: $('#sec-icon').value.trim(), instruments: insts });
+    } else {
+      Object.assign(SEC[id], { name, icon: $('#sec-icon').value.trim(), instruments: insts });
     }
-    S.config.extraInstruments = next;
-    save(); toast('Instruments actualitzats'); return true;
+    SEC = Object.fromEntries(SECTIONS.map(x => [x.id, x]));
+    saveSections(); toast('Secció desada'); return true;
   };
+}
+function saveSections() {
+  try { sb.rpc('sync_sections', { p_sections: SECTIONS }).then(r => { if (r.error) { console.warn(r.error); toast('No s\'ha pogut desar la secció. Torna-ho a provar.'); } }); } catch (e) { console.warn(e); }
 }
 function impersonateSheet() {
   sheet({ title: 'Prova rols', body: `<ul class="picklist">${S.users.filter(u => u.active !== false).sort(byName).map(u => `<li>
@@ -2036,6 +2096,11 @@ document.addEventListener('click', async e => {
     case 'cal-past': ui.calPast = !ui.calPast; render(); return;
     case 'cal-mode': ui.calMode = el.dataset.id; save(); render(); window.scrollTo(0, 0); return;
     case 'stats-proj': ui.statsProj = el.dataset.id; save(); render(); return;
+    case 'pick-proj': return projectPickerSheet(el.dataset.scope);
+    case 'proj-pick-go': {
+      if (el.dataset.scope === 'cal') ui.calProj = el.dataset.id; else ui.statsProj = el.dataset.id;
+      save(); closeSheet(); render(); return;
+    }
     case 'stats-sec': ui.statsSec = el.dataset.sec; render(); return;
     case 'member-detail': return memberDetail(el.dataset.mid);
 
@@ -2093,7 +2158,24 @@ document.addEventListener('click', async e => {
     case 'edit-identity': return identitySheet();
     case 'edit-rules': return rulesSheet();
     case 'edit-places': return placesSheet();
-    case 'edit-instruments': return instrumentsSheet();
+    case 'edit-instruments': return sectionsSheet();
+    case 'new-section': return sectionEditSheet(null);
+    case 'edit-section': return sectionEditSheet(el.dataset.id);
+    case 'sec-move': {
+      const i = Number(el.dataset.i), dir = Number(el.dataset.dir), j = i + dir;
+      if (j < 0 || j >= SECTIONS.length) return;
+      [SECTIONS[i], SECTIONS[j]] = [SECTIONS[j], SECTIONS[i]];
+      saveSections(); sectionsSheet(); return;
+    }
+    case 'del-section': {
+      const id = el.dataset.id;
+      const n = membersOf(id).length;
+      if (n) { toast(`No es pot eliminar: ${n} músic${n === 1 ? '' : 's'} hi són assignats`); return; }
+      if (!confirm(`Eliminar la secció "${SEC[id].name}"?`)) return;
+      SECTIONS = SECTIONS.filter(x => x.id !== id);
+      SEC = Object.fromEntries(SECTIONS.map(x => [x.id, x]));
+      saveSections(); closeSheet(); sectionsSheet(); return;
+    }
     case 'export': return doExport(false);
     case 'export-copy': return doExport(true);
     case 'import': return importSheet();
