@@ -131,6 +131,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .chip-caret{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 .chip:active{transform:scale(.95)}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip-dd[aria-pressed="true"] .chip-caret{opacity:.9}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
 .section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-block:24px 10px}
 .empty{text-align:center;padding:42px 16px;color:var(--muted)}
@@ -301,6 +302,10 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .hcell i{width:100%;height:22px;border-radius:5px;background:var(--surface-2);border:1px dashed var(--line-strong)}
 .hcell i.s-P,.hcell i.s-R,.hcell i.s-FJ,.hcell i.s-FNJ,.hcell i.s-NP{border:0}
 .privacy{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);background:var(--surface-2);font-size:12.5px;color:var(--muted);margin-top:10px}
+.help-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.help-row span{font-size:20px;flex:none;line-height:1.3}
+.help-row div{font-size:13.5px;line-height:1.4;color:var(--ink-2)}
+.help-row b{color:var(--ink);font-size:14.5px}
 
 /* Profile */
 .profile-head{display:flex;align-items:center;gap:14px;padding:16px;flex-wrap:wrap}
@@ -392,8 +397,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .field small{font-size:12px;color:var(--muted)}
 .inp{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);padding:0 12px;font-size:16px}
 textarea.inp{padding:10px 12px;min-height:100px;resize:vertical;line-height:1.4}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:420px){.row2{grid-template-columns:1fr}}
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .toggle-row{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
 .switch{position:relative;width:48px;height:28px;flex:none}
 .switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
@@ -496,9 +500,9 @@ const ORDER = ['P', 'R', 'FJ', 'FNJ', 'NP'];
 const TYPES = ['Assaig', 'Assaig extra', 'Assaig general', 'Concert', 'Cercavila', 'Sortida / intercanvi', 'Altres'];
 const LATE_CHIPS = [10, 15, 20, 25, 30];
 const PROJECT_COLORS = [
-  { name: 'Magenta', v: '#E0457B' }, { name: 'Taronja', v: '#F2703D' }, { name: 'Verd', v: '#2FA84F' },
-  { name: 'Blau', v: '#2E7DD1' }, { name: 'Lila', v: '#8B4FD1' }, { name: 'Mostassa', v: '#DB9E1F' },
-  { name: 'Turquesa', v: '#1EA0A6' }, { name: 'Coure', v: '#B15A2E' },
+  { name: 'Ocre fosc', v: '#A67818' }, { name: 'Terracota', v: '#B85C34' }, { name: 'Vi negre', v: '#8F2A40' },
+  { name: 'Pruna', v: '#7C3F6B' }, { name: 'Violeta fosc', v: '#6E3789' }, { name: 'Indigo', v: '#3F4E8C' },
+  { name: 'Petroli', v: '#1D6E82' }, { name: 'Teal fosc', v: '#2C7A6B' },
 ];
 const ROLES = {
   musician: { name: 'Músic',        level: 1 },
@@ -823,7 +827,7 @@ function faltesPctBoxes(c) {
 function projStatsChips() {
   const p = S.projects.find(x => x.id === ui.statsProj) || (ui.statsProj === 'all' ? ongoingProject() : null);
   return `<div class="chips"><button class="chip" aria-pressed="${ui.statsProj === 'all'}" data-act="stats-proj" data-id="all">Tot el curs</button>
-    ${S.projects.length ? `<button class="chip chip-dd" data-act="pick-proj" data-scope="stats">${p ? `<span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}` : 'Un projecte'}${ICON.caret}</button>` : ''}</div>`;
+    ${S.projects.length ? `<button class="chip chip-dd" aria-pressed="${ui.statsProj !== 'all'}" data-act="pick-proj" data-scope="stats">${p ? `<span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}` : 'Un projecte'}${ICON.caret}</button>` : ''}</div>`;
 }
 function sessionCounts(session) {
   const c = emptyCounts();
@@ -911,6 +915,7 @@ function appbar(u) {
       <span class="brand-sub">${esc(u.name)} · ${esc(ROLES[topRole(u)].name)}</span></div></div>
     <div class="top-actions">
       ${hasRole(u, 'admin') ? `<button class="icon-btn" data-act="impersonate" aria-label="Canvia de rol">${ICON.swap}</button>` : ''}
+      <button class="icon-btn" data-act="show-help" aria-label="Com funciona l'aplicació">${ICON.help}</button>
       <button class="icon-btn" data-act="logout" aria-label="Tanca la sessió">${ICON.logout}</button>
     </div></header>`;
 }
@@ -1055,7 +1060,7 @@ function viewCal() {
     ${can.manageProjects() ? '<button class="btn btn-primary" data-act="new-proj">+ Nou projecte</button>' : ''}</div>`;
   const cp = S.projects.find(x => x.id === ui.calProj) || (ui.calProj === 'all' ? ongoingProject() : null);
   const chips = `<div class="chips"><button class="chip" aria-pressed="${ui.calProj === 'all'}" data-act="cal-proj" data-id="all">Tot</button>
-    ${S.projects.length ? `<button class="chip chip-dd" data-act="pick-proj" data-scope="cal">${cp ? `<span class="pdot" style="background:${esc(cp.color)}"></span>${esc(cp.name)}` : 'Un projecte'}${ICON.caret}</button>` : ''}
+    ${S.projects.length ? `<button class="chip chip-dd" aria-pressed="${ui.calProj !== 'all'}" data-act="pick-proj" data-scope="cal">${cp ? `<span class="pdot" style="background:${esc(cp.color)}"></span>${esc(cp.name)}` : 'Un projecte'}${ICON.caret}</button>` : ''}
     <button class="chip" aria-pressed="${ui.calPast}" data-act="cal-past">Anteriors</button></div>`;
   let list = all.filter(s => ui.calProj === 'all' || (s.projIds || []).includes(ui.calProj));
   if (!ui.calPast) list = list.filter(s => s.date >= TODAY);
@@ -1319,10 +1324,8 @@ function manageIncidents() {
 function manageConfig() {
   const c = S.config;
   return `<div class="panel" style="margin-top:10px">
-      <div class="setting"><div><div class="t">Nom de la banda</div><div class="s">${esc(c.name)}</div></div>
-        <button class="btn btn-sm" data-act="edit-identity">Edita</button></div>
-      <div class="setting"><div><div class="t">Logotip</div><div class="s">Una imatge o bé unes inicials / emoji.</div></div>
-        <span style="display:flex;align-items:center;gap:8px">${logoHTML('avatar')}<button class="btn btn-sm" data-act="edit-identity">Canvia</button></span></div></div>
+      <div class="setting"><div style="display:flex;align-items:center;gap:10px">${logoHTML('avatar')}<div><div class="t">${esc(c.name)}</div><div class="s">Nom i logotip de la banda</div></div></div>
+        <button class="btn btn-sm" data-act="edit-identity">Edita</button></div></div>
     <div class="section-title"><h2 class="h2">Sistema d'assistència</h2></div>
     <div class="panel">
       <div class="setting"><div><div class="t">Assistència mínima</div><div class="s">Per sota d'aquest percentatge, un músic queda en situació de risc. El canvi recalcula estadístiques i indicadors immediatament.</div></div>
@@ -1500,8 +1503,7 @@ function projSheet(p) {
         <small>Identifica el projecte al calendari i a les llistes.</small></div>
       <div class="row2"><div class="field"><span>Des de</span><input class="inp" type="date" id="p-from" value="${esc(p.from || '')}"></div>
         <div class="field"><span>Fins a</span><input class="inp" type="date" id="p-to" value="${esc(p.to || '')}"></div></div>
-      <div class="field"><span>Repertori</span><input class="inp" id="p-rep" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures">
-        <small>Enllaç a la carpeta o document amb les partitures del projecte.</small></div>
+      <div class="field"><span>Repertori</span><input class="inp" id="p-rep" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures"></div>
       <div class="field"><span>Informació complementària</span><textarea class="inp" id="p-info" placeholder="Vestuari, notes de producció…">${esc(p.info || '')}</textarea></div>
       <div class="field"><span>No fan el projecte</span>
         <div class="scroll-list" style="max-height:260px" id="p-excluded">${SECTIONS.map(sec => {
@@ -1919,6 +1921,40 @@ function sectionEditSheet(id) {
 function saveSections() {
   try { sb.rpc('sync_sections', { p_sections: SECTIONS }).then(r => { if (r.error) { console.warn(r.error); toast('No s\'ha pogut desar la secció. Torna-ho a provar.'); } }); } catch (e) { console.warn(e); }
 }
+/** Ajuda contextual: mostra només el bloc corresponent al rol més alt de qui l'obre. */
+function helpSheet() {
+  const u = me();
+  const blocks = {
+    musician: `<p>Consulta el calendari, comunica absències i segueix la teva assistència.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta el repertori, els assajos i concerts programats.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b><br>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta la teva assistència i puntualitat.</div></div>`,
+    leader: `<p>Tot el que fa un músic i, a més, la gestió de la teva secció.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta el repertori, els assajos i concerts programats.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b><br>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b><br>Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta la teva assistència i puntualitat, i les de tota la teva secció.</div></div>`,
+    director: `<p>Un accés de seguiment, sense poder passar llista ni editar res.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta els assajos, concerts i el repertori de cada projecte, amb el percentatge d'assistència de les sessions ja passades.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta l'assistència i la puntualitat de tota la banda.</div></div>
+      <div class="privacy">Tot el teu accés és només de lectura: veus les dades que ja han marcat els caps de secció i la Junta, però no pots passar llista, justificar absències ni editar res.</div>`,
+    board: `<p>Gestió d'assistència de tota la banda i seguiment general.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta el repertori, els assajos i concerts programats, i en pots crear de nous.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b><br>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b><br>Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta les dades generals i les de qualsevol músic.</div></div>`,
+    admin: `<p>Gestió completa de l'aplicació: dades, usuaris i configuració.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Crea i edita projectes i sessions.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b><br>Passa llista de qualsevol secció, i justifica o rebutja absències.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta les dades generals i les de qualsevol músic.</div></div>
+      <div class="help-row"><span>⚙️</span><div><b>Gestió</b><br>Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.</div></div>`,
+  };
+  sheet({
+    title: 'Com funciona l\'aplicació',
+    body: `<p>Aquesta app serveix per passar llista als assajos i concerts, seguir l'assistència de cada músic i gestionar absències i retards.</p>${blocks[topRole(u)] || blocks.musician}`,
+    foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Entesos</button>`,
+  });
+}
 function impersonateSheet() {
   sheet({ title: 'Prova rols', body: `<ul class="picklist">${S.users.filter(u => u.active !== false).sort(byName).map(u => `<li>
       <button data-act="impersonate-go" data-uid="${u.id}" aria-current="${u.id === ME}">
@@ -1975,15 +2011,6 @@ async function doExport(copyOnly) {
   }
   try { await navigator.clipboard.writeText(data); toast('Dades copiades'); }
   catch { sheet({ title: 'Còpia manual', body: `<textarea class="summary-pre">${esc(data)}</textarea>`, foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Tanca</button>` }); }
-}
-function helpSheet() {
-  sheet({ title: 'Com funciona', body: `
-    <p style="margin:0">Cada <b>projecte</b> té dates, repertori, seccions implicades i les seves <b>sessions</b> (assajos, generals, concert).</p>
-    <p style="margin:0">Els <b>caps de secció</b> passen llista de la seva secció; <b>direcció, Junta i administració</b> de totes. Els <b>músics</b> consulten el seu perfil i comuniquen absències i retards, que queden <b>pendents</b> fins que algú amb permisos les revisa.</p>
-    <div class="field"><span>Els cinc estats</span><div class="legend" style="margin:0">${ORDER.map(k => `<span><i class="i-${k}"></i>${STATUS[k].label}</span>`).join('')}</div></div>
-    <p style="margin:0" class="muted">L'assistència és (presents${S.config.countLateAsPresent ? ' + retards' : ''}) sobre el total de convocats. El mínim actual és del ${S.config.minAttendance}%.</p>
-    <p style="margin:0" class="muted">Director i administració no computen al cens d'assistència.</p>`,
-  });
 }
 
 /* ================= Dades d'exemple ================= */
@@ -2074,7 +2101,6 @@ document.addEventListener('click', async e => {
   const cur = currentSession();
   switch (a) {
     case 'tab': ui.tab = el.dataset.tab; ui.rollSec = null; if (ui.tab === 'llista') ui.sessionId = null; save(); render(); window.scrollTo(0, 0); return;
-    case 'help': return helpSheet();
     case 'logout': ME = null; saveSession(); ui.tab = null; render(); return;
     case 'demo': return demo();
 
@@ -2200,6 +2226,7 @@ document.addEventListener('click', async e => {
     case 'export-copy': return doExport(true);
     case 'import': return importSheet();
     case 'impersonate': return impersonateSheet();
+    case 'show-help': return helpSheet();
     case 'impersonate-go': ME = el.dataset.uid; saveSession(); closeSheet(); ui.tab = null; ui.rollSec = null; render(); window.scrollTo(0, 0); return;
     case 'wipe': {
       if (!confirm('Esborrar tots els usuaris, projectes, llistes i incidències?')) return;
