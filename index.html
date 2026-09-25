@@ -57,7 +57,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none !important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;width:100%;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:var(--fs-4);line-height:1.45;-webkit-tap-highlight-color:transparent;padding-inline:16px;padding-block:0 calc(var(--nav-h) + 24px + env(safe-area-inset-bottom))}
+body{margin:0;width:100%;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:var(--fs-4);line-height:1.45;-webkit-tap-highlight-color:transparent;padding-inline:16px;padding-block:env(safe-area-inset-top, 0px) calc(var(--nav-h) + 24px + env(safe-area-inset-bottom))}
 body.no-nav{padding-block:0 24px}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
@@ -314,10 +314,12 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .hcell i{width:100%;height:22px;border-radius:5px;background:var(--surface-2);border:1px dashed var(--line-strong)}
 .hcell i.s-P,.hcell i.s-R,.hcell i.s-FJ,.hcell i.s-FNJ,.hcell i.s-NP{border:0}
 .privacy{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);background:var(--surface-2);font-size:12.5px;color:var(--muted);margin-top:10px}
-.help-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
-.help-row span{font-size:20px;flex:none;line-height:1.3}
-.help-row div{font-size:13.5px;line-height:1.4;color:var(--ink-2)}
-.help-row b{color:var(--ink);font-size:14.5px}
+.help-row{display:flex;gap:13px;align-items:flex-start;padding:13px 0}
+.help-row + .help-row{border-top:1px solid var(--line)}
+.help-row span{font-size:18px;flex:none;line-height:1;width:40px;height:40px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center}
+.help-row div{font-size:13.5px;line-height:1.45;color:var(--ink-2);padding-top:6px}
+.help-row b{color:var(--ink);font-size:14.5px;display:block;margin-bottom:2px}
+.help-intro{background:var(--accent-soft);border-radius:var(--r-md);padding:12px 14px;font-size:13.5px;color:var(--ink-2);margin:0 0 4px}
 
 /* Profile */
 .profile-head{display:flex;align-items:center;gap:14px;padding:16px;flex-wrap:wrap}
@@ -510,7 +512,7 @@ const STATUS = {
   NP:  { label: 'No fa el projecte',    short: 'No fa' },
 };
 const ORDER = ['P', 'R', 'FJ', 'FNJ', 'NP'];
-const TYPES = ['Assaig', 'Assaig extra', 'Assaig general', 'Concert', 'Cercavila', 'Sortida / intercanvi', 'Altres'];
+let TYPES = ['Assaig', 'Assaig extra', 'Assaig general', 'Concert', 'Cercavila', 'Sortida / intercanvi', 'Altres'];
 const LATE_CHIPS = [10, 15, 20, 25, 30];
 const PROJECT_COLORS = [
   { name: 'Ocre fosc', v: '#A67818' }, { name: 'Terracota', v: '#B85C34' }, { name: 'Vi negre', v: '#8F2A40' },
@@ -624,8 +626,8 @@ function incidentFromRow(r) {
 function configFromRow(r) {
   if (!r) return structuredClone(DEFAULT.config);
   return { name: r.name, logo: r.logo || '', accentH: r.accent_h, maxFaltesPct: r.max_faltes_pct ?? 25,
-    minPunctuality: r.min_punctuality, alertFNJ: r.alert_fnj, countLateAsPresent: r.count_late_as_present,
-    places: r.places || [] };
+    alertFNJ: r.alert_fnj, countLateAsPresent: r.count_late_as_present,
+    places: r.places || [], types: (r.types && r.types.length) ? r.types : null };
 }
 function rowsToAttendance(rows) {
   const map = {};
@@ -658,6 +660,7 @@ async function load() {
     S.incidents = (incidents || []).map(incidentFromRow);
     S.config = configFromRow(configRows && configRows[0]);
     applySections(sectionRows);
+    if (S.config.types) TYPES = S.config.types;
   } catch (e) { console.warn(e); toast('No s\'ha pogut connectar amb el servidor'); }
   migrate();
   if (!S.users.length) await seedAdmin();
@@ -672,6 +675,7 @@ function migrate() {
 let t1 = null;
 function save() {
   clearTimeout(t1);
+  S.config.types = TYPES;
   t1 = setTimeout(async () => {
     try {
       const r1 = await sb.rpc('sync_data', { p_config: S.config, p_projects: S.projects, p_sessions: S.sessions,
@@ -1013,7 +1017,7 @@ function rollOverview(cur) {
     const done = on && c.total > 0 && c.none === 0;
     const pend = S.incidents.some(inc => inc.sessionId === cur.id && inc.status === 'pending' && (userById(inc.userId) || {}).section === x.id);
     return `<button class="sq ${on ? '' : 'off'}" data-act="open-sec" data-sec="${x.id}" ${on ? '' : 'disabled'}>
-      ${pend ? '<span class="q-dot pend" title="Incidències pendents"></span>' : ''}
+      ${pend ? '<span class="q-dot pend" title="Avisos pendents"></span>' : ''}
       <span class="q-l">${esc(x.icon) || x.id}</span><span class="q-n">${x.name}</span>
       <span class="q-c ${done ? 'done' : ''}">${on ? `${c.total - c.none}/${c.total}` : 'no convocada'}</span></button>`;
   }).join('');
@@ -1133,7 +1137,10 @@ function viewProjects() {
   const head = `<div class="sec-h"><span class="muted" style="font-size:13px">${S.projects.length} projectes</span></div>`;
   if (!S.projects.length) return head + `<div class="empty"><h2 class="h2">Cap projecte</h2>
     <p>Un projecte agrupa les dates, el repertori, els músics implicats i els assajos.</p></div>`;
-  const sorted = S.projects.slice().sort((a, b) => (a.from || '9999') < (b.from || '9999') ? -1 : (a.from || '9999') > (b.from || '9999') ? 1 : 0);
+  const byEnd = (a, b) => (a.to || '9999') < (b.to || '9999') ? -1 : (a.to || '9999') > (b.to || '9999') ? 1 : 0;
+  const ongoing = S.projects.filter(p => projectStatus(p) === 'ongoing').sort(byEnd);
+  const rest = S.projects.filter(p => projectStatus(p) !== 'ongoing').sort(byEnd);
+  const sorted = [...ongoing, ...rest];
   return head + sorted.map(p => {
     const ss = sessionsOfProj(p.id);
     const rehearsals = ss.filter(s => s.type !== 'Concert');
@@ -1160,7 +1167,7 @@ function viewStats() {
   const sessions = doneSessions(ui.statsProj);
   const chips = projStatsChips();
   if (!sessions.length) return `<div class="page-head"><h1 class="h1">Estadístiques</h1></div>${chips}
-    <div class="empty"><h2 class="h2">Encara no hi ha dades</h2><p>Quan es passi llista d'algun assaig, aquí hi haurà l'assistència.</p></div>`;
+    <div class="empty"><h2 class="h2">Encara no hi ha dades</h2><p>Les estadístiques d'aquest projecte apareixeran aquí.</p></div>`;
   const total = emptyCounts();
   for (const s of sessions) { const c = sessionCounts(s); for (const k of Object.keys(total)) total[k] += c[k]; }
   const stats = censusUsers().map(m => ({ m, ...userStats(m, sessions) })).filter(x => x.c.total);
@@ -1171,7 +1178,7 @@ function viewStats() {
     <div class="kpi ${punctClass(punctualityRate(total))}"><div class="kpi-v">${pct(punctualityRate(total))}</div><div class="kpi-l">Puntualitat</div></div>
     ${faltesPctBoxes(total)}</div>`;
 
-  const globalBlock = `<div class="section-title"><h2 class="h2">Global</h2><span class="eyebrow">assistència</span></div>
+  const globalBlock = `<div class="section-title"><h2 class="h2">Per secció</h2><span class="eyebrow">assistència</span></div>
     <div class="panel bars">
       <div class="bar-row bar-total"><span class="lbl"><span>General</span></span>${statBar(total)}<span class="val">${pct(rate(total))}</span></div>
       ${SECTIONS.map(x => {
@@ -1263,7 +1270,7 @@ function viewProfile(targetId) {
       ${st ? `<div class="mini-kpi ${attClass(st)}"><b>${pct(st.pct)}</b><span>Assistència</span></div>` : ''}</div>
     ${own && inCensus(u) ? `<div class="panel incident-cta" style="margin-top:16px">
         <button class="btn btn-primary btn-block btn-cta" data-act="new-incident">Comunica una absència o un retard</button></div>` : ''}
-    <div class="section-title"><h2 class="h2">Les meves incidències</h2><span class="eyebrow">${incs.length}</span></div>
+    <div class="section-title"><h2 class="h2">Els meus avisos</h2><span class="eyebrow">${incs.length}</span></div>
     <div class="panel">${incs.length ? incs.map(i => incCard(i, false)).join('') : '<div class="empty" style="padding:24px"><p>Cap absència ni retard comunicats.</p></div>'}</div>
     ${(() => {
       if (!own || !u.section) return '';
@@ -1294,9 +1301,9 @@ function incCard(i, review) {
   const canAct = can.reviewIncident(i);
   return `<div class="inc-card"><div class="inc-h"><b>${esc(u ? u.name : '—')}${review && u && u.instrument ? ` <span class="part">${esc(u.instrument)}</span>` : ''}</b>
       <span class="st-pill st-${i.status}">${i.status === 'pending' ? 'Pendent' : i.status === 'accepted' ? 'Justificada' : 'No justificada'}</span></div>
-    <div class="inc-m">${i.kind === 'late' ? `Retard${i.min ? ` de ${i.min}′` : ''}` : 'Absència'} · ${s ? `${capz(longDate(s.date))} · ${esc(s.type || '')}` : 'sessió eliminada'}</div>
-    ${i.reason && i.status !== 'rejected' ? `<div style="font-size:13.5px">${esc(i.reason)}</div>` : ''}
+    <div class="inc-m"><span class="pill ${i.kind === 'late' ? 'info' : 'low'}">${i.kind === 'late' ? 'Retard' : 'Absència'}</span>${i.kind === 'late' && i.min ? ` de ${i.min}′` : ''} · ${s ? `${capz(longDate(s.date))} · ${esc(s.type || '')}` : 'sessió eliminada'}</div>
     <div class="inc-m">Comunicat el ${fmtStamp(i.createdAt)}${rev ? ` · revisat per ${esc(rev.name)} el ${fmtStamp(i.reviewedAt)}` : ''}</div>
+    ${i.reason && i.status !== 'rejected' ? `<div style="font-size:13.5px">${esc(i.reason)}</div>` : ''}
     ${i.reviewNote ? `<div class="inc-m">Nota: ${esc(i.reviewNote)}</div>` : ''}
     ${review && canAct && i.status === 'pending' ? `<div class="inc-a">
       <button class="btn btn-sm btn-primary" data-act="inc-accept" data-id="${i.id}">Justifica</button>
@@ -1352,13 +1359,16 @@ function userRow(x) {
     <span class="icon-btn plain">${ICON.edit}</span></button></li>`;
 }
 function manageIncidents() {
-  const mine = S.incidents.filter(i => can.viewIncidents(i)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const mine = S.incidents.filter(i => can.viewIncidents(i)).sort((a, b) => {
+    const da = (sessionById(a.sessionId) || {}).date || '9999', db = (sessionById(b.sessionId) || {}).date || '9999';
+    return da < db ? -1 : da > db ? 1 : b.createdAt.localeCompare(a.createdAt);
+  });
   const list = ui.incFilter === 'all' ? mine : mine.filter(i => i.status === ui.incFilter);
   return `<div class="chips">${[['pending', 'Pendents'], ['accepted', 'Justificades'], ['all', 'Totes']]
       .map(([v, n]) => `<button class="chip" aria-pressed="${ui.incFilter === v}" data-act="inc-filter" data-v="${v}">${n}</button>`).join('')}</div>
     <div class="panel">${list.length ? list.map(i => incCard(i, true)).join('')
-      : '<div class="empty" style="padding:28px"><p>Cap incidència en aquest estat.</p></div>'}</div>
-    <div class="privacy">Quan acceptes una incidència, la falta queda marcada com a justificada (o com a retard) a la llista de la sessió corresponent.</div>`;
+      : '<div class="empty" style="padding:28px"><p>Cap avís en aquest estat.</p></div>'}</div>
+    <div class="privacy">Quan acceptes un avís, la falta queda marcada com a justificada (o com a retard) a la llista de la sessió corresponent.</div>`;
 }
 
 function manageConfig() {
@@ -1378,6 +1388,10 @@ function manageConfig() {
     <div class="panel">
       <div class="setting"><div><div class="t">Llocs disponibles</div><div class="s">${(c.places || []).join(' · ') || 'Cap definit'}</div></div>
         <button class="btn btn-sm" data-act="edit-places">Edita</button></div></div>
+    <div class="section-title"><h2 class="h2">Tipus d'activitat</h2></div>
+    <div class="panel">
+      <div class="setting"><div><div class="t">Tipus disponibles</div><div class="s">${TYPES.join(' · ')}</div></div>
+        <button class="btn btn-sm" data-act="edit-types">Edita</button></div></div>
     <div class="section-title"><h2 class="h2">Seccions</h2></div>
     <div class="panel">
       <div class="setting"><div><div class="t">Seccions i instruments</div><div class="s">${SECTIONS.length} seccions. Afegeix, edita, reordena o elimina seccions i els seus instruments.</div></div>
@@ -1389,7 +1403,7 @@ function manageConfig() {
       <div class="setting"><div><div class="t">Importa</div><div class="s">Substitueix les dades actuals.</div></div><button class="btn btn-sm" data-act="import">Importa</button></div>
       <div class="setting"><div><div class="t">Entra com un altre usuari</div><div class="s">Eina de proves: canvia de rol sense contrasenya per revisar les vistes.</div></div>
         <button class="btn btn-sm" data-act="impersonate">Prova rols</button></div>
-      <div class="setting"><div><div class="t">Esborra-ho tot</div><div class="s">Usuaris, projectes, llistes i incidències.</div></div>
+      <div class="setting"><div><div class="t">Esborra-ho tot</div><div class="s">Usuaris, projectes, llistes i avisos.</div></div>
         <button class="btn btn-sm btn-danger-ghost" data-act="wipe">Esborra</button></div></div>`;
 }
 
@@ -1434,7 +1448,7 @@ function userSheet(x) {
         ${SECTIONS.map(s => `<button type="button" class="pick" data-sec="${s.id}" aria-pressed="${x.section === s.id}">${s.name}</button>`).join('')}</div></div>
       <div class="field" id="u-inst-wrap" ${staffOnly ? 'hidden' : ''}><span>Instrument(s)</span><div class="pickers" id="u-inst">
         ${insts.map(i => `<button type="button" class="pick" data-inst="${esc(i)}" aria-pressed="${(x.instrument || '').split(' / ').includes(i)}">${esc(i)}</button>`).join('')}</div>
-        <small>Es poden triar més d'un si el músic toca diversos instruments de la secció.</small></div>
+        </div>
       <div class="field" id="u-staff-note" ${staffOnly ? '' : 'hidden'}><small class="muted">Aquest càrrec no pertany a cap secció.</small></div>` : ''}
       ${editRoles ? `<div class="field"><span>Rols</span><div class="pickers" id="u-roles">
         ${Object.entries(ROLES).map(([k, v]) => `<button type="button" class="pick" data-role="${k}" aria-pressed="${rolesOf(x).includes(k)}">${v.name}</button>`).join('')}</div>
@@ -1730,7 +1744,7 @@ function incidentSheet() {
       <div class="field" id="i-minwrap" hidden><span>Minuts de retard previstos</span><div class="pickers" id="i-min">
         ${LATE_CHIPS.map((n, i) => `<button type="button" class="pick" data-min="${n}" aria-pressed="${i === 0}">${n}′</button>`).join('')}
         <input type="number" class="pick min-custom" id="i-min-custom" aria-pressed="false" inputmode="numeric" min="1" max="180" placeholder="+"></div></div>
-      <div class="field"><span>Motiu</span><textarea class="inp" id="i-reason" placeholder="Explica-ho breument perquè es pugui justificar"></textarea></div>
+      <div class="field"><span>Motiu</span><textarea class="inp" id="i-reason" placeholder="Explica-ho breument"></textarea></div>
       <div class="privacy">L'avís s'enviarà al cap de secció i a la Junta.</div>`,
     foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Envia</button>`,
   });
@@ -1783,11 +1797,11 @@ function reviewIncident(id, accept) {
     : { s: 'FNJ' };
   setMark(inc.sessionId, inc.userId, val);
   save(); closeSheet(); render();
-  toast(accept ? 'Incidència justificada' : 'Marcada com a no justificada');
+  toast(accept ? 'Avís justificat' : 'Marcada com a no justificada');
 }
 function incidentDetail(id) {
   const inc = S.incidents.find(i => i.id === id); if (!inc) return;
-  sheet({ title: 'Incidència', body: `<div class="panel">${incCard(inc, can.reviewIncident(inc))}</div>` });
+  sheet({ title: 'Avís', body: `<div class="panel">${incCard(inc, can.reviewIncident(inc))}</div>` });
 }
 
 function sessionPicker() {
@@ -1861,7 +1875,7 @@ function memberDetail(mid) {
       <div class="kpis"><div class="kpi ${attClass(st)}"><div class="kpi-v">${pct(st.pct)}</div><div class="kpi-l">Assistència${atRisk(st) ? ' <span class="pill risk">En risc</span>' : ''}</div></div>
         <div class="kpi ${punctClass(punctualityRate(st.c))}"><div class="kpi-v">${pct(punctualityRate(st.c))}</div><div class="kpi-l">Puntualitat</div></div>
         ${faltesBox(st.c)}</div>
-      ${incs.length ? `<div class="field"><span>Últimes incidències</span><div class="panel">${incs.map(i => incCard(i, false)).join('')}</div></div>` : ''}`,
+      ${incs.length ? `<div class="field"><span>Últims avisos</span><div class="panel">${incs.map(i => incCard(i, false)).join('')}</div></div>` : ''}`,
     foot: `<span class="spacer"></span>${can.manageUsers() && can.seeMember(m) ? `<button class="btn btn-primary" data-act="edit-user" data-uid="${m.id}">Fitxa d'usuari</button>` : ''}`,
   });
 }
@@ -1934,6 +1948,21 @@ function placesSheet() {
     save(); toast('Llocs actualitzats'); return true;
   };
 }
+/** Gestió dels tipus d'activitat (Assaig, Concert...): un per línia, en l'ordre que apareixeran als desplegables. */
+function typesSheet() {
+  sheet({
+    title: 'Tipus d\'activitat',
+    body: `<div class="field"><span>Un tipus per línia</span><textarea class="inp" id="c-types" rows="8">${esc(TYPES.join('\n'))}</textarea>
+      <small>Aquests tipus surten al desplegable en crear o editar una sessió. Si n'elimines un que ja s'estigui fent servir en alguna sessió, aquella sessió el manté igualment.</small></div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  sheetSave = () => {
+    const vals = $('#c-types').value.split('\n').map(v => v.trim()).filter(Boolean);
+    if (!vals.length) { toast('Cal almenys un tipus'); return false; }
+    TYPES = vals;
+    save(); toast('Tipus actualitzats'); return true;
+  };
+}
 /** Gestió de seccions: llista amb edició, reordenació i eliminació (si no té músics). */
 function sectionsSheet() {
   sheet({
@@ -1992,29 +2021,29 @@ function saveSections() {
 function helpSheet() {
   const u = me();
   const blocks = {
-    musician: `<p>Consulta el calendari, comunica absències i segueix la teva assistència.</p>
-      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta el repertori, els assajos i concerts programats.</div></div>
-      <div class="help-row"><span>👤</span><div><b>Perfil</b><br>Comunica una absència o un retard amb antelació.</div></div>
-      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta la teva assistència i puntualitat.</div></div>`,
-    leader: `<p>Tot el que fa un músic i, a més, la gestió de la teva secció.</p>
-      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta el repertori, els assajos i concerts programats.</div></div>
-      <div class="help-row"><span>👤</span><div><b>Perfil</b><br>Comunica una absència o un retard amb antelació.</div></div>
-      <div class="help-row"><span>📋</span><div><b>Llista</b><br>Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin.</div></div>
-      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta la teva assistència i puntualitat, i les de tota la teva secció.</div></div>`,
-    director: `<p>Un accés de seguiment, sense poder passar llista ni editar res.</p>
-      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta els assajos, concerts i el repertori de cada projecte, amb el percentatge d'assistència de les sessions ja passades.</div></div>
-      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta l'assistència i la puntualitat de tota la banda.</div></div>
+    musician: `<p class="help-intro">Consulta el calendari, comunica absències i segueix la teva assistència.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta el repertori, els assajos i concerts programats.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta la teva assistència i puntualitat.</div></div>`,
+    leader: `<p class="help-intro">Tot el que fa un músic i, a més, la gestió de la teva secció.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta el repertori, els assajos i concerts programats.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta la teva assistència i puntualitat, i les de tota la teva secció.</div></div>`,
+    director: `<p class="help-intro">Un accés de seguiment, sense poder passar llista ni editar res.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta els assajos, concerts i el repertori de cada projecte, amb el percentatge d'assistència de les sessions ja passades.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta l'assistència i la puntualitat de tota la banda.</div></div>
       <div class="privacy">Tot el teu accés és només de lectura: veus les dades que ja han marcat els caps de secció i la Junta, però no pots passar llista, justificar absències ni editar res.</div>`,
-    board: `<p>Gestió d'assistència de tota la banda i seguiment general.</p>
-      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Consulta el repertori, els assajos i concerts programats, i en pots crear de nous.</div></div>
-      <div class="help-row"><span>👤</span><div><b>Perfil</b><br>Comunica una absència o un retard amb antelació.</div></div>
-      <div class="help-row"><span>📋</span><div><b>Llista</b><br>Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda.</div></div>
-      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta les dades generals i les de qualsevol músic.</div></div>`,
-    admin: `<p>Gestió completa de l'aplicació: dades, usuaris i configuració.</p>
-      <div class="help-row"><span>📅</span><div><b>Calendari</b><br>Crea i edita projectes i sessions.</div></div>
-      <div class="help-row"><span>📋</span><div><b>Llista</b><br>Passa llista de qualsevol secció, i justifica o rebutja absències.</div></div>
-      <div class="help-row"><span>📊</span><div><b>Estadístiques</b><br>Consulta les dades generals i les de qualsevol músic.</div></div>
-      <div class="help-row"><span>⚙️</span><div><b>Gestió</b><br>Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.</div></div>`,
+    board: `<p class="help-intro">Gestió d'assistència de tota la banda i seguiment general.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta el repertori, els assajos i concerts programats, i en pots crear de nous.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta les dades generals i les de qualsevol músic.</div></div>`,
+    admin: `<p class="help-intro">Gestió completa de l'aplicació: dades, usuaris i configuració.</p>
+      <div class="help-row"><span>📅</span><div><b>Calendari</b>Crea i edita projectes i sessions.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències.</div></div>
+      <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta les dades generals i les de qualsevol músic.</div></div>
+      <div class="help-row"><span>⚙️</span><div><b>Gestió</b>Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.</div></div>`,
   };
   sheet({
     title: 'Com funciona l\'aplicació',
@@ -2274,6 +2303,7 @@ document.addEventListener('click', async e => {
     case 'edit-identity': return identitySheet();
     case 'edit-rules': return rulesSheet();
     case 'edit-places': return placesSheet();
+    case 'edit-types': return typesSheet();
     case 'edit-instruments': return sectionsSheet();
     case 'new-section': return sectionEditSheet(null);
     case 'edit-section': return sectionEditSheet(el.dataset.id);
@@ -2308,7 +2338,7 @@ document.addEventListener('click', async e => {
       ME = REAL_ADMIN; REAL_ADMIN = null; saveSession(); ui.tab = null; ui.rollSec = null; render(); window.scrollTo(0, 0); return;
     }
     case 'wipe': {
-      if (!confirm('Esborrar tots els usuaris, projectes, llistes i incidències?')) return;
+      if (!confirm('Esborrar tots els usuaris, projectes, llistes i avisos?')) return;
       S = structuredClone(DEFAULT); await seedAdmin(); ME = null; saveSession(); save(); render(); return;
     }
 
