@@ -244,6 +244,9 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .vm.off{border-style:dotted;opacity:.4}
 .cal-pct{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
 .cal-row.is-today{background-color:var(--accent-soft)}
+.cal-row.is-special{background-color:var(--surface-2)}
+.cal-row.is-special.is-today{background-color:var(--accent-soft)}
+.cal-star{color:var(--gold);margin-right:4px;font-size:11px}
 .cal-row.is-today .cal-date b{color:var(--accent)}
 .cal-row.is-past .cal-date b{color:var(--ink-2)}
 
@@ -253,6 +256,9 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm)}
 .kpi-v{font-weight:700;font-size:var(--fs-9);line-height:1.05;letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums}
 .kpi-l{font-size:var(--fs-2);color:var(--muted);margin-top:4px}
+.dot-tag{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.dot-tag.gold{background:var(--gold)}
+.dot-tag.red{background:var(--fnj)}
 .kpi.great{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--p) 24%, var(--surface)) 0%, var(--surface) 78%)}
 .kpi.alert{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--fnj) 15%, var(--surface)) 0%, var(--surface) 72%)}
 .kpi.gold-box{background:radial-gradient(130% 130% at 25% 15%, color-mix(in srgb, var(--gold) 22%, var(--surface)) 0%, var(--surface) 78%)}
@@ -261,6 +267,9 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .kpi-details summary::after{content:'';position:absolute;right:2px;top:8px;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);transition:transform .15s var(--ease-out)}
 .kpi-details[open] summary::after{transform:rotate(-135deg)}
 .kpi-breakdown{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.kpi-details[open]{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.kpi-details[open] summary{flex:none}
+.kpi-details[open] .kpi-breakdown{margin-top:0}
 .kpi-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
 .kpi-chip.gold{background:var(--warn-bg);color:var(--warn-fg)}
 .kpi-chip.red{background:var(--bad-bg);color:var(--bad-fg)}
@@ -827,8 +836,8 @@ function faltesBox(c) {
 function faltesPctBoxes(c) {
   const total = c.FJ + c.FNJ;
   const pj = total ? c.FJ / total : null, pnj = total ? c.FNJ / total : null;
-  return `<div class="kpi gold-box"><div class="kpi-v">${pj == null ? '—' : pct(pj)}</div><div class="kpi-l">Faltes justificades</div></div>
-    <div class="kpi alert"><div class="kpi-v">${pnj == null ? '—' : pct(pnj)}</div><div class="kpi-l">Faltes no justificades</div></div>`;
+  return `<div class="kpi"><div class="kpi-v">${pj == null ? '—' : pct(pj)}</div><div class="kpi-l"><span class="dot-tag gold"></span>Faltes justificades</div></div>
+    <div class="kpi"><div class="kpi-v">${pnj == null ? '—' : pct(pnj)}</div><div class="kpi-l"><span class="dot-tag red"></span>Faltes no justificades</div></div>`;
 }
 function projStatsChips() {
   const p = S.projects.find(x => x.id === ui.statsProj) || (ui.statsProj === 'all' ? ongoingProject() : null);
@@ -882,7 +891,7 @@ const attClass = st => st.pct == null ? '' : atRisk(st) ? 'alert' : 'great';
 /** Igual que attClass, però a partir dels comptadors bruts (per a requadres d'assistència que no parteixen d'un userStats). */
 const riskClass = c => { const fp = faltesShare(c); return fp == null ? '' : fp > maxFaltesRate() ? 'alert' : 'great'; };
 /** Puntualitat: blau per defecte, vermell només per sota del mínim configurat — sense verd, per no acumular massa color. */
-const punctClass = r => r == null ? '' : r < minPunctRate() ? 'alert' : 'info';
+const punctClass = () => 'info';
 /** Faltes no justificades: blanc per defecte, vermell només quan n'hi ha prou perquè calgui parar-hi atenció. */
 const fnjClass = n => n >= (S.config.alertFNJ || 3) ? 'alert' : '';
 function pendingIncidents() {
@@ -1012,9 +1021,10 @@ function rollOverview(cur) {
   const started = c.total > 0 && c.none < c.total;
   const showPanel = started || can.manageProjects();
   return `<div class="secs">${cards}</div>
-    ${showPanel ? `<div class="tally" style="margin-top:16px">${started ? tallyGrid(c) : ''}
-      ${started ? `<div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-top:12px"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
-        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div></div>` : ''}
+    ${showPanel ? `<div class="tally" style="margin-top:16px">
+      ${started ? `<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-top:0"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div>
+        <div class="kpi"><div class="kpi-v">${c.P + c.R}/${c.total}</div><div class="kpi-l">Presents</div></div></div>` : ''}
       ${can.manageProjects() ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm" data-act="sess-edit" data-sid="${cur.id}">Edita la sessió</button></div>` : ''}</div>` : ''}`;
 }
 function stackBar(c) {
@@ -1039,9 +1049,10 @@ function rollSection(cur, sec, fixed) {
   if (!convoked(cur, sec)) return head + `<div class="empty"><h2 class="h2">Secció no convocada</h2><p>Aquesta sessió no convoca ${esc(SEC[sec].name.toLowerCase())}.</p></div>`;
   if (!ms.length) return head + `<div class="empty"><h2 class="h2">Cap músic</h2><p>Afegeix músics a aquesta secció des de Gestió.</p></div>`;
   const showPanel = started || (c.none && can.section(sec));
-  return head + `${showPanel ? `<div class="tally">${started ? tallyGrid(c) : ''}
-      ${started ? `<div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-top:12px"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
-        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div></div>` : ''}
+  return head + `${showPanel ? `<div class="tally">
+      ${started ? `<div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-top:0"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+        <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div>
+        <div class="kpi"><div class="kpi-v">${c.P + c.R}/${c.total}</div><div class="kpi-l">Presents</div></div></div>` : ''}
       ${c.none && can.section(sec) ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="rest-present" data-sec="${sec}">Marca tots els músics com a presents</button></div>` : ''}</div>` : ''}
     <ul class="roster">${ms.map(m => rollRow(cur, m)).join('')}</ul>`;
 }
@@ -1101,10 +1112,11 @@ function viewCal() {
     if (mk) right += `<span class="pill ${mk.s === 'P' ? 'ok' : mk.s === 'R' ? 'info' : mk.s === 'FNJ' ? 'fnj' : 'low'}">${STATUS[mk.s].short}</span>`;
     else if (inCensus(u) && !mine) right += `<span class="cal-pct muted">No hi toques</span>`;
     if (viewOnly(u) && s.date < TODAY) { const c = sessionCounts(s); if (c.total > 0 && c.none < c.total) right += `<span class="cal-pct">${pct(rate(c))}</span>`; }
-    out += `<li class="cal-row ${s.date === TODAY ? 'is-today' : ''} ${s.date < TODAY ? 'is-past' : ''}" style="${s.projs.length ? `border-left:7px solid ${esc(s.projs[0].color)}` : ''}">
+    const isSpecial = !(s.type || 'Assaig').toLowerCase().startsWith('assaig');
+    out += `<li class="cal-row ${s.date === TODAY ? 'is-today' : ''} ${s.date < TODAY ? 'is-past' : ''} ${isSpecial ? 'is-special' : ''}" style="${s.projs.length ? `border-left:7px solid ${esc(s.projs[0].color)}` : ''}">
       <button class="cal-main" data-act="sess-info" data-sid="${s.id}">
         <span class="cal-date"><b>${Number(s.date.slice(8, 10))}</b><small>${wdShort(s.date)}</small></span>
-        <span class="cal-info"><span class="cal-type">${esc(s.type || 'Assaig')}<em>${esc(timeRange(s))}</em></span>
+        <span class="cal-info"><span class="cal-type">${isSpecial ? '<span class="cal-star">★</span>' : ''}${esc(s.type || 'Assaig')}<em>${esc(timeRange(s))}</em></span>
           ${s.place ? `<span class="cal-place">${esc(s.place)}</span>` : ''}
           <span class="cal-projs">${s.projs.map(pr => `<span class="cal-tagp" style="background:${esc(pr.color)}22;color:${esc(pr.color)}">${esc(pr.name)}</span>`).join('')}</span></span>
         <span class="cal-right">${right}</span></button></li>`;
@@ -1129,8 +1141,7 @@ function viewProjects() {
     const st = projectStatus(p);
     const inner = `<span class="h2"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}<span class="status-badge ${st}">${PROJECT_STATUS_LABEL[st]}</span></span>
         <span class="prod-meta">${p.from ? `<span>${esc(ddmm(p.from))}${p.to ? ' – ' + esc(ddmm(p.to)) : ''}</span>` : ''}
-          <span>${done}/${rehearsals.length} Assajos</span>
-          <span>${p.repertoire ? 'Repertori enllaçat' : 'Sense repertori'}</span>
+          <span>${done}/${rehearsals.length} assajos fets</span>
           </span>`;
     return `<div class="panel prod-card" style="margin-bottom:12px;border-left:7px solid ${esc(p.color)}">
       <button data-act="${editable ? 'edit-proj' : 'view-proj'}" data-pid="${p.id}">${inner}</button>
@@ -1360,9 +1371,6 @@ function manageConfig() {
       <div class="setting"><div><div class="t">Faltes màximes per risc</div><div class="s">Quan el percentatge de faltes (justificades o no) d'un músic supera aquest valor, queda en situació de risc. El canvi recalcula estadístiques i indicadors immediatament.</div></div>
         <span style="display:flex;align-items:center;gap:8px"><span class="mono" style="font-size:18px">${c.maxFaltesPct}%</span>
         <button class="btn btn-sm" data-act="edit-rules">Edita</button></span></div>
-      <div class="setting"><div><div class="t">Puntualitat mínima</div><div class="s">Per sota d'aquest percentatge, el requadre de puntualitat es pinta de vermell.</div></div>
-        <span style="display:flex;align-items:center;gap:8px"><span class="mono" style="font-size:18px">${c.minPunctuality || 80}%</span>
-        <button class="btn btn-sm" data-act="edit-rules">Edita</button></span></div>
       <div class="setting"><div><div class="t">Els retards compten com a assistència</div><div class="s">Si el desactives, un retard resta en el percentatge.</div></div>
         <label class="switch"><input type="checkbox" data-act="toggle-late" ${c.countLateAsPresent ? 'checked' : ''}><span></span></label></div>
       <div class="setting"><div><div class="t">Cens d'assistència</div><div class="s">Director i administració no hi computen. Ara mateix: ${censusUsers().length} músics al cens.</div></div></div></div>
@@ -1571,13 +1579,15 @@ function projSheet(p) {
 /** Enllaç de subscripció al calendari (Google/Apple), sempre actualitzat. */
 function subscribeSheet() {
   const webcal = CALENDAR_FEED_URL.replace(/^https?:/, 'webcal:');
+  const googleUrl = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(CALENDAR_FEED_URL);
   sheet({
     title: 'Subscriu-te al calendari',
-    body: `<p>Afegeix tots els assajos i concerts al teu calendari personal (Google o Apple). Si mai canvien les dates, s'actualitzarà sol.</p>
-      <div class="field"><span>Enllaç de subscripció</span><input class="inp" readonly value="${esc(CALENDAR_FEED_URL)}" onclick="this.select()"></div>
-      <div class="privacy">A l'iPhone o Mac, toca "Obre'l a Calendari" per subscriure-t'hi directament. A Google Calendar: Configuració → Afegeix un calendari → Des de l'URL, i enganxa aquest enllaç.</div>`,
-    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Tanca</button>
-      <a class="btn btn-primary" href="${esc(webcal)}">Obre'l a Calendari</a>`,
+    body: `<p>Afegeix tots els assajos i concerts al teu calendari personal. Si mai canvien les dates, s'actualitzarà sol.</p>
+      <div class="field"><span>📱 iPhone / iPad / Mac</span><a class="btn btn-block btn-primary" href="${esc(webcal)}">Obre'l a Calendari</a></div>
+      <div class="field"><span>🤖 Android / Google Calendar</span><a class="btn btn-block btn-primary" href="${esc(googleUrl)}" target="_blank" rel="noopener">Afegeix a Google Calendar</a>
+        <small class="muted">Obre el navegador i et demanarà confirmar-ho. Google el pot trigar entre 12 i 24 hores a actualitzar els canvis (Apple ho fa molt més ràpid).</small></div>
+      <div class="field"><span>Un altre calendari (Outlook...)</span><input class="inp" readonly value="${esc(CALENDAR_FEED_URL)}" onclick="this.select()"></div>`,
+    foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Tanca</button>`,
   });
 }
 function projectPickerSheet(scope) {
@@ -1610,6 +1620,24 @@ function repertoireSheet(pid) {
   };
 }
 
+/** Perquè el director pugui reassignar el projecte d'una sessió, sense donar-li accés a la resta d'edició. */
+function sessionProjectSheet(sid) {
+  const s = sessionById(sid); if (!s) return;
+  const chosen = new Set(s.projIds || []);
+  sheet({
+    title: 'Canvia el projecte',
+    body: `<div class="field"><span>Projectes</span><div class="pickers" id="s-projs">
+        ${S.projects.map(p => `<button type="button" class="pick" data-pid="${p.id}" aria-pressed="${chosen.has(p.id)}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}</div>
+        <small>Un mateix assaig pot pertànyer a més d'un projecte.</small></div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  $('#s-projs').addEventListener('click', e => {
+    const b = e.target.closest('[data-pid]'); if (!b) return;
+    if (chosen.has(b.dataset.pid)) chosen.delete(b.dataset.pid); else chosen.add(b.dataset.pid);
+    b.setAttribute('aria-pressed', chosen.has(b.dataset.pid));
+  });
+  sheetSave = () => { s.projIds = [...chosen]; save(); toast('Projecte actualitzat'); return true; };
+}
 function sessionSheet(s, pid) {
   const isNew = !s.id;
   const chosen = new Set(s.projIds && s.projIds.length ? s.projIds : (pid ? [pid] : (S.projects[0] ? [S.projects[0].id] : [])));
@@ -1807,9 +1835,6 @@ function sessionInfo(sid) {
   sheet({ title: capz(longDate(s.date)),
     body: `<div class="field"><span>${esc(s.type || 'Assaig')}</span><div>${esc(timeRange(s))}${s.place ? ' · ' + esc(s.place) : ''}</div></div>
       <div class="field"><span>Projecte${ps.length > 1 ? 's' : ''}</span><div class="tagp-row">${ps.map(pr => `<span class="cal-tagp lg" style="background:${esc(pr.color)}22;color:${esc(pr.color)}">${esc(pr.name)}</span>`).join('') || '—'}</div></div>
-      ${s.note ? `<div class="field"><span>Nota</span><div>${esc(s.note)}</div></div>` : ''}
-      ${ps.some(pr => pr.repertoire) ? `<div class="field"><span>Repertori</span><div>${ps.map(pr => pr.repertoire ? `<a href="${esc(pr.repertoire)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(pr.repertoire)}</a>` : '').filter(Boolean).join('<br>')}</div></div>` : ''}
-      ${inSession(s, u) && mk ? `<div class="field"><span>Assistència</span><div>${statusPill(mk)}</div></div>` : ''}
       ${(() => {
         if (!inCensus(u) || !u.section) return '';
         const justified = S.incidents.filter(i => i.sessionId === s.id && i.status === 'accepted' && i.userId !== u.id && (userById(i.userId) || {}).section === u.section);
@@ -1817,10 +1842,13 @@ function sessionInfo(sid) {
         return `<div class="field"><span>De la teva secció, ja han justificat que no hi seran</span>
           <div style="display:flex;flex-wrap:wrap;gap:6px">${justified.map(i => `<span class="part">${esc(userById(i.userId).name)}</span>`).join('')}</div></div>`;
       })()}
+      ${s.note ? `<div class="field"><span>Nota</span><div>${esc(s.note)}</div></div>` : ''}
+      ${ps.some(pr => pr.repertoire) ? `<div class="field"><span>Repertori</span><div>${ps.map(pr => pr.repertoire ? `<a href="${esc(pr.repertoire)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(pr.repertoire)}</a>` : '').filter(Boolean).join('<br>')}</div></div>` : ''}
+      ${inSession(s, u) && mk ? `<div class="field"><span>Assistència</span><div>${statusPill(mk)}</div></div>` : ''}
       ${statsBlock}`,
     foot: `<span class="spacer"></span>${inSession(s, u) && s.date >= TODAY && level(u) < 2 ? '<button class="btn" data-act="new-incident">Comunica una absència</button>' : ''}
       ${can.passList() ? `<button class="btn" data-act="goto-sess" data-sid="${s.id}">Consulta la llista</button>` : ''}
-      ${can.manageProjects() ? `<button class="btn btn-primary" data-act="sess-edit" data-sid="${s.id}">Edita</button>` : ''}` });
+      ${can.manageProjects() ? `<button class="btn btn-primary" data-act="sess-edit" data-sid="${s.id}">Edita</button>` : (hasRole(u, 'director') ? `<button class="btn btn-primary" data-act="edit-sess-project" data-sid="${s.id}">Canvia el projecte</button>` : '')}` });
 }
 function memberDetail(mid) {
   const m = userById(mid); if (!m || !can.seeMember(m)) { toast('No tens permís per veure aquesta fitxa'); return; }
@@ -1885,14 +1913,12 @@ function changePasswordSheet(forced) {
 function rulesSheet() {
   sheet({
     title: 'Regles d\'assistència',
-    body: `<div class="row2"><div class="field"><span>Faltes màximes per risc (%)</span><input class="inp" type="number" min="0" max="100" id="c-min" value="${S.config.maxFaltesPct}"></div>
-      <div class="field"><span>Puntualitat mínima (%)</span><input class="inp" type="number" min="0" max="100" id="c-punct" value="${S.config.minPunctuality || 80}"></div></div>
-      <div class="privacy">En canviar els mínims es recalculen automàticament els percentatges, els indicadors i qui està en situació de risc.</div>`,
+    body: `<div class="field"><span>Faltes màximes per risc (%)</span><input class="inp" type="number" min="0" max="100" id="c-min" value="${S.config.maxFaltesPct}"></div>
+      <div class="privacy">En canviar el llindar es recalculen automàticament els indicadors i qui està en situació de risc.</div>`,
     foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
   });
   sheetSave = () => {
     S.config.maxFaltesPct = Math.min(100, Math.max(0, Number($('#c-min').value) || 25));
-    S.config.minPunctuality = Math.min(100, Math.max(0, Number($('#c-punct').value) || 80));
     save(); toast('Regles actualitzades'); return true;
   };
 }
@@ -2233,6 +2259,7 @@ document.addEventListener('click', async e => {
     }
     case 'new-session': { if (!S.projects.length) { toast('Crea primer un projecte'); return projSheet({}); } return sessionSheet({}, el.dataset.pid); }
     case 'sess-edit': { const s = sessionById(el.dataset.sid); if (s && can.manageProjects()) sessionSheet({ ...s }); return; }
+    case 'edit-sess-project': { if (hasRole(me(), 'director')) sessionProjectSheet(el.dataset.sid); return; }
     case 'del-session': {
       if (!confirm('Eliminar la sessió i la seva llista?')) return;
       const sid = el.dataset.sid;
