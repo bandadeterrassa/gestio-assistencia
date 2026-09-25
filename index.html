@@ -481,6 +481,7 @@ textarea.inp{padding:10px 12px;min-height:100px;resize:vertical;line-height:1.4}
   const SUPABASE_URL = 'https://crveneipgpopqefszgkw.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNydmVuZWlwZ3BvcHFlZnN6Z2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwOTg4MTMsImV4cCI6MjEwNTY3NDgxM30.p_LwgacANZlxCCoRaRT50pCHlex1XNbSnmbp6EoKi54';
   const CALENDAR_FEED_URL = 'https://crveneipgpopqefszgkw.supabase.co/functions/v1/bandadeterrassa';
+  const GOOGLE_CALENDAR_ID = 'la.banda.de.terrassa@gmail.com';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 'use strict';
 
@@ -1593,13 +1594,11 @@ function projSheet(p) {
 /** Enllaç de subscripció al calendari (Google/Apple), sempre actualitzat. */
 function subscribeSheet() {
   const webcal = CALENDAR_FEED_URL.replace(/^https?:/, 'webcal:');
-  const googleUrl = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(CALENDAR_FEED_URL);
+  const googleUrl = 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(GOOGLE_CALENDAR_ID);
   sheet({
     title: 'Subscriu-te al calendari',
-    body: `<p>Afegeix tots els assajos i concerts al teu calendari personal. Si mai canvien les dates, s'actualitzarà sol.</p>
-      <div class="field"><span>📱 iPhone / iPad / Mac</span><a class="btn btn-block btn-primary" href="${esc(webcal)}">Obre'l a Calendari</a></div>
-      <div class="field"><span>🤖 Android / Google Calendar</span><a class="btn btn-block btn-primary" href="${esc(googleUrl)}" target="_blank" rel="noopener">Afegeix a Google Calendar</a>
-        <small class="muted">Obre el navegador i et demanarà confirmar-ho. Google el pot trigar entre 12 i 24 hores a actualitzar els canvis (Apple ho fa molt més ràpid).</small></div>
+    body: `<a class="btn btn-block btn-primary" href="${esc(webcal)}">Afegeix a Apple Calendar</a>
+      <a class="btn btn-block btn-primary" href="${esc(googleUrl)}" target="_blank" rel="noopener">Afegeix a Google Calendar</a>
       <div class="field"><span>Un altre calendari (Outlook...)</span><input class="inp" readonly value="${esc(CALENDAR_FEED_URL)}" onclick="this.select()"></div>`,
     foot: `<span class="spacer"></span><button class="btn btn-primary" data-act="sheet-close">Tanca</button>`,
   });
