@@ -902,7 +902,12 @@ const atRisk = st => { const fp = faltesShare(st.c); return fp != null && fp > m
 /** Etiqueta d'instrument reutilitzada arreu (mateixa mida i espaiat a totes les llistes de músics). */
 const instrumentBadge = inst => inst ? ` <span class="part">${esc(inst)}</span>` : '';
 /** Classe per tenyir el fons d'un requadre segons si el valor és de risc (vermell) o no (verd) — sense zona neutra. Només per a assistència. */
-const attClass = st => st.pct == null ? '' : atRisk(st) ? 'alert' : 'great';
+const attClass = st => {
+  if (st.pct == null) return '';
+  const fp = faltesShare(st.c);
+  if (fp == null) return '';
+  return fp > maxFaltesRate() ? 'alert' : 'great';
+};
 /** Igual que attClass, però a partir dels comptadors bruts (per a requadres d'assistència que no parteixen d'un userStats). */
 const riskClass = c => { const fp = faltesShare(c); return fp == null ? '' : fp > maxFaltesRate() ? 'alert' : 'great'; };
 /** Puntualitat: blau per defecte, vermell només per sota del mínim configurat — sense verd, per no acumular massa color. */
@@ -961,7 +966,8 @@ function appbar(u) {
   return `<header class="appbar">
     <div class="brand">${logoHTML('brand-mark')}
       <div style="min-width:0"><span class="brand-name">${esc(S.config.name)}</span>
-      <span class="brand-sub">${esc(u.name)} · ${esc(ROLES[topRole(u)].name)}</span></div></div>
+      <span class="brand-sub">${esc(u.name)}</span>
+      <span class="brand-sub">${esc(ROLES[topRole(u)].name)}</span></div></div>
     <div class="top-actions">
       ${hasRole(u, 'admin') || REAL_ADMIN ? `<button class="icon-btn" data-act="impersonate" aria-label="Canvia de rol">${ICON.swap}</button>` : ''}
       <button class="icon-btn" data-act="show-help" aria-label="Com funciona l'aplicació">${ICON.help}</button>
@@ -1620,10 +1626,11 @@ function repertoireSheet(pid) {
   const editable = can.repertoire();
   sheet({
     title: esc(p.name),
-    body: `<div class="field"><span>Repertori</span>${editable
+    body: `<div style="min-height:22vh">
+      <div class="field"><span>Repertori</span>${editable
         ? `<input class="inp" id="rp-list" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures"><small>Enllaç a la carpeta o document amb les partitures.</small>`
-        : (p.repertoire ? `<div><a href="${esc(p.repertoire)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(p.repertoire)}</a></div>` : '<div class="muted">Encara no hi ha cap enllaç.</div>')}</div>
-      ${p.info ? `<div class="field"><span>Informació del projecte</span><div class="muted" style="font-size:13.5px">${esc(p.info)}</div></div>` : ''}`,
+        : (p.repertoire ? `<div><a href="${esc(p.repertoire)}" target="_blank" rel="noopener" style="color:var(--accent);word-break:break-all">${esc(p.repertoire)}</a></div>` : '<div class="muted">Encara no hi ha cap enllaç.</div>')}</div>
+      ${p.info ? `<div class="field"><span>Informació del projecte</span><div class="muted" style="font-size:13.5px">${esc(p.info)}</div></div>` : ''}</div>`,
     foot: editable
       ? `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`
       : '',
