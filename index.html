@@ -190,6 +190,10 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .tally-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
 .progress-txt{font-size:13px;color:var(--muted)}
 .progress-txt b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.fj-list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.fj-list li{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding:11px 14px;border-top:1px solid var(--line)}
+.fj-list li:first-child{border-top:0}
+.fj-list b{font-weight:600}
 .roster{list-style:none;margin:14px 0 0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
 .row{padding:12px;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
@@ -352,6 +356,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .subtab{min-height:36px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .subtab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--notice);color:var(--notice-ink);font-size:10.5px;font-weight:700;line-height:1}
+.chip .count-badge{margin-left:6px;vertical-align:middle}
 .list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
 .li{border-top:1px solid var(--line)}
 .li:first-child{border-top:0}
@@ -615,7 +620,7 @@ let ME = null;      // user id de la sessió
 let REAL_ADMIN = null; // id real de l'administrador quan està "provant" un altre rol (null si no s'està impersonant ningú)
 let splashing = false;
 const ui = { tab: null, sessionId: null, rollSec: null, calProj: 'all', calPast: false, calMode: 'sessions', llistaMode: 'roll',
-  statsProj: 'all', statsSec: '', statsSort: 'pct', manage: 'usuaris', search: '', incFilter: 'pending' };
+  statsProj: 'all', statsSec: '', statsSort: 'pct', manage: 'usuaris', search: '', incFilter: 'all' };
 
 function userFromRow(r) {
   return { id: r.id, username: r.username, name: r.name, section: r.section || '', instrument: r.instrument || '',
@@ -676,7 +681,7 @@ async function load() {
   migrate();
   if (!S.users.length) await seedAdmin();
   if (ME && !S.users.some(u => u.id === ME && u.active !== false)) ME = null;
-  ui.sessionId = null; ui.rollSec = null; ui.search = ''; ui.tab = null;
+  ui.sessionId = null; ui.rollSec = null; ui.search = ''; ui.tab = null; ui.incFilter = 'all';
 }
 /** Comprovacions de seguretat mínimes; les dades ja arriben normalitzades des de Supabase. */
 function migrate() {
@@ -908,6 +913,14 @@ const attendanceTone = r => r == null ? '' : (Math.round(r * 100) >= 100 - (S.co
 const attClass = st => attendanceTone(st.pct);
 /** Igual que attClass, però a partir dels comptadors bruts (requadres d'assistència que no parteixen d'un userStats). */
 const riskClass = c => attendanceTone(rate(c));
+/** Assistència d'UNA sessió. Només es mostra quan la llista s'ha passat (hi ha algú present o amb retard) i està completa
+ *  o la sessió ja ha acabat; mentre hi ha gent per marcar, o si ningú ha vingut encara, surt un guió (com la puntualitat).
+ *  Així el percentatge no es calcula només amb els primers marcats (p. ex. 6 de 40) i no enganya. */
+function sessionRate(c, session) {
+  if (c.P + c.R === 0) return null;
+  if (c.none > 0 && !sessionIsDone(session)) return null;
+  return rate(c);
+}
 /** Puntualitat: blau per defecte, vermell només per sota del mínim configurat — sense verd, per no acumular massa color. */
 const punctClass = () => 'info';
 /** Faltes no justificades: blanc per defecte, vermell només quan n'hi ha prou perquè calgui parar-hi atenció. */
@@ -1038,12 +1051,17 @@ function rollOverview(cur) {
   const c = sessionCounts(cur);
   const started = c.total > 0 && c.none < c.total;
   const showPanel = started || can.manageProjects();
+  // Qui no podrà venir i ho ha justificat (per avís acceptat o marcat a mà). Només surt si n'hi ha cap; sense motius.
+  const fj = SECTIONS.flatMap(x => membersOf(x.id)).filter(u => convoked(cur, u.section) && inSession(cur, u) && (mark(cur.id, u.id) || {}).s === 'FJ');
+  const fjBlock = fj.length ? `<div class="section-title"><h2 class="h2">Faltes justificades</h2><span class="eyebrow">${fj.length}</span></div>
+    <ul class="fj-list">${fj.map(u => `<li><b>${esc(u.name)}</b>${instrumentBadge(u.instrument)}</li>`).join('')}</ul>` : '';
   return `<div class="secs">${cards}</div>
     ${showPanel ? `<div class="tally" style="margin-top:16px">
-      ${started ? `<div class="kpis kpis-3"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+      ${started ? `<div class="kpis kpis-3"><div class="kpi ${attendanceTone(sessionRate(c, cur))}"><div class="kpi-v">${pct(sessionRate(c, cur))}</div><div class="kpi-l">Assistència</div></div>
         <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div>
         <div class="kpi dark-box"><div class="kpi-v">${c.P + c.R}/${c.total}</div><div class="kpi-l">Presents</div></div></div>` : ''}
-      ${can.manageProjects() ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm" data-act="sess-edit" data-sid="${cur.id}">Edita la sessió</button></div>` : ''}</div>` : ''}`;
+      ${can.manageProjects() ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm" data-act="sess-edit" data-sid="${cur.id}">Edita la sessió</button></div>` : ''}</div>` : ''}
+    ${fjBlock}`;
 }
 function stackBar(c) {
   const den = c.total || 1;
@@ -1068,7 +1086,7 @@ function rollSection(cur, sec, fixed) {
   if (!ms.length) return head + `<div class="empty"><h2 class="h2">Cap músic</h2><p>Afegeix músics a aquesta secció des de Gestió.</p></div>`;
   const showPanel = started || (c.none && can.section(sec));
   return head + `${showPanel ? `<div class="tally">
-      ${started ? `<div class="kpis kpis-3"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència</div></div>
+      ${started ? `<div class="kpis kpis-3"><div class="kpi ${attendanceTone(sessionRate(c, cur))}"><div class="kpi-v">${pct(sessionRate(c, cur))}</div><div class="kpi-l">Assistència</div></div>
         <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat</div></div>
         <div class="kpi dark-box"><div class="kpi-v">${c.P + c.R}/${c.total}</div><div class="kpi-l">Presents</div></div></div>` : ''}
       ${c.none && can.section(sec) ? `<div class="tally-foot"><span class="spacer"></span><button class="btn btn-sm btn-primary" data-act="rest-present" data-sec="${sec}">Marca tots els músics com a presents</button></div>` : ''}</div>` : ''}
@@ -1314,7 +1332,7 @@ function incCard(i, review, hideName) {
     ${review && canAct && i.status === 'pending' ? `<div class="inc-a">
       <button class="btn btn-sm btn-primary" data-act="inc-accept" data-id="${i.id}">Justifica</button>
       <button class="btn btn-sm btn-danger-ghost" data-act="inc-reject" data-id="${i.id}">Denega</button></div>` : ''}
-    ${review && canAct && i.status !== 'pending' ? `<div class="inc-a"><button class="btn btn-sm btn-ghost" data-act="inc-reopen" data-id="${i.id}">Torna-la a pendent</button></div>` : ''}</div>`;
+    ${review && canAct && i.status !== 'pending' ? `<div class="inc-a"><button class="btn btn-sm" data-act="inc-reopen" data-id="${i.id}">Torna-la a pendent</button></div>` : ''}</div>`;
 }
 
 /* ---------- Gestió ---------- */
@@ -1370,8 +1388,9 @@ function manageIncidents() {
     return da < db ? -1 : da > db ? 1 : b.createdAt.localeCompare(a.createdAt);
   });
   const list = ui.incFilter === 'all' ? mine : mine.filter(i => i.status === ui.incFilter);
-  return `<div class="chips">${[['pending', 'Pendents'], ['accepted', 'Justificades'], ['all', 'Totes']]
-      .map(([v, n]) => `<button class="chip" aria-pressed="${ui.incFilter === v}" data-act="inc-filter" data-v="${v}">${n}</button>`).join('')}</div>
+  const pendN = pendingIncidents().length;
+  return `<div class="chips">${[['all', 'Totes'], ['pending', 'Pendents'], ['accepted', 'Justificades']]
+      .map(([v, n]) => `<button class="chip" aria-pressed="${ui.incFilter === v}" data-act="inc-filter" data-v="${v}">${n}${v === 'pending' && pendN ? ` <span class="count-badge">${pendN}</span>` : ''}</button>`).join('')}</div>
     <div class="panel">${list.length ? list.map(i => incCard(i, true)).join('')
       : '<div class="empty" style="padding:28px"><p>Cap avís en aquest estat.</p></div>'}</div>
     <div class="privacy">Quan acceptes un avís, la falta queda marcada com a justificada (o com a retard) a la llista de la sessió corresponent.</div>`;
@@ -1844,11 +1863,11 @@ function sessionInfo(sid) {
   if (hasData) {
     if (lvl >= 3) {
       const c = sessionCounts(s);
-      statsBlock = `<div class="kpis kpis-sm"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència general</div></div>
+      statsBlock = `<div class="kpis kpis-sm"><div class="kpi ${attendanceTone(sessionRate(c, s))}"><div class="kpi-v">${pct(sessionRate(c, s))}</div><div class="kpi-l">Assistència general</div></div>
         <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat general</div></div></div>`;
     } else if (lvl === 2 && u.section) {
       const c = countsFor(s, u.section);
-      statsBlock = `<div class="kpis kpis-sm"><div class="kpi ${riskClass(c)}"><div class="kpi-v">${pct(rate(c))}</div><div class="kpi-l">Assistència secció</div></div>
+      statsBlock = `<div class="kpis kpis-sm"><div class="kpi ${attendanceTone(sessionRate(c, s))}"><div class="kpi-v">${pct(sessionRate(c, s))}</div><div class="kpi-l">Assistència secció</div></div>
         <div class="kpi ${punctClass(punctualityRate(c))}"><div class="kpi-v">${pct(punctualityRate(c))}</div><div class="kpi-l">Puntualitat secció</div></div></div>`;
     }
   }
