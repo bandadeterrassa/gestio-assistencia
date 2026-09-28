@@ -617,6 +617,7 @@ const DEFAULT = {
 };
 let S = structuredClone(DEFAULT);
 let ME = null;      // user id de la sessió
+let TOKEN = null;   // identificador de sessió que el servidor comprova a cada desada
 let REAL_ADMIN = null; // id real de l'administrador quan està "provant" un altre rol (null si no s'està impersonant ningú)
 let splashing = false;
 const ui = { tab: null, sessionId: null, rollSec: null, calProj: 'all', calPast: false, calMode: 'sessions', llistaMode: 'roll',
@@ -688,11 +689,10 @@ async function fetchAll() {
 }
 async function load() {
   try { Object.assign(ui, JSON.parse(localStorage.getItem(LS_UI) || '{}')); } catch {}
-  try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; REAL_ADMIN = (s && s.realAdminId) || null; } catch {}
+  try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; REAL_ADMIN = (s && s.realAdminId) || null; TOKEN = (s && s.token) || null; if (!TOKEN) ME = null; } catch {}
   const ok = await fetchAll();
   if (!ok) toast('No s\'han pogut carregar les dades. Recarrega la pàgina.');
   migrate();
-  if (ok && !S.users.length) await seedAdmin();
   if (ME && !S.users.some(u => u.id === ME && u.active !== false)) ME = null;
   ui.sessionId = null; ui.rollSec = null; ui.search = ''; ui.tab = null; ui.incFilter = 'all';
 }
@@ -739,18 +739,24 @@ function buildChanges() {
   if (next.config !== BASE.config) { ch.config = S.config; n++; }
   return { ch: n ? JSON.parse(JSON.stringify(ch)) : null, next };
 }
+const errMsg = e => String((e && (e.message || e.details)) || '');
+/** La sessió ja no és vàlida al servidor: torna a la pantalla d'entrada. */
+function sessionExpired() { ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); ui.tab = null; try { closeSheet(); } catch {} render(); toast('La sessió ha caducat. Torna a entrar.'); }
 async function flush(isRetry) {
   t1 = null;
-  if (!LOAD_OK || !BASE) return;
+  if (!LOAD_OK || !BASE || !TOKEN) return;
   if (saving) { again = true; return; }
   const { ch, next } = buildChanges();
   if (!ch) return;
   saving = true;
   try {
-    const r = await sb.rpc('apply_changes', { p: ch });
+    const r = await sb.rpc('app_save', { p_token: TOKEN, p_changes: ch });
     if (r.error) throw r.error;
     BASE = next;
   } catch (e) {
+    const m = errMsg(e);
+    if (m.includes('sessio_caducada')) { sessionExpired(); return; }
+    if (m.includes('sense_permis')) { toast('No tens permís per fer aquest canvi.'); if (await fetchAll()) render(); return; }
     console.warn(e); toast('No s\'han pogut desar els canvis. Torna-ho a provar.');
     if (!isRetry) { clearTimeout(retryT); retryT = setTimeout(() => flush(true), 10000); }
   } finally { saving = false; if (again) { again = false; save(); } }
@@ -761,15 +767,8 @@ function save() {
   try { localStorage.setItem(LS_UI, JSON.stringify({ tab: ui.tab, calProj: ui.calProj, calMode: ui.calMode, llistaMode: ui.llistaMode, statsProj: ui.statsProj, manage: ui.manage, incFilter: ui.incFilter })); } catch {}
 }
 function saveSession() {
-  try { localStorage.setItem(LS_SESSION, JSON.stringify(ME ? { userId: ME, realAdminId: REAL_ADMIN } : null)); } catch {}
+  try { localStorage.setItem(LS_SESSION, JSON.stringify(ME && TOKEN ? { userId: ME, realAdminId: REAL_ADMIN, token: TOKEN } : null)); } catch {}
 }
-async function seedAdmin() {
-  try {
-    const { data: id, error } = await sb.rpc('create_user', { p_username: 'admin', p_password: '1234', p_name: 'Administració', p_section: '', p_instrument: '', p_roles: ['admin'] });
-    if (!error && id) S.users.push({ id, username: 'admin', name: 'Administració', section: '', instrument: '', roles: ['admin'], active: true, mustChangePassword: true });
-  } catch (e) { console.warn(e); }
-}
-
 /* ================= Usuaris, rols i permisos ================= */
 const me = () => S.users.find(u => u.id === ME) || null;
 const userById = id => S.users.find(u => u.id === id) || null;
@@ -1487,7 +1486,7 @@ function manageConfig() {
       <div class="setting"><div><div class="t">Assistència en CSV</div><div class="s">Llista d'assistència de tot el curs amb les estadístiques de cada músic, per obrir-la en un full de càlcul.</div></div><button class="btn btn-sm" data-act="export-csv">Descarrega</button></div>
       <div class="setting"><div><div class="t">Entra com un altre usuari</div><div class="s">Eina de proves: canvia de rol sense contrasenya per revisar les vistes.</div></div>
         <button class="btn btn-sm" data-act="impersonate">Prova rols</button></div>
-      <div class="setting"><div><div class="t">Esborra-ho tot</div><div class="s">Usuaris, projectes, llistes i avisos.</div></div>
+      <div class="setting"><div><div class="t">Esborra-ho tot</div><div class="s">Usuaris (menys el teu), projectes, llistes i avisos.</div></div>
         <button class="btn btn-sm btn-danger-ghost" data-act="wipe">Esborra</button></div></div>`;
 }
 
@@ -1602,8 +1601,8 @@ function userSheet(x) {
       if (S.users.some(o => o.username === un)) { toast('Aquest usuari ja existeix'); return false; }
       let newId = null;
       try {
-        const r = await sb.rpc('create_user', { p_username: un, p_password: pw, p_name: name, p_section: rec.section, p_instrument: rec.instrument, p_roles: rec.roles });
-        if (!r.error) newId = r.data;
+        const r = await sb.rpc('app_create_user', { p_token: TOKEN, p_username: un, p_password: pw, p_name: name, p_section: rec.section, p_instrument: rec.instrument, p_roles: rec.roles });
+        if (!r.error) newId = r.data; else if (errMsg(r.error).includes('sessio_caducada')) { sessionExpired(); return false; }
       } catch (e) { console.warn(e); }
       if (!newId) { toast('No s\'ha pogut crear l\'usuari'); return false; }
       rec.id = newId; rec.username = un;
@@ -1614,7 +1613,7 @@ function userSheet(x) {
       if (!un) { toast('L\'usuari no pot ser buit'); return false; }
       if (S.users.some(o => o.id !== rec.id && o.username === un)) { toast('Aquest usuari ja existeix'); return false; }
       let ok = false;
-      try { const r = await sb.rpc('admin_set_credentials', { p_user_id: rec.id, p_username: un, p_new_password: pw || null }); ok = !r.error && r.data === true; }
+      try { const r = await sb.rpc('app_set_credentials', { p_token: TOKEN, p_user_id: rec.id, p_username: un, p_new_password: pw || null }); ok = !r.error && r.data === true; }
       catch (e) { console.warn(e); }
       if (!ok) { toast('No s\'han pogut actualitzar les credencials'); return false; }
       rec.username = un;
@@ -2000,7 +1999,7 @@ function changePasswordSheet(forced) {
     if (newP !== newP2) { toast('Les contrasenyes noves no coincideixen'); return false; }
     if (newP === oldP) { toast('La contrasenya nova ha de ser diferent de l\'actual'); return false; }
     let ok = false;
-    try { const r = await sb.rpc('change_password', { p_user_id: u.id, p_old_password: oldP, p_new_password: newP }); ok = !r.error && r.data === true; }
+    try { const r = await sb.rpc('app_change_password', { p_token: TOKEN, p_old: oldP, p_new: newP }); ok = !r.error && r.data === true; }
     catch (e) { console.warn(e); }
     if (!ok) { toast('La contrasenya actual no és correcta'); return false; }
     u.mustChangePassword = false;
@@ -2098,7 +2097,7 @@ function sectionEditSheet(id) {
   };
 }
 function saveSections() {
-  try { sb.rpc('sync_sections', { p_sections: SECTIONS }).then(r => { if (r.error) { console.warn(r.error); toast('No s\'ha pogut desar la secció. Torna-ho a provar.'); } }); } catch (e) { console.warn(e); }
+  try { sb.rpc('app_save_sections', { p_token: TOKEN, p_sections: SECTIONS }).then(r => { if (r.error) { console.warn(r.error); toast('No s\'ha pogut desar la secció. Torna-ho a provar.'); } }); } catch (e) { console.warn(e); }
 }
 /** Ajuda contextual: mostra només el bloc corresponent al rol més alt de qui l'obre. */
 function helpSheet() {
@@ -2289,19 +2288,22 @@ document.addEventListener('submit', async e => {
   const pw = $('#lg-pass').value;
   const btn = e.target.querySelector('button[type=submit]');
   if (btn) btn.disabled = true;
-  let row = null;
+  let row = null, token = null, lerr = null;
   try {
-    const { data, error } = await sb.rpc('login', { p_username: un, p_password: pw });
-    if (!error && data && data.length) row = data[0];
-  } catch (e) { console.warn(e); }
+    const { data, error } = await sb.rpc('app_login', { p_username: un, p_password: pw, p_keep: $('#lg-keep').checked });
+    if (error) throw error;
+    if (data && data.ok) { row = data.user; token = data.token; } else lerr = (data && data.error) || 'credencials';
+  } catch (e) { console.warn(e); lerr = 'xarxa'; }
   if (btn) btn.disabled = false;
-  if (!row) { $('#shell').innerHTML = viewLogin('Usuari o contrasenya incorrectes'); return; }
-  if (row.active === false) { $('#shell').innerHTML = viewLogin('Aquest usuari està desactivat'); return; }
+  if (!row) {
+    const msg = { massa_intents: 'Massa intents. Torna-ho a provar d\'aquí a uns minuts.', usuari_desactivat: 'Aquest usuari està desactivat', xarxa: 'No s\'ha pogut connectar. Torna-ho a provar.' }[lerr] || 'Usuari o contrasenya incorrectes';
+    $('#shell').innerHTML = viewLogin(msg); return;
+  }
   const u = { id: row.id, username: row.username, name: row.name, section: row.section || '', instrument: row.instrument || '',
     roles: row.roles && row.roles.length ? row.roles : ['musician'], active: row.active !== false, mustChangePassword: !!row.must_change_password };
   const i = S.users.findIndex(x => x.id === u.id);
   if (i >= 0) S.users[i] = u; else S.users.push(u);
-  ME = u.id;
+  ME = u.id; TOKEN = token;
   if ($('#lg-keep').checked) saveSession(); else { try { localStorage.removeItem(LS_SESSION); } catch {} }
   ui.tab = null;
   splash(() => { render(); if (u.mustChangePassword) changePasswordSheet(true); });
@@ -2314,7 +2316,7 @@ document.addEventListener('click', async e => {
   switch (a) {
     case 'tab': ui.tab = el.dataset.tab; ui.rollSec = null; if (ui.tab === 'llista') ui.sessionId = null; save(); render(); window.scrollTo(0, 0); return;
     case 'reload': return location.reload();
-    case 'logout': ME = null; REAL_ADMIN = null; saveSession(); ui.tab = null; render(); return;
+    case 'logout': { if (TOKEN) { try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} } ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); ui.tab = null; render(); return; }
     case 'demo': return demo();
 
     /* llista */
@@ -2455,7 +2457,8 @@ document.addEventListener('click', async e => {
     }
     case 'wipe': {
       if (!confirm('Esborrar tots els usuaris, projectes, llistes i avisos?')) return;
-      S = structuredClone(DEFAULT); await seedAdmin(); ME = null; saveSession(); save(); render(); return;
+      const keepId = REAL_ADMIN || ME; const keep = S.users.find(u => u.id === keepId);
+      S = structuredClone(DEFAULT); S.config.types = TYPES; S.users = keep ? [keep] : []; ui.tab = null; save(); render(); toast('Dades esborrades'); return;
     }
 
     /* sheet */
