@@ -662,36 +662,55 @@ function attendanceToRows(att) {
 let BASE = null;
 let LOAD_OK = false;   // fins que no s'han carregat bé TOTES les dades, no es desa res
 let LAST_LOAD = 0;
-/** Carrega totes les dades del servidor d'un cop. Si alguna consulta falla no se'n dóna res per bo (una càrrega parcial
- *  faria creure que no hi ha dades). */
-async function fetchAll() {
+const errMsg = e => String((e && (e.message || e.details)) || '');
+let LOAD_ERR = false;      // l'última càrrega amb sessió ha fallat (es mostra un avís a la pantalla d'entrada)
+let LAST_EXPIRED = false;  // l'última càrrega ha fallat perquè la sessió ja no és vàlida
+/** Sense sessió, l'única cosa que es demana al servidor és el nom i el logo de la banda (per a la pantalla d'entrada). */
+async function fetchPublic() {
   try {
-    const res = await Promise.all([
-      sb.from('users_public').select('*'), sb.from('projects').select('*'), sb.from('sessions').select('*'),
-      sb.from('attendance').select('*'), sb.from('incidents').select('*'), sb.from('config').select('*').limit(1), sb.from('sections').select('*'),
-    ]);
-    const bad = res.find(r => r.error || !Array.isArray(r.data));
-    if (bad) throw (bad.error || new Error('resposta buida'));
-    const [users, projects, sessions, attendance, incidents, configRows, sectionRows] = res.map(r => r.data);
-    S.users = users.map(userFromRow);
-    S.projects = projects.map(projectFromRow);
-    S.sessions = sessions.map(sessionFromRow);
-    S.attendance = rowsToAttendance(attendance);
-    S.incidents = incidents.map(incidentFromRow);
-    S.config = configFromRow(configRows[0]);
-    applySections(sectionRows);
+    const r = await sb.rpc('app_public');
+    if (r.error || !r.data) return false;
+    if (r.data.name) S.config.name = r.data.name;
+    if (r.data.logo) S.config.logo = r.data.logo;
+    return true;
+  } catch (e) { console.warn(e); return false; }
+}
+/** Carrega totes les dades amb la sessió de l'usuari, en una sola crida. El servidor ja amaga els motius escrits a qui no els ha
+ *  de veure. Si alguna cosa falla no se'n dóna res per bo (una càrrega parcial faria creure que no hi ha dades). */
+async function fetchAll() {
+  LAST_EXPIRED = false;
+  if (!TOKEN) return false;
+  try {
+    const { data: d, error } = await sb.rpc('app_load', { p_token: TOKEN });
+    if (error) throw error;
+    const need = ['users', 'projects', 'sessions', 'attendance', 'incidents', 'sections'];
+    if (!d || need.some(k => !Array.isArray(d[k])) || !d.config) throw new Error('resposta incompleta');
+    S.users = d.users.map(userFromRow);
+    S.projects = d.projects.map(projectFromRow);
+    S.sessions = d.sessions.map(sessionFromRow);
+    S.attendance = rowsToAttendance(d.attendance);
+    S.incidents = d.incidents.map(incidentFromRow);
+    S.config = configFromRow(d.config);
+    applySections(d.sections);
     if (S.config.types) TYPES = S.config.types;
     S.config.types = TYPES;
     BASE = snapshot();
-    LOAD_OK = true; LAST_LOAD = Date.now();
+    LOAD_OK = true; LOAD_ERR = false; LAST_LOAD = Date.now();
     return true;
-  } catch (e) { console.warn(e); return false; }
+  } catch (e) {
+    if (errMsg(e).includes('sessio_caducada')) LAST_EXPIRED = true; else { console.warn(e); LOAD_ERR = true; }
+    return false;
+  }
 }
 async function load() {
   try { Object.assign(ui, JSON.parse(localStorage.getItem(LS_UI) || '{}')); } catch {}
   try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; REAL_ADMIN = (s && s.realAdminId) || null; TOKEN = (s && s.token) || null; if (!TOKEN) ME = null; } catch {}
-  const ok = await fetchAll();
-  if (!ok) toast('No s\'han pogut carregar les dades. Recarrega la pàgina.');
+  if (TOKEN) {
+    const ok = await fetchAll();
+    if (!ok && LAST_EXPIRED) { ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); }   // sessió caducada: torna a la pantalla d'entrada
+    else if (!ok) { ME = null; toast('No s\'han pogut carregar les dades. Recarrega la pàgina.'); }
+  }
+  if (!TOKEN) await fetchPublic();
   migrate();
   if (ME && !S.users.some(u => u.id === ME && u.active !== false)) ME = null;
   ui.sessionId = null; ui.rollSec = null; ui.search = ''; ui.tab = null; ui.incFilter = 'all';
@@ -739,7 +758,6 @@ function buildChanges() {
   if (next.config !== BASE.config) { ch.config = S.config; n++; }
   return { ch: n ? JSON.parse(JSON.stringify(ch)) : null, next };
 }
-const errMsg = e => String((e && (e.message || e.details)) || '');
 /** La sessió ja no és vàlida al servidor: torna a la pantalla d'entrada. */
 function sessionExpired() { ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); ui.tab = null; try { closeSheet(); } catch {} render(); toast('La sessió ha caducat. Torna a entrar.'); }
 async function flush(isRetry) {
@@ -756,7 +774,7 @@ async function flush(isRetry) {
   } catch (e) {
     const m = errMsg(e);
     if (m.includes('sessio_caducada')) { sessionExpired(); return; }
-    if (m.includes('sense_permis')) { toast('No tens permís per fer aquest canvi.'); if (await fetchAll()) render(); return; }
+    if (m.includes('sense_permis')) { toast('No tens permís per fer aquest canvi.'); if (await fetchAll()) render(); else if (LAST_EXPIRED) sessionExpired(); return; }
     console.warn(e); toast('No s\'han pogut desar els canvis. Torna-ho a provar.');
     if (!isRetry) { clearTimeout(retryT); retryT = setTimeout(() => flush(true), 10000); }
   } finally { saving = false; if (again) { again = false; save(); } }
@@ -1053,7 +1071,7 @@ function viewLogin(err) {
     <div><h1 class="h1">${esc(S.config.name)}</h1><p class="muted" style="margin:4px 0 0">Gestió d'assistència</p></div>
     <form id="loginf" autocomplete="on">
       ${err ? `<div class="err">${esc(err)}</div>` : ''}
-      ${!LOAD_OK ? `<div class="err">No s'han pogut carregar les dades. <button type="button" class="btn btn-sm" data-act="reload">Torna-ho a provar</button></div>` : ''}
+      ${LOAD_ERR ? `<div class="err">No s'han pogut carregar les dades. <button type="button" class="btn btn-sm" data-act="reload">Torna-ho a provar</button></div>` : ''}
       <div class="field"><span>Usuari</span><input class="inp" id="lg-user" placeholder="nom.cognom" autocapitalize="none" autocorrect="off"></div>
       <div class="field"><span>Contrasenya</span>${passField('lg-pass')}</div>
       <label class="toggle-row" style="min-height:36px"><span style="font-size:13.5px">Mantenir la sessió iniciada</span>
@@ -2301,9 +2319,14 @@ document.addEventListener('submit', async e => {
   }
   const u = { id: row.id, username: row.username, name: row.name, section: row.section || '', instrument: row.instrument || '',
     roles: row.roles && row.roles.length ? row.roles : ['musician'], active: row.active !== false, mustChangePassword: !!row.must_change_password };
+  TOKEN = token;
+  if (!(await fetchAll())) {   // sessió creada però no s'han pogut baixar les dades: es tanca i es demana tornar-ho a provar
+    try { sb.rpc('app_logout', { p_token: token }); } catch {}
+    TOKEN = null; $('#shell').innerHTML = viewLogin(); return;
+  }
   const i = S.users.findIndex(x => x.id === u.id);
-  if (i >= 0) S.users[i] = u; else S.users.push(u);
-  ME = u.id; TOKEN = token;
+  if (i >= 0) S.users[i] = { ...S.users[i], mustChangePassword: u.mustChangePassword }; else S.users.push(u);
+  ME = u.id;
   if ($('#lg-keep').checked) saveSession(); else { try { localStorage.removeItem(LS_SESSION); } catch {} }
   ui.tab = null;
   splash(() => { render(); if (u.mustChangePassword) changePasswordSheet(true); });
@@ -2316,7 +2339,14 @@ document.addEventListener('click', async e => {
   switch (a) {
     case 'tab': ui.tab = el.dataset.tab; ui.rollSec = null; if (ui.tab === 'llista') ui.sessionId = null; save(); render(); window.scrollTo(0, 0); return;
     case 'reload': return location.reload();
-    case 'logout': { if (TOKEN) { try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} } ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); ui.tab = null; render(); return; }
+    case 'logout': {
+      if (t1) { clearTimeout(t1); await flush(); }   // no es perd cap canvi fet just abans de sortir
+      if (TOKEN) { try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} }
+      ME = null; REAL_ADMIN = null; TOKEN = null; saveSession();
+      const keepName = S.config.name, keepLogo = S.config.logo;   // de la banda, no de cap persona
+      S = structuredClone(DEFAULT); S.config.name = keepName; S.config.logo = keepLogo; BASE = null; LOAD_OK = false;
+      ui.tab = null; render(); return;
+    }
     case 'demo': return demo();
 
     /* llista */
@@ -2510,9 +2540,9 @@ document.addEventListener('visibilitychange', async () => {
   if (!ME || !LOAD_OK || saving || t1 || Date.now() - LAST_LOAD < 60000 || document.querySelector('.sheet-back')) return;
   if (buildChanges().ch) return;
   if (await fetchAll()) {
-    if (ME && !S.users.some(u => u.id === ME && u.active !== false)) { ME = null; saveSession(); }
+    if (ME && !S.users.some(u => u.id === ME && u.active !== false)) { ME = null; TOKEN = null; saveSession(); }
     render();
-  }
+  } else if (LAST_EXPIRED) sessionExpired();
 });
 (async () => {
   await load();
