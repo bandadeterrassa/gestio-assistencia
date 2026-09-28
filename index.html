@@ -656,30 +656,43 @@ function attendanceToRows(att) {
     return { sessionId, userId, s: v.s, min: v.min ?? '', note: v.note || '', by: v.by || '', at: v.at || '' };
   });
 }
+/** Estat del servidor tal com el va veure aquest dispositiu (última càrrega o última desada correcta). Serveix per saber
+ *  QUÈ ha canviat aquest dispositiu i enviar només això: un dispositiu amb dades antigues ja no pot trepitjar les dels altres. */
+let BASE = null;
+let LOAD_OK = false;   // fins que no s'han carregat bé TOTES les dades, no es desa res
+let LAST_LOAD = 0;
+/** Carrega totes les dades del servidor d'un cop. Si alguna consulta falla no se'n dóna res per bo (una càrrega parcial
+ *  faria creure que no hi ha dades). */
+async function fetchAll() {
+  try {
+    const res = await Promise.all([
+      sb.from('users_public').select('*'), sb.from('projects').select('*'), sb.from('sessions').select('*'),
+      sb.from('attendance').select('*'), sb.from('incidents').select('*'), sb.from('config').select('*').limit(1), sb.from('sections').select('*'),
+    ]);
+    const bad = res.find(r => r.error || !Array.isArray(r.data));
+    if (bad) throw (bad.error || new Error('resposta buida'));
+    const [users, projects, sessions, attendance, incidents, configRows, sectionRows] = res.map(r => r.data);
+    S.users = users.map(userFromRow);
+    S.projects = projects.map(projectFromRow);
+    S.sessions = sessions.map(sessionFromRow);
+    S.attendance = rowsToAttendance(attendance);
+    S.incidents = incidents.map(incidentFromRow);
+    S.config = configFromRow(configRows[0]);
+    applySections(sectionRows);
+    if (S.config.types) TYPES = S.config.types;
+    S.config.types = TYPES;
+    BASE = snapshot();
+    LOAD_OK = true; LAST_LOAD = Date.now();
+    return true;
+  } catch (e) { console.warn(e); return false; }
+}
 async function load() {
   try { Object.assign(ui, JSON.parse(localStorage.getItem(LS_UI) || '{}')); } catch {}
   try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; REAL_ADMIN = (s && s.realAdminId) || null; } catch {}
-  try {
-    const [{ data: users }, { data: projects }, { data: sessions }, { data: attendance }, { data: incidents }, { data: configRows }, { data: sectionRows }] = await Promise.all([
-      sb.from('users_public').select('*'),
-      sb.from('projects').select('*'),
-      sb.from('sessions').select('*'),
-      sb.from('attendance').select('*'),
-      sb.from('incidents').select('*'),
-      sb.from('config').select('*').limit(1),
-      sb.from('sections').select('*'),
-    ]);
-    S.users = (users || []).map(userFromRow);
-    S.projects = (projects || []).map(projectFromRow);
-    S.sessions = (sessions || []).map(sessionFromRow);
-    S.attendance = rowsToAttendance(attendance || []);
-    S.incidents = (incidents || []).map(incidentFromRow);
-    S.config = configFromRow(configRows && configRows[0]);
-    applySections(sectionRows);
-    if (S.config.types) TYPES = S.config.types;
-  } catch (e) { console.warn(e); toast('No s\'ha pogut connectar amb el servidor'); }
+  const ok = await fetchAll();
+  if (!ok) toast('No s\'han pogut carregar les dades. Recarrega la pàgina.');
   migrate();
-  if (!S.users.length) await seedAdmin();
+  if (ok && !S.users.length) await seedAdmin();
   if (ME && !S.users.some(u => u.id === ME && u.active !== false)) ME = null;
   ui.sessionId = null; ui.rollSec = null; ui.search = ''; ui.tab = null; ui.incFilter = 'all';
 }
@@ -688,19 +701,63 @@ function migrate() {
   if (!Array.isArray(S.sessions)) S.sessions = [];
   S.sessions.forEach(s => { if (!Array.isArray(s.projIds)) s.projIds = []; });
 }
-let t1 = null;
+let t1 = null, saving = false, again = false, retryT = null;
+/** JSON amb les claus ordenades: dues còpies iguals donen sempre el mateix text (sense falsos canvis). */
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
+const userSync = u => ({ id: u.id, name: u.name, section: u.section || '', instrument: u.instrument || '', roles: rolesOf(u), active: u.active !== false });
+function snapshot() {
+  const byId = (arr, view) => new Map(arr.map(x => [x.id, stable(view ? view(x) : x)]));
+  return { users: byId(S.users, userSync), projects: byId(S.projects), sessions: byId(S.sessions), incidents: byId(S.incidents),
+    attendance: new Map(Object.entries(S.attendance).map(([k, v]) => [k, stable(v)])), config: stable(S.config) };
+}
+/** Compara l'estat actual amb BASE i retorna només el que ha canviat aquest dispositiu (o null si no hi ha res). */
+function buildChanges() {
+  S.config.types = TYPES;
+  const next = snapshot();
+  const ch = { projects: { upsert: [], delete: [] }, sessions: { upsert: [], delete: [] }, incidents: { upsert: [], delete: [] },
+    attendance: { upsert: [], delete: [] }, users: { update: [], delete: [] }, config: null };
+  let n = 0;
+  const cmp = (name, objs, up, del) => {
+    for (const [id, js] of next[name]) if (BASE[name].get(id) !== js) { up.push(objs.get(id)); n++; }
+    for (const id of BASE[name].keys()) if (!next[name].has(id)) { del.push(id); n++; }
+  };
+  cmp('projects', new Map(S.projects.map(x => [x.id, x])), ch.projects.upsert, ch.projects.delete);
+  cmp('sessions', new Map(S.sessions.map(x => [x.id, x])), ch.sessions.upsert, ch.sessions.delete);
+  cmp('incidents', new Map(S.incidents.map(x => [x.id, x])), ch.incidents.upsert, ch.incidents.delete);
+  cmp('users', new Map(S.users.map(x => [x.id, userSync(x)])), ch.users.update, ch.users.delete);
+  for (const [k, js] of next.attendance) if (BASE.attendance.get(k) !== js) {
+    const [sessionId, userId] = k.split('|'); const v = S.attendance[k];
+    ch.attendance.upsert.push({ sessionId, userId, s: v.s, min: v.min ?? null, note: v.note || '', by: v.by || null, at: v.at || null }); n++;
+  }
+  for (const k of BASE.attendance.keys()) if (!next.attendance.has(k)) {
+    const [sessionId, userId] = k.split('|'); ch.attendance.delete.push({ sessionId, userId }); n++;
+  }
+  if (next.config !== BASE.config) { ch.config = S.config; n++; }
+  return { ch: n ? JSON.parse(JSON.stringify(ch)) : null, next };
+}
+async function flush(isRetry) {
+  t1 = null;
+  if (!LOAD_OK || !BASE) return;
+  if (saving) { again = true; return; }
+  const { ch, next } = buildChanges();
+  if (!ch) return;
+  saving = true;
+  try {
+    const r = await sb.rpc('apply_changes', { p: ch });
+    if (r.error) throw r.error;
+    BASE = next;
+  } catch (e) {
+    console.warn(e); toast('No s\'han pogut desar els canvis. Torna-ho a provar.');
+    if (!isRetry) { clearTimeout(retryT); retryT = setTimeout(() => flush(true), 10000); }
+  } finally { saving = false; if (again) { again = false; save(); } }
+}
 function save() {
   clearTimeout(t1);
-  S.config.types = TYPES;
-  t1 = setTimeout(async () => {
-    try {
-      const r1 = await sb.rpc('sync_data', { p_config: S.config, p_projects: S.projects, p_sessions: S.sessions,
-        p_attendance: attendanceToRows(S.attendance), p_incidents: S.incidents });
-      if (r1.error) throw r1.error;
-      const r2 = await sb.rpc('sync_users', { p_users: S.users });
-      if (r2.error) throw r2.error;
-    } catch (e) { console.warn(e); toast('No s\'han pogut desar els canvis. Torna-ho a provar.'); }
-  }, 400);
+  t1 = setTimeout(flush, 400);
   try { localStorage.setItem(LS_UI, JSON.stringify({ tab: ui.tab, calProj: ui.calProj, calMode: ui.calMode, llistaMode: ui.llistaMode, statsProj: ui.statsProj, manage: ui.manage, incFilter: ui.incFilter })); } catch {}
 }
 function saveSession() {
@@ -997,6 +1054,7 @@ function viewLogin(err) {
     <div><h1 class="h1">${esc(S.config.name)}</h1><p class="muted" style="margin:4px 0 0">Gestió d'assistència</p></div>
     <form id="loginf" autocomplete="on">
       ${err ? `<div class="err">${esc(err)}</div>` : ''}
+      ${!LOAD_OK ? `<div class="err">No s'han pogut carregar les dades. <button type="button" class="btn btn-sm" data-act="reload">Torna-ho a provar</button></div>` : ''}
       <div class="field"><span>Usuari</span><input class="inp" id="lg-user" placeholder="nom.cognom" autocapitalize="none" autocorrect="off"></div>
       <div class="field"><span>Contrasenya</span>${passField('lg-pass')}</div>
       <label class="toggle-row" style="min-height:36px"><span style="font-size:13.5px">Mantenir la sessió iniciada</span>
@@ -2255,6 +2313,7 @@ document.addEventListener('click', async e => {
   const cur = currentSession();
   switch (a) {
     case 'tab': ui.tab = el.dataset.tab; ui.rollSec = null; if (ui.tab === 'llista') ui.sessionId = null; save(); render(); window.scrollTo(0, 0); return;
+    case 'reload': return location.reload();
     case 'logout': ME = null; REAL_ADMIN = null; saveSession(); ui.tab = null; render(); return;
     case 'demo': return demo();
 
@@ -2442,6 +2501,16 @@ document.addEventListener('input', e => {
 });
 
 /* ================= Init ================= */
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'hidden') { if (t1) { clearTimeout(t1); flush(); } return; }
+  // En tornar a l'app: si fa estona que no s'ha actualitzat i no hi ha res pendent ni cap full obert, es baixen les dades noves.
+  if (!ME || !LOAD_OK || saving || t1 || Date.now() - LAST_LOAD < 60000 || document.querySelector('.sheet-back')) return;
+  if (buildChanges().ch) return;
+  if (await fetchAll()) {
+    if (ME && !S.users.some(u => u.id === ME && u.active !== false)) { ME = null; saveSession(); }
+    render();
+  }
+});
 (async () => {
   await load();
   if (ME) splash(() => { render(); const u = me(); if (u && u.mustChangePassword) changePasswordSheet(true); }); else render();
