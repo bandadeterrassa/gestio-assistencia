@@ -122,6 +122,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .btn-ghost{border-color:transparent;background:transparent;color:var(--accent)}
 .btn-danger{background:var(--fnj);border-color:var(--fnj);color:var(--fnj-ink)}
 .btn-danger-ghost{border-color:var(--bad-bg);background:var(--bad-bg);color:var(--fnj)}
+.btn-outline-danger{background:transparent;border-color:color-mix(in srgb, var(--fnj) 45%, transparent);color:var(--fnj)}
 .btn-sm{min-height:34px;padding:0 12px;font-size:var(--fs-2)}
 .btn-block{width:100%}
 .btn-cta{min-height:50px;font-size:var(--fs-5);font-weight:700;gap:8px;white-space:normal;text-align:center;line-height:1.25;padding:10px 20px;background:linear-gradient(180deg, hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 6%)), var(--accent));color:var(--accent-ink);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 3px 0 hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) - 8%)), 0 10px 24px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.4);transition:transform .15s var(--ease-spring),box-shadow .15s}
@@ -1403,15 +1404,20 @@ function incCard(i, review, hideName) {
   const u = userById(i.userId); const s = sessionById(i.sessionId);
   const rev = i.reviewedBy ? userById(i.reviewedBy) : null;
   const canAct = can.reviewIncident(i);
+  // Accions: qui revisa justifica/denega/reobre/elimina; el propietari pot editar mentre no estigui justificat.
+  const btn = (act, cls, txt, extra = '') => `<button class="btn btn-sm ${cls}" data-act="${act}" data-id="${i.id}" ${extra}>${txt}</button>`;
+  const actions = [
+    review && canAct && i.status === 'pending' ? btn('inc-accept', 'btn-primary', 'Justifica') + btn('inc-reject', 'btn-danger-ghost', 'Denega') : '',
+    review && canAct && i.status !== 'pending' ? btn('inc-reopen', '', 'Torna-la a pendent') : '',
+    i.userId === ME && i.status !== 'accepted' ? btn('inc-edit', '', 'Edita') : '',
+    review && canAct ? btn('inc-del', 'btn-outline-danger', 'Elimina', 'style="margin-left:auto"') : '',
+  ].join('');
   return `<div class="inc-card">${hideName ? '' : `<div class="inc-h"><b>${esc(u ? u.name : '—')}${review && u && u.instrument ? ` <span class="part">${esc(u.instrument)}</span>` : ''}</b></div>`}
     <div class="inc-m"><span class="pill sm ${i.kind === 'late' ? 'info' : 'low'}">${i.kind === 'late' ? 'Retard' : 'Absència'}</span>${i.kind === 'late' && i.min ? ` de ${i.min}′` : ''} · ${s ? `${capz(longDate(s.date))}` : 'sessió eliminada'}</div>
     <div class="inc-m">Comunicat el ${fmtStamp(i.createdAt)}${rev ? ` · revisat per ${esc(rev.name)} el ${fmtStamp(i.reviewedAt)}` : ''}</div>
     ${i.reason && i.status !== 'rejected' ? `<div style="font-size:13.5px">${esc(i.reason)}</div>` : ''}
     ${i.reviewNote ? `<div class="inc-m">Nota: ${esc(i.reviewNote)}</div>` : ''}
-    ${review && canAct && i.status === 'pending' ? `<div class="inc-a">
-      <button class="btn btn-sm btn-primary" data-act="inc-accept" data-id="${i.id}">Justifica</button>
-      <button class="btn btn-sm btn-danger-ghost" data-act="inc-reject" data-id="${i.id}">Denega</button></div>` : ''}
-    ${review && canAct && i.status !== 'pending' ? `<div class="inc-a"><button class="btn btn-sm" data-act="inc-reopen" data-id="${i.id}">Torna-la a pendent</button></div>` : ''}</div>`;
+    ${actions ? `<div class="inc-a">${actions}</div>` : ''}</div>`;
 }
 
 /* ---------- Gestió ---------- */
@@ -1930,6 +1936,87 @@ function reviewIncident(id, accept) {
   save(); closeSheet(); render();
   toast(accept ? 'Avís justificat' : 'Marcada com a no justificada');
 }
+/** Marca d'assistència que l'avís va deixar en ser revisat, si encara és exactament aquella (si algú l'ha canviada després, no la toquem). */
+function derivedMark(inc) {
+  const mk = mark(inc.sessionId, inc.userId); if (!mk) return null;
+  if (inc.status === 'accepted') {
+    const same = inc.kind === 'late' ? mk.s === 'R' && (mk.min || 0) === (inc.min || 10) : mk.s === 'FJ';
+    return same && (mk.note || '') === (inc.reason || '') ? mk : null;
+  }
+  if (inc.status === 'rejected') return mk.s === 'FNJ' ? mk : null;
+  return null;
+}
+/** Elimina un avís (només qui els revisa). A diferència de «Denega», l'esborra del tot. */
+function deleteIncidentSheet(id) {
+  const inc = S.incidents.find(i => i.id === id); if (!inc || !can.reviewIncident(inc)) return;
+  const u = userById(inc.userId), s = sessionById(inc.sessionId), dm = derivedMark(inc);
+  sheet({
+    title: 'Elimina l\'avís',
+    body: `<p>Vols eliminar l'avís ${inc.kind === 'late' ? 'de retard' : 'd\'absència'} de <b>${esc(u ? u.name : '—')}</b>${s ? ` del ${esc(longDate(s.date))}` : ''}?</p>
+      <div class="privacy">S'esborra del tot i no es pot desfer. «Denega» el deixa guardat com a no justificat; això, no.</div>
+      ${dm ? `<div class="toggle-row"><span><b>Treu també la marca de la llista</b><br><span class="muted" style="font-size:12.5px">Ara hi consta «${esc(STATUS[dm.s].label)}» per aquest avís.</span></span>
+        <label class="switch"><input type="checkbox" id="d-mark" checked><span></span></label></div>` : ''}`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-danger" data-act="sheet-save">Elimina</button>`,
+  });
+  sheetSave = () => {
+    if (!S.incidents.some(i => i.id === id)) return true;
+    if ($('#d-mark') && $('#d-mark').checked) delete S.attendance[aKey(inc.sessionId, inc.userId)];
+    S.incidents = S.incidents.filter(i => i.id !== id);
+    save(); toast('Avís eliminat'); return true;
+  };
+}
+/** Edita el propi avís mentre no estigui justificat. Si estava denegat, en desar-lo torna a quedar pendent de revisió. */
+function editIncidentSheet(id) {
+  const inc = S.incidents.find(i => i.id === id);
+  if (!inc || inc.userId !== ME || inc.status === 'accepted') return;
+  const u = me(), cur = sessionById(inc.sessionId), wasRejected = inc.status === 'rejected';
+  const canMove = inc.status === 'pending';   // un cop revisat, la sessió ja no es pot canviar
+  const opts = allSessions().filter(s => (s.date >= TODAY && inSession(s, u)) || s.id === inc.sessionId);
+  let kind = inc.kind, min = inc.min || LATE_CHIPS[0];
+  const custom = inc.kind === 'late' && inc.min && !LATE_CHIPS.includes(inc.min);
+  sheet({
+    title: 'Edita l\'avís',
+    body: `<div class="field"><span>Sessió</span>${canMove
+        ? `<select class="inp" id="e-sess">${opts.map(s => `<option value="${s.id}" ${s.id === inc.sessionId ? 'selected' : ''}>${esc(capz(wdShort(s.date)) + ' ' + ddmm(s.date))} · ${esc(s.type || 'Assaig')} ${esc(timeRange(s))}</option>`).join('')}</select>`
+        : `<div>${cur ? esc(capz(longDate(cur.date))) + ' · ' + esc(cur.type || '') : 'sessió eliminada'}</div><small class="muted">La sessió no es pot canviar un cop l'avís ha estat revisat.</small>`}</div>
+      <div class="field"><span>Què passa?</span><div class="pickers" id="e-kind">
+        <button type="button" class="pick" data-kind="absence" aria-pressed="${kind === 'absence'}">No hi puc ser</button>
+        <button type="button" class="pick" data-kind="late" aria-pressed="${kind === 'late'}">Arribaré tard</button></div></div>
+      <div class="field" id="e-minwrap" ${kind === 'late' ? '' : 'hidden'}><span>Minuts de retard previstos</span><div class="pickers" id="e-min">
+        ${LATE_CHIPS.map(n => `<button type="button" class="pick" data-min="${n}" aria-pressed="${!custom && n === min}">${n}′</button>`).join('')}
+        <input type="number" class="pick min-custom" id="e-min-custom" aria-pressed="${custom}" inputmode="numeric" min="1" max="180" placeholder="+" value="${custom ? inc.min : ''}"></div></div>
+      <div class="field"><span>Motiu</span><textarea class="inp" id="e-reason" placeholder="Explica-ho breument">${esc(inc.reason || '')}</textarea></div>
+      ${wasRejected ? '<div class="privacy">Aquest avís va ser denegat. En desar-lo tornarà a quedar pendent de revisió.</div>' : ''}`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
+  });
+  $('#e-kind').addEventListener('click', e => {
+    const b = e.target.closest('[data-kind]'); if (!b) return;
+    kind = b.dataset.kind;
+    $$('#e-kind .pick').forEach(p => p.setAttribute('aria-pressed', p.dataset.kind === kind));
+    $('#e-minwrap').hidden = kind !== 'late';
+  });
+  $('#e-min').addEventListener('click', e => {
+    const b = e.target.closest('[data-min]'); if (!b) return;
+    min = Number(b.dataset.min);
+    $$('#e-min .pick[data-min]').forEach(p => p.setAttribute('aria-pressed', Number(p.dataset.min) === min));
+    $('#e-min-custom').value = ''; $('#e-min-custom').setAttribute('aria-pressed', 'false');
+  });
+  $('#e-min-custom').addEventListener('change', e => {
+    const n = Number(e.target.value);
+    if (!n || n < 1) return;
+    min = Math.min(180, n);
+    $$('#e-min .pick[data-min]').forEach(p => p.setAttribute('aria-pressed', false));
+    e.target.setAttribute('aria-pressed', 'true');
+  });
+  sheetSave = () => {
+    const reason = $('#e-reason').value.trim();
+    if (!reason) { toast('Escriu el motiu'); return false; }
+    const sid = canMove ? $('#e-sess').value : inc.sessionId;
+    if (sid !== inc.sessionId && S.incidents.some(o => o.id !== inc.id && o.userId === ME && o.sessionId === sid)) { toast('Ja tens un avís per a aquesta sessió'); return false; }
+    Object.assign(inc, { sessionId: sid, kind, min: kind === 'late' ? min : null, reason, status: 'pending', reviewedBy: null, reviewedAt: null, reviewNote: '' });
+    save(); toast(wasRejected ? 'Avís enviat de nou a revisió' : 'Avís actualitzat'); return true;
+  };
+}
 function incidentDetail(id) {
   const inc = S.incidents.find(i => i.id === id); if (!inc) return;
   sheet({ title: 'Avís', body: `<div class="panel">${incCard(inc, can.reviewIncident(inc))}</div>` });
@@ -2154,12 +2241,12 @@ function helpSheet() {
   const blocks = {
     musician: `<p class="help-intro">Consulta el calendari, comunica absències i segueix la teva assistència.</p>
       <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta el repertori, els assajos i concerts programats.</div></div>
-      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació. Mentre no estigui justificat, el pots editar.</div></div>
       <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta la teva assistència i puntualitat.</div></div>`,
     leader: `<p class="help-intro">Tot el que fa un músic i, a més, la gestió de la teva secció.</p>
       <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta el repertori, els assajos i concerts programats.</div></div>
-      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació.</div></div>
-      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació. Mentre no estigui justificat, el pots editar.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin. Un avís es pot eliminar des d'Avisos.</div></div>
       <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta la teva assistència i puntualitat, i les de tota la teva secció.</div></div>
       <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>`,
     director: `<p class="help-intro">Un accés de seguiment, sense poder passar llista ni editar res.</p>
@@ -2168,13 +2255,13 @@ function helpSheet() {
       <div class="privacy">Tot el teu accés és només de lectura: veus les dades que ja han marcat els caps de secció i la Junta, però no pots passar llista, justificar absències ni editar res.</div>`,
     board: `<p class="help-intro">Gestió d'assistència de tota la banda i seguiment general.</p>
       <div class="help-row"><span>📅</span><div><b>Calendari</b>Consulta el repertori, els assajos i concerts programats, i en pots crear de nous.</div></div>
-      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació.</div></div>
-      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda.</div></div>
+      <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació. Mentre no estigui justificat, el pots editar.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda. Un avís es pot eliminar des d'Avisos.</div></div>
       <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta les dades generals i les de qualsevol músic.</div></div>
       <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>`,
     admin: `<p class="help-intro">Gestió completa de l'aplicació: dades, usuaris i configuració.</p>
       <div class="help-row"><span>📅</span><div><b>Calendari</b>Crea i edita projectes i sessions.</div></div>
-      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències.</div></div>
+      <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències. Un avís es pot eliminar des d'Avisos.</div></div>
       <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta les dades generals i les de qualsevol músic.</div></div>
       <div class="help-row"><span>⚙️</span><div><b>Gestió</b>Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.</div></div>
       <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>`,
@@ -2436,6 +2523,8 @@ document.addEventListener('click', async e => {
     case 'inc-accept': return reviewIncident(el.dataset.id, true);
     case 'inc-reject': return reviewIncident(el.dataset.id, false);
     case 'inc-open': return incidentDetail(el.dataset.id);
+    case 'inc-edit': return editIncidentSheet(el.dataset.id);
+    case 'inc-del': return deleteIncidentSheet(el.dataset.id);
     case 'inc-reopen': { const i = S.incidents.find(x => x.id === el.dataset.id);
       if (i && can.reviewIncident(i)) { i.status = 'pending'; i.reviewedBy = null; i.reviewedAt = null; save(); closeSheet(); render(); } return; }
 
