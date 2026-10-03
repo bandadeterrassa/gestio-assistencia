@@ -136,6 +136,8 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .chip-caret{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 .chip:active{transform:scale(.95)}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chips-sm{gap:6px}
+.chips-sm .chip{padding:0 12px;min-height:34px}
 .chip-dd[aria-pressed="true"] .chip-caret{opacity:.9}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
 .section-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-block:24px 10px}
@@ -366,6 +368,14 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .li .t{font-weight:600}
 .li .s{font-size:12.5px;color:var(--muted)}
 .li .dim{opacity:.5}
+.fee-sum{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 2px 0;font-size:12.5px}
+.fee{font-size:10px;line-height:15px;font-weight:600;letter-spacing:.01em;padding:0 6px;border-radius:999px;white-space:nowrap}
+/* Les files amb etiqueta de quota guanyen amplada perquè els noms no es parteixin: forat més petit i llapis (decoratiu) més petit */
+.li.has-fee > button{gap:8px;padding-inline:12px}
+.li.has-fee .icon-btn.plain{width:26px;height:26px}
+.li.has-fee > button > span:last-child{gap:5px !important}
+.fee.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.fee.no{background:var(--warn-bg);color:var(--warn-fg)}
 .sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-block:20px 8px;padding-inline:2px}
 .sec-h .h2 em{font-style:normal;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent);margin-right:6px}
 .prod-card > button{display:block;padding:14px;width:100%;text-align:left;transition:background .15s}
@@ -628,7 +638,8 @@ const ui = { tab: null, sessionId: null, rollSec: null, calProj: 'all', calPast:
 function userFromRow(r) {
   return { id: r.id, username: r.username, name: r.name, section: r.section || '', instrument: r.instrument || '',
     roles: r.roles && r.roles.length ? r.roles : ['musician'], active: r.active !== false, mustChangePassword: !!r.must_change_password,
-    countsFrom: r.counts_from || '' };
+    countsFrom: r.counts_from || '',
+    feePaid: typeof r.fee_paid === 'boolean' ? r.fee_paid : null };   // null = no hi tens accés (només Junta i administració la reben)
 }
 function projectFromRow(r) {
   return { id: r.id, name: r.name, color: r.color, from: r.from_date || '', to: r.to_date || '',
@@ -730,7 +741,8 @@ function stable(v) {
   if (v && typeof v === 'object') return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
   return JSON.stringify(v === undefined ? null : v);
 }
-const userSync = u => ({ id: u.id, name: u.name, section: u.section || '', instrument: u.instrument || '', roles: rolesOf(u), active: u.active !== false, countsFrom: u.countsFrom || '' });
+const userSync = u => ({ id: u.id, name: u.name, section: u.section || '', instrument: u.instrument || '', roles: rolesOf(u), active: u.active !== false, countsFrom: u.countsFrom || '',
+  ...(typeof u.feePaid === 'boolean' ? { feePaid: u.feePaid } : {}) });
 function snapshot() {
   const byId = (arr, view) => new Map(arr.map(x => [x.id, stable(view ? view(x) : x)]));
   return { users: byId(S.users, userSync), projects: byId(S.projects), sessions: byId(S.sessions), incidents: byId(S.incidents),
@@ -884,6 +896,10 @@ function excludedFrom(s, u) {
 }
 /** Qui s'incorpora més tard: les sessions anteriors a la seva data d'inici no li compten (no surt a les llistes ni a cap recompte o estadística). */
 const beforeStart = (s, u) => !!u.countsFrom && s.date < u.countsFrom;
+/** La quota la veuen i la canvien només la Junta i l'administració, i només té sentit per als músics (no per a direcció/administració sense secció). */
+const canFee = () => level(me()) >= 4;
+const hasFee = x => canFee() && typeof x.feePaid === 'boolean' && x.active !== false && !rolesOf(x).every(r => r === 'admin' || r === 'director');
+const feeCounts = () => { const l = S.users.filter(hasFee); return { pending: l.filter(x => !x.feePaid).length, paid: l.filter(x => x.feePaid).length }; };
 const inSession = (s, u) => inCensus(u) && !excludedFrom(s, u) && !beforeStart(s, u);
 const aKey = (sid, uidv) => `${sid}|${uidv}`;
 const mark = (sid, u) => S.attendance[aKey(sid, u)] || null;
@@ -1434,40 +1450,49 @@ function manageUsers() {
   const u = me(); const lvl = level(u);
   const secs = lvl >= 3 ? SECTIONS.map(x => x.id) : [u.section];
   const q = normText(ui.search);
+  const feeF = canFee() ? (ui.feeFilter || 'all') : 'all';   // el filtre només el tenen qui veu la quota
+  const feeOk = x => feeF === 'all' || (hasFee(x) && (feeF === 'pending' ? !x.feePaid : x.feePaid));
   const head = `<div class="sec-h"><span class="muted" style="font-size:13px">${lvl >= 3 ? `${S.users.filter(x => x.active !== false).length} usuaris · ${censusUsers().length} al cens` : `${membersOf(u.section).length} músics a la teva secció`}</span>
     <span style="display:flex;gap:6px">${can.createUsers() ? '<button class="btn btn-sm btn-primary" data-act="new-user">+ Usuari</button>' : ''}</span></div>
     <input class="search" id="usearch" placeholder="Cerca…" value="${esc(ui.search)}">`;
   const blocks = secs.map(sid => {
-    const list = S.users.filter(x => x.section === sid && (!q || normText(x.name).includes(q) || normText(x.username).includes(q))).sort(byInstrumentOrder(sid));
-    if (!list.length && q) return '';
+    const list = S.users.filter(x => x.section === sid && feeOk(x) && (!q || normText(x.name).includes(q) || normText(x.username).includes(q))).sort(byInstrumentOrder(sid));
+    if (!list.length && (q || feeF !== 'all')) return '';
     return `<div class="sec-h"><h2 class="h2">${SEC[sid].name}</h2>
         <span style="display:flex;align-items:center;gap:10px"><span class="muted mono" style="font-size:12.5px">${list.length}</span>
         ${can.createUsers() ? `<button class="btn btn-sm btn-ghost" data-act="new-user" data-sec="${sid}">+ Afegeix-ne</button>` : ''}</span></div>
       ${list.length ? `<ul class="list">${list.map(userRow).join('')}</ul>`
         : `<div class="panel" style="padding:14px;color:var(--muted);font-size:13.5px">Cap músic en aquesta secció.</div>`}`;
   }).join('');
-  const staff = lvl >= 3 ? (() => {
+  const staff = lvl >= 3 && feeF === 'all' ? (() => {
     const dirs = S.users.filter(x => !x.section && topRole(x) === 'director' && (!q || normText(x.name).includes(q))).sort(bySurname);
     const adms = S.users.filter(x => !x.section && topRole(x) === 'admin' && (!q || normText(x.name).includes(q))).sort(bySurname);
     const block = (title, list) => list.length ? `<div class="sec-h"><h2 class="h2">${title}</h2><span class="muted mono" style="font-size:12.5px">${list.length}</span></div>
       <ul class="list">${list.map(userRow).join('')}</ul>` : '';
     return block('Direcció', dirs) + block('Administració', adms);
   })() : '';
-  return head + blocks + staff;
+  const fc = feeCounts();
+  const feePanel = canFee() ? `<div class="fee-sum"><span class="muted" style="font-weight:600">Quota</span><button class="btn btn-sm btn-ghost" data-act="fee-reset">Reinicia les quotes</button></div>
+    <div class="chips chips-sm" style="margin-top:4px">
+      <button class="chip" aria-pressed="${feeF === 'all'}" data-act="fee-filter" data-v="all">Totes</button>
+      <button class="chip" aria-pressed="${feeF === 'pending'}" data-act="fee-filter" data-v="pending">Pendents${fc.pending ? ` <span class="count-badge">${fc.pending}</span>` : ''}</button>
+      <button class="chip" aria-pressed="${feeF === 'paid'}" data-act="fee-filter" data-v="paid">Pagades${fc.paid ? ` <span class="mono" style="opacity:.7">${fc.paid}</span>` : ''}</button></div>` : '';
+  const none = feeF !== 'all' && !blocks ? `<div class="panel" style="padding:14px;color:var(--muted);font-size:13.5px;margin-top:10px">Cap usuari amb la quota ${feeF === 'pending' ? 'pendent' : 'pagada'}${q ? ' que coincideixi amb la cerca' : ''}.</div>` : '';
+  return head + feePanel + blocks + none + staff;
 }
 function userRow(x) {
   const shown = rolesOf(x).filter(r => r !== 'musician');
   const roleHtml = shown.length
     ? ' · ' + shown.map(r => r === 'leader' ? `<b style="color:var(--accent)">${ROLES[r].name}</b>` : ROLES[r].name).join(', ')
     : '';
-  const fromHtml = x.countsFrom ? `compta des del ${ddmm(x.countsFrom)}` : '';
-  const metaParts = [roleHtml.replace(/^ · /, ''), x.active === false ? 'inactiu' : '', fromHtml].filter(Boolean);
+  const metaParts = [roleHtml.replace(/^ · /, ''), x.active === false ? 'inactiu' : ''].filter(Boolean);
   const meta = metaParts.length ? ' · ' + metaParts.join(' · ') : '';
-  return `<li class="li"><button data-act="edit-user" data-uid="${x.id}">
+  return `<li class="li${hasFee(x) ? ' has-fee' : ''}"><button data-act="edit-user" data-uid="${x.id}">
     <span class="${x.active === false ? 'dim' : ''}" style="min-width:0"><span class="t">${esc(x.name)}</span>
       ${x.instrument ? ` <span class="part">${esc(x.instrument)}</span>` : ''}
       ${meta ? `<span class="s">${meta}</span>` : ''}</span>
-    <span class="icon-btn plain">${ICON.edit}</span></button></li>`;
+    <span style="display:flex;align-items:center;gap:8px;flex:none">${hasFee(x) ? `<span class="fee ${x.feePaid ? 'ok' : 'no'}" title="${x.feePaid ? 'Quota pagada' : 'Quota pendent'}">${x.feePaid ? 'Quota ✓' : 'Quota –'}</span>` : ''}
+      <span class="icon-btn plain">${ICON.edit}</span></span></button></li>`;
 }
 function manageIncidents() {
   const mine = S.incidents.filter(i => can.viewIncidents(i)).sort((a, b) => {
@@ -1586,6 +1611,8 @@ function userSheet(x) {
           : `<div style="display:flex;gap:8px;align-items:center"><input class="inp" value="••••••••" disabled style="flex:1;letter-spacing:3px;color:var(--muted)"><button type="button" class="btn btn-sm" data-act="unlock-pass">Edita</button></div>`}</div>
           ${isNew ? '' : '<small class="muted">Es manté igual tret que la canviïs expressament.</small>'}</div></fieldset>`
         : ''}
+      ${canFee() ? `<div class="toggle-row" id="u-fee-wrap" ${staffOnly ? 'hidden' : ''}><span><b>Quota pagada</b><br><span class="muted" style="font-size:12.5px">Només ho veuen la Junta i l'administració</span></span>
+        <label class="switch"><input type="checkbox" id="u-fee" ${x.feePaid ? 'checked' : ''}><span></span></label></div>` : ''}
       ${editActive ? `<div class="toggle-row"><span><b>Actiu</b><br><span class="muted" style="font-size:12.5px">Els inactius no surten a les llistes ni poden entrar</span></span>
         <label class="switch"><input type="checkbox" id="u-active" ${x.active !== false ? 'checked' : ''}><span></span></label></div>` : ''}`,
     foot: `${!isNew && can.createUsers() && x.id !== ME ? `<button class="btn btn-sm btn-danger-ghost" data-act="del-user" data-uid="${x.id}">Elimina</button>` : ''}
@@ -1633,6 +1660,7 @@ function userSheet(x) {
     if ($('#u-sec-wrap')) $('#u-sec-wrap').hidden = staffOnly;
     if ($('#u-inst-wrap')) $('#u-inst-wrap').hidden = staffOnly;
     if ($('#u-from-wrap')) $('#u-from-wrap').hidden = staffOnly;
+    if ($('#u-fee-wrap')) $('#u-fee-wrap').hidden = staffOnly;
     if ($('#u-staff-note')) $('#u-staff-note').hidden = !staffOnly;
     if (staffOnly && !wasStaffOnly) { draft.section = ''; draft.instruments = []; }
   });
@@ -1648,6 +1676,7 @@ function userSheet(x) {
       roles: draft.roles, active: editActive ? $('#u-active').checked : x.active !== false,
       username: x.username,
       countsFrom: staffOnly ? '' : (fromSel && canStart ? fromSel.value : (x.countsFrom || '')),
+      feePaid: canFee() && $('#u-fee') ? $('#u-fee').checked : (typeof x.feePaid === 'boolean' ? x.feePaid : null),
     };
     if (isNewUser) {
       const un = $('#u-user').value.trim().toLowerCase();
@@ -1935,6 +1964,22 @@ function reviewIncident(id, accept) {
   setMark(inc.sessionId, inc.userId, val);
   save(); closeSheet(); render();
   toast(accept ? 'Avís justificat' : 'Marcada com a no justificada');
+}
+/** Nova temporada: posa totes les quotes com a pendents. Els canvis viatgen com qualsevol altra edició d'usuari (el servidor només ho deixa fer a Junta i administració). */
+function feeResetSheet() {
+  if (!canFee()) return;
+  const paid = S.users.filter(x => x.feePaid === true);
+  if (!paid.length) { toast('Totes les quotes ja són pendents'); return; }
+  sheet({
+    title: 'Reinicia les quotes',
+    body: `<p>Vols posar com a <b>pendent</b> la quota de <b>${paid.length}</b> ${paid.length === 1 ? 'persona que ara consta' : 'persones que ara consten'} com a pagada?</p>
+      <div class="privacy">Serveix per començar una temporada nova. No toca res més, i després pots tornar a marcar-les una a una.</div>`,
+    foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-danger" data-act="sheet-save">Reinicia</button>`,
+  });
+  sheetSave = () => {
+    for (const x of S.users) if (x.feePaid === true) x.feePaid = false;
+    save(); toast('Quotes reiniciades'); return true;
+  };
 }
 /** Marca d'assistència que l'avís va deixar en ser revisat, si encara és exactament aquella (si algú l'ha canviada després, no la toquem). */
 function derivedMark(inc) {
@@ -2258,13 +2303,15 @@ function helpSheet() {
       <div class="help-row"><span>👤</span><div><b>Perfil</b>Comunica una absència o un retard amb antelació. Mentre no estigui justificat, el pots editar.</div></div>
       <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda. Un avís es pot eliminar des d'Avisos.</div></div>
       <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta les dades generals i les de qualsevol músic.</div></div>
-      <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>`,
+      <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>
+      <div class="help-row"><span>💶</span><div><b>Quota</b>A la fitxa del músic pots marcar si ha pagat la quota; a la llista surt com una etiqueta petita. Pots filtrar els pendents, i «Reinicia les quotes» les posa totes com a pendents per començar una temporada nova.</div></div>`,
     admin: `<p class="help-intro">Gestió completa de l'aplicació: dades, usuaris i configuració.</p>
       <div class="help-row"><span>📅</span><div><b>Calendari</b>Crea i edita projectes i sessions.</div></div>
       <div class="help-row"><span>📋</span><div><b>Llista</b>Passa llista de qualsevol secció, i justifica o rebutja absències. Un avís es pot eliminar des d'Avisos.</div></div>
       <div class="help-row"><span>📊</span><div><b>Estadístiques</b>Consulta les dades generals i les de qualsevol músic.</div></div>
       <div class="help-row"><span>⚙️</span><div><b>Gestió</b>Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.</div></div>
-      <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>`,
+      <div class="help-row"><span>🗓️</span><div><b>Qui s'incorpora més tard</b>A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.</div></div>
+      <div class="help-row"><span>💶</span><div><b>Quota</b>A la fitxa del músic pots marcar si ha pagat la quota; a la llista surt com una etiqueta petita. Pots filtrar els pendents, i «Reinicia les quotes» les posa totes com a pendents per començar una temporada nova.</div></div>`,
   };
   sheet({
     title: 'Com funciona l\'aplicació',
@@ -2523,6 +2570,8 @@ document.addEventListener('click', async e => {
     case 'inc-accept': return reviewIncident(el.dataset.id, true);
     case 'inc-reject': return reviewIncident(el.dataset.id, false);
     case 'inc-open': return incidentDetail(el.dataset.id);
+    case 'fee-filter': ui.feeFilter = el.dataset.v; render(); return;
+    case 'fee-reset': return feeResetSheet();
     case 'inc-edit': return editIncidentSheet(el.dataset.id);
     case 'inc-del': return deleteIncidentSheet(el.dataset.id);
     case 'inc-reopen': { const i = S.incidents.find(x => x.id === el.dataset.id);
