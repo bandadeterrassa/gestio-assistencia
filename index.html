@@ -368,6 +368,10 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .li .t{font-weight:600}
 .li .s{font-size:12.5px;color:var(--muted)}
 .li .dim{opacity:.5}
+.risk-hint{display:block;margin-top:12px;font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+.risk-hint b{color:var(--ink);font-weight:700}
+.risk-hint .ok{color:var(--ok-fg);font-weight:600}
+.risk-hint .no{color:var(--warn-fg);font-weight:600}
 .fee-sum{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 2px 0;font-size:12.5px}
 .fee{font-size:10px;line-height:15px;font-weight:600;letter-spacing:.01em;padding:0 6px;border-radius:999px;white-space:nowrap}
 /* Les files amb etiqueta de quota guanyen amplada perquè els noms no es parteixin: forat més petit i llapis (decoratiu) més petit */
@@ -990,15 +994,39 @@ function totalSessionsForScope(projFilter) {
  *  faltes permeses, el marge natural és de 3 faltes, així que també s'esperen 3 assajos abans de jutjar-ho;
  *  en un de 6 assajos el marge (i per tant l'espera) és menor. Mentre no hi hagi prou mostra, retorna null
  *  (ni verd ni vermell). */
-function faltesShare(c) {
+function faltesShare(c, proj = ui.statsProj) {
   const den = c.P + c.R + c.FJ + c.FNJ;
-  const totalExpected = totalSessionsForScope(ui.statsProj);
+  const totalExpected = totalSessionsForScope(proj);
   const minNeeded = Math.max(1, Math.floor(totalExpected * maxFaltesRate()));
   if (den < minNeeded) return null;
   return den ? (c.FJ + c.FNJ) / den : null;
 }
 /** En risc: quan el percentatge de faltes (justificades o no) supera el llindar configurat. */
 const atRisk = st => { const fp = faltesShare(st.c); return fp != null && fp > maxFaltesRate(); };
+/** Un «assaig» és qualsevol sessió el tipus de la qual comença per «Assaig» (les actuacions no hi compten). */
+const isRehearsalType = s => (s.type || 'Assaig').toLowerCase().startsWith('assaig');
+/** Només per a qui és en risc (mateixa regla que l'etiqueta «En risc»): a quin % arribaria si vingués a tots els assajos que queden.
+ *  Les absències que ja ha avisat compten com a falta. Retorna null si no és en risc o ja no queden assajos. */
+function riskForecast(u, proj) {
+  if (!inCensus(u)) return null;
+  const c = userStats(u, doneSessions(proj)).c;
+  const fp = faltesShare(c, proj);
+  if (fp == null || !(fp > maxFaltesRate())) return null;
+  const left = allSessions().filter(s => (!proj || proj === 'all' || (s.projIds || []).includes(proj))
+    && !sessionIsDone(s) && isRehearsalType(s) && inSession(s, u) && (mark(s.id, u.id) || {}).s !== 'NP');
+  if (!left.length) return null;
+  const known = left.filter(s => { const mk = mark(s.id, u.id); return (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) || S.incidents.some(i => i.userId === u.id && i.sessionId === s.id && i.kind === 'absence'); }).length;
+  if (known >= left.length) return null;   // si ja ha avisat que faltarà a tots, «si vens a tots» no té sentit
+  const den = c.P + c.R + c.FJ + c.FNJ + left.length;
+  const faltes = c.FJ + c.FNJ + known;
+  const present = c.P + (S.config.countLateAsPresent ? c.R : 0) + (left.length - known);
+  return { n: left.length, known, rate: present / den, exits: !(faltes / den > maxFaltesRate()) };
+}
+/** La frase que s'ensenya a qui és en risc. No diu mai quant marge hi ha: l'objectiu és que vinguin a tots. */
+function riskHint(u, proj, self) {
+  const f = riskForecast(u, proj); if (!f) return '';
+  return `<div class="privacy risk-hint">Si ${self ? 'vens' : 've'} a tots els assajos que queden <b>→ ${pct(f.rate)}</b> <span class="${f.exits ? 'ok' : 'no'}">(${f.exits ? 'sense risc' : 'encara en risc'})</span>${f.known ? `<span class="muted"> · ja comptant ${f.known} ${f.known === 1 ? 'absència avisada' : 'absències avisades'}</span>` : ''}</div>`;
+}
 /** Etiqueta d'instrument reutilitzada arreu (mateixa mida i espaiat a totes les llistes de músics). */
 const instrumentBadge = inst => inst ? ` <span class="part">${esc(inst)}</span>` : '';
 /** Color del percentatge d'assistència: vermell per sota del llindar, verd a partir del llindar (inclòs) — el 100% també és verd.
@@ -1334,7 +1362,7 @@ function viewStats() {
 
   const mineBlock = inCensus(u) ? (() => {
     const st = userStats(u, sessions);
-    return `<div class="section-title"><h2 class="h2">Les meves dades</h2></div>${statsSelfKpis(st)}`;
+    return `<div class="section-title"><h2 class="h2">Les meves dades</h2></div>${statsSelfKpis(st, u)}`;
   })() : '';
 
   return `<div class="page-head"><h1 class="h1">Estadístiques</h1><span class="eyebrow">Banda</span></div>
@@ -1352,7 +1380,7 @@ function viewStatsLeader(u) {
   const st = userStats(u, sessions);
   const secC = emptyCounts();
   for (const m of membersOf(u.section)) { const x = userStats(m, sessions); for (const k of Object.keys(secC)) secC[k] += x.c[k]; }
-  const mineKpis = statsSelfKpis(st);
+  const mineKpis = statsSelfKpis(st, u);
 
   const stats = membersOf(u.section).map(m => ({ m, ...userStats(m, sessions) })).filter(x => x.c.total);
   const sectionKpis = `<div class="kpis">
@@ -1373,13 +1401,13 @@ function statsSelf(u) {
   const chips = projStatsChips();
   const sessions = doneSessions(ui.statsProj);
   const st = userStats(u, sessions);
-  return `<div class="page-head"><h1 class="h1">Les meves dades</h1></div>${chips}${statsSelfKpis(st)}`;
+  return `<div class="page-head"><h1 class="h1">Les meves dades</h1></div>${chips}${statsSelfKpis(st, u)}`;
 }
 /** Els tres requadres personals (assistència, puntualitat, faltes) — sense el desglossament ni el comparatiu. */
-function statsSelfKpis(st) {
+function statsSelfKpis(st, u) {
   return `<div class="kpis"><div class="kpi ${attClass(st)}"><div class="kpi-v">${pct(st.pct)}</div><div class="kpi-l">Assistència${atRisk(st) ? ' <span class="pill risk">En risc</span>' : ''}</div></div>
       <div class="kpi ${punctClass(punctualityRate(st.c))}"><div class="kpi-v">${pct(punctualityRate(st.c))}</div><div class="kpi-l">Puntualitat</div></div>
-      ${faltesBox(st.c)}</div>`;
+      ${faltesBox(st.c)}</div>${u ? riskHint(u, ui.statsProj, u.id === ME) : ''}`;
 }
 
 /* ---------- Perfil ---------- */
@@ -1399,6 +1427,7 @@ function viewProfile(targetId) {
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${roleBadges(u)}
         ${inCensus(u) ? '' : '<span class="rolepill dim">No compta a l\'assistència</span>'}</div></div>
       ${st ? `<div class="mini-kpi ${attClass(st)}"><b>${pct(st.pct)}</b><span>Assistència</span></div>` : ''}</div>
+    ${riskHint(u, 'all', own)}
     ${own && inCensus(u) ? `<div class="panel incident-cta" style="margin-top:16px">
         <button class="btn btn-primary btn-block btn-cta" data-act="new-incident">Comunica una absència o un retard</button></div>` : ''}
     <div class="section-title"><h2 class="h2">Els meus avisos</h2><span class="eyebrow">${incs.length}</span></div>
@@ -2138,6 +2167,7 @@ function memberDetail(mid) {
       <div class="kpis"><div class="kpi ${attClass(st)}"><div class="kpi-v">${pct(st.pct)}</div><div class="kpi-l">Assistència${atRisk(st) ? ' <span class="pill risk">En risc</span>' : ''}</div></div>
         <div class="kpi ${punctClass(punctualityRate(st.c))}"><div class="kpi-v">${pct(punctualityRate(st.c))}</div><div class="kpi-l">Puntualitat</div></div>
         ${faltesBox(st.c)}</div>
+      ${riskHint(m, ui.statsProj, m.id === ME)}
       ${incs.length ? `<div class="field"><span>Últims avisos</span><div class="panel">${incs.map(i => incCard(i, false, true)).join('')}</div></div>` : ''}`,
     foot: `<span class="spacer"></span>${can.manageUsers() && can.seeMember(m) ? `<button class="btn btn-primary" data-act="edit-user" data-uid="${m.id}">Fitxa d'usuari</button>` : ''}`,
   });
