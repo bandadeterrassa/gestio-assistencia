@@ -479,7 +479,28 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 /* ===== Ajustos de la 3a revisió ===== */
 .rtag{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap}
 .fhead{display:flex;justify-content:space-between;align-items:center;width:calc(100% + 36px);margin:-16px -18px 0;padding:16px 18px 12px;text-align:left}
-.n100{letter-spacing:.07em;margin-right:-.07em}
+.n100{letter-spacing:.03em;margin-right:-.03em}
+
+/* ===== 4a proposta: marc del percentatge ajustat, «En risc» a dins, text de la data més gran, més aire sota la data ===== */
+.pbox{min-height:0;min-width:92px;padding:11px 12px 12px;border-radius:20px}
+.pbox .n{font-size:36px}
+.pbox .l{font-size:12px;margin-top:2px}
+.pbox .inbox{margin-top:8px;height:20px;padding:0 9px;font-size:11px;line-height:1}
+.herorow .hero{max-width:calc(100% - 108px)}
+.hrow2>div,.hrow2>p{max-width:calc(100% - 108px)}
+.hrow2{margin-top:12px}
+@media (max-width:340px){.tb .t1{font-size:14px}}
+
+/* ===== Detall de sessió i camps de data/hora ===== */
+.dtype{display:flex;align-items:center;gap:6px;font-size:17px;font-weight:600;color:var(--ink2);margin:2px 0 12px}
+.dfield{position:relative;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border:1.5px solid var(--rule);border-radius:18px;background:#fff;font-size:17px;overflow:hidden}
+.dfield .dv{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dfield .dv.ph{color:var(--ink3)}
+.dfield>svg{flex:none;color:var(--ink2)}
+#sheet-root .dfield>input{position:absolute;inset:0;width:100%;height:100%;opacity:0;z-index:1;margin:0;border:0;padding:0;background:transparent;font-size:16px!important}
+.dfield:focus-within{border-color:var(--field)}
+.dclr{position:relative;z-index:2;flex:none;width:32px;height:32px;display:grid;place-items:center;border-radius:16px;color:var(--ink2);margin:0 -6px 0 0;background:rgba(15,34,54,.07)}
+.dclr[hidden]{display:none}
 
 </style>
 </head>
@@ -1157,7 +1178,7 @@ function fitTexts() {
   const sdd = document.querySelector('.sbox .sdd');
   if (sdd) uniform(sdd, 36, 17, () => { const p = document.createElement('span'); p.className = sdd.className; return p; });
   const hero = document.querySelector('.hero[data-fit="date"]');
-  if (hero) uniform(hero, 50, 28, () => { const p = hero.cloneNode(false); p.innerHTML = '<em></em>'; return p; });
+  if (hero) { let s = 50; hero.style.fontSize = s + 'px'; while (hero.scrollWidth > hero.clientWidth + 0.5 && s > 28) { s--; hero.style.fontSize = s + 'px'; } }
 }
 /* ---------- entrada i pantalla d'arrencada ---------- */
 function passField(id, placeholder, value) {
@@ -1206,7 +1227,7 @@ function viewPerfil(u) {
   const mine = S.incidents.filter(i => i.userId === u.id).sort(incSort);
   const risk = st && st.c.total > 0 && isRisk(st, pscope);
   const tone = st && st.pct != null ? (attendanceTone(st.pct) === 'alert' ? 'risk' : 'ok') : '';
-  const pbox = st ? `<button class="pbox ${tone}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><div class="n">${pctH(st.pct)}</div><div class="l">assistència</div></button>${risk ? `<button class="risktag2 rtag" data-act="pbox" data-proj="${pscope}" aria-label="En risc. Veure estadístiques">En risc</button>` : ''}` : '';
+  const pbox = st ? `<button class="pbox ${tone}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><div class="n">${pctH(st.pct)}</div><div class="l">assistència</div>${risk ? '<span class="risktag2 inbox">En risc</span>' : ''}</button>` : '';
   const who = `<div class="who"><b>${esc(u.name)}</b> · ${esc(sectionLabel(u))}${u.instrument ? ', ' + esc(u.instrument) : ''}</div>`;
   let hero;
   if (!census) hero = `${who}<div class="hrow2"><p class="meta">No compta a l’assistència.</p></div>`;
@@ -1579,9 +1600,9 @@ function sessionInfo(sid) {
   const myTxt = mine ? `${mine.kind === 'late' ? 'Arribaràs ' + (mine.min || '') + '′ tard' : 'No hi seràs'} · ${mine.status === 'pending' ? 'pendent de revisar' : mine.status === 'accepted' ? 'justificat' : 'no justificat'}` : '';
   sheet({
     title: `<span class="dwd">${WD(s.date)}</span><span style="font-size:28px;line-height:1.1">${dmy(s.date)}</span>`,
-    body: `<div class="dpills">${ps.map(p => pj(p, 'lg')).join('') || '<span class="muted">Sense projecte</span>'}</div>
+    body: `<div class="dtype">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}</div>
+      <div class="dpills">${ps.map(p => pj(p, 'lg')).join('') || '<span class="muted">Sense projecte</span>'}</div>
       <div class="ig"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(s) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Lloc</div><b>${esc(s.place || 'Sense especificar')}</b></div></div></div>
-      <div class="s13 muted" style="margin-top:10px">${isPerf(s) ? starI(14) : ''}${esc(s.type || 'Assaig')} · ${when}</div>
       ${mine ? `<div class="dstate">${sdot(incKey(mine))}<span style="flex:1">${myTxt}</span>${mine.status !== 'accepted' ? `<button class="circb" data-act="inc-edit" data-id="${mine.id}" aria-label="Edita l’avís" style="width:40px;height:40px">${ico('pen', 18)}</button>` : ''}</div>` : ''}
       ${s.note ? `<div class="dnote"><div class="s13 muted">Nota</div>${esc(s.note)}</div>` : ''}
       ${ps.filter(p => p.repertoire).map(p => `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Repertori</b><br><span class="s13 muted">${esc(p.name)}</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>`).join('')}
@@ -2407,7 +2428,34 @@ function sheet({ title, body, foot }) {
   root.innerHTML = `<div class="dim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label)}"><div class="grab"></div>
     <div class="hd"><h2>${title}</h2><button class="circ" data-act="sheet-close" aria-label="Tanca" style="background:rgba(15,34,54,.07)">${ico('x', 20)}</button></div>
     <div class="bd">${body || ''}</div>${foot ? `<div class="foot">${foot}</div>` : ''}</div>`;
-  spaceDots(root);
+  spaceDots(root); enhanceFields(root);
+}
+/** Els camps de data i d'hora dels fulls es mostren com una caixa pròpia (el valor ben escrit i una icona) amb el selector natiu a sobre,
+ *  perquè es vegin igual a tots els mòbils i encaixin amb la resta de camps. El valor segueix sent el del camp original. */
+function enhanceFields(root) {
+  root.querySelectorAll('input[type=date],input[type=time]').forEach(inp => {
+    if (inp.closest('.dfield')) return;
+    const isDate = inp.type === 'date', optional = inp.id === 'p-from' || inp.id === 'p-to';
+    const wrap = document.createElement('div'); wrap.className = 'dfield';
+    const txt = document.createElement('span'); txt.className = 'dv';
+    inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(txt);
+    wrap.insertAdjacentHTML('beforeend', ico(isDate ? 'calp' : 'clock', 20));
+    let clr = null;
+    if (optional) {
+      clr = document.createElement('button'); clr.type = 'button'; clr.className = 'dclr'; clr.setAttribute('aria-label', 'Esborra la data'); clr.innerHTML = ico('x', 16);
+      clr.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); inp.value = ''; inp.dispatchEvent(new Event('change', { bubbles: true })); });
+      wrap.appendChild(clr);
+    }
+    wrap.appendChild(inp);
+    const paint = () => {
+      const v = inp.value; txt.classList.toggle('ph', !v);
+      txt.textContent = !v ? (isDate ? 'Tria una data' : 'Tria una hora') : isDate ? `${capz(fmtD(v, { weekday: 'long' }))}, ${dmy(v)} de ${v.slice(0, 4)}` : v;
+      if (clr) clr.hidden = !v;
+    };
+    inp.addEventListener('change', paint); inp.addEventListener('input', paint);
+    wrap.addEventListener('click', () => { try { inp.showPicker && inp.showPicker(); } catch {} });
+    paint();
+  });
 }
 const closeSheet = () => { const r = $('#sheet-root'); if (r) r.innerHTML = ''; sheetSave = null; };
 
