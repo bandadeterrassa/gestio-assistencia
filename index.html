@@ -476,6 +476,11 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 #sheet-root .row2:has(input[type=date]){grid-template-columns:minmax(0,1fr)}
 #sheet-root .row2>.field{min-width:0}
 
+/* ===== Ajustos de la 3a revisió ===== */
+.rtag{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap}
+.fhead{display:flex;justify-content:space-between;align-items:center;width:calc(100% + 36px);margin:-16px -18px 0;padding:16px 18px 12px;text-align:left}
+.n100{letter-spacing:.07em;margin-right:-.07em}
+
 </style>
 </head>
 <body>
@@ -557,8 +562,9 @@ const ICON = {
 const SWATCH_NAMES = null;
 /* Estat de la quota de pantalla: «sd» = punt d'estat; CSS_KEY converteix l'estat intern a la lletra de color del disseny */
 const CSS_KEY = { P: 'P', R: 'R', FJ: 'F', FNJ: 'X', NP: 'W' };
-const pctH = v => v == null ? '—' : Math.round(v * 100) + '<span class="pcs">%</span>';
-const pcn = n => n + '<span class="pcs">%</span>';
+const num100 = n => n === 100 ? '<span class="n100">100</span>' : String(n);
+const pctH = v => v == null ? '—' : num100(Math.round(v * 100)) + '<span class="pcs">%</span>';
+const pcn = n => num100(n) + '<span class="pcs">%</span>';
 
 
 /* ================= Utils ================= */
@@ -1138,11 +1144,20 @@ function render() {
 
 /** Fa que certs textos grans càpiguen sempre en una sola línia: baixa la mida de la lletra només quan cal. */
 function fitTexts() {
-  const fit = (sel, start, min) => $$(sel).forEach(el => {
-    el.style.whiteSpace = 'nowrap'; el.style.fontSize = start + 'px';
-    let s = start; while (el.scrollWidth > el.clientWidth + 0.5 && s > min) { s -= 1; el.style.fontSize = s + 'px'; }
-  });
-  fit('.sbox .sdd', 36, 20); fit('.hero em', 50, 28);
+  // Mida única: la més gran en què cap en una línia la data més llarga possible (30 de setembre, 31 de desembre…), perquè no canviï d'una sessió a una altra.
+  const worst = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].map((d, m) => dmy(`2026-${String(m + 1).padStart(2, '0')}-${d}`));
+  const uniform = (el, start, min, mkProbe) => {
+    const avail = el.clientWidth; if (!avail) return;
+    const probe = mkProbe(); probe.style.cssText += ';position:absolute;visibility:hidden;white-space:nowrap;max-width:none;width:auto;left:0;top:0;pointer-events:none';
+    el.parentNode.appendChild(probe);
+    const fits = s => { probe.style.fontSize = s + 'px'; return worst.every(t => { (probe.querySelector('em') || probe).textContent = t; return probe.scrollWidth <= avail + 0.5; }); };
+    let s = start; while (s > min && !fits(s)) s--;
+    probe.remove(); el.style.whiteSpace = 'nowrap'; el.style.fontSize = s + 'px';
+  };
+  const sdd = document.querySelector('.sbox .sdd');
+  if (sdd) uniform(sdd, 36, 17, () => { const p = document.createElement('span'); p.className = sdd.className; return p; });
+  const hero = document.querySelector('.hero[data-fit="date"]');
+  if (hero) uniform(hero, 50, 28, () => { const p = hero.cloneNode(false); p.innerHTML = '<em></em>'; return p; });
 }
 /* ---------- entrada i pantalla d'arrencada ---------- */
 function passField(id, placeholder, value) {
@@ -1191,19 +1206,18 @@ function viewPerfil(u) {
   const mine = S.incidents.filter(i => i.userId === u.id).sort(incSort);
   const risk = st && st.c.total > 0 && isRisk(st, pscope);
   const tone = st && st.pct != null ? (attendanceTone(st.pct) === 'alert' ? 'risk' : 'ok') : '';
-  const pbox = st ? `<button class="pbox ${tone}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><div class="n">${pctH(st.pct)}</div><div class="l">assistència</div>${pproj ? `<div class="pl">${esc(pproj.name)}</div>` : ''}${risk ? '<span class="risktag">En risc</span>' : ''}</button>` : '';
+  const pbox = st ? `<button class="pbox ${tone}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><div class="n">${pctH(st.pct)}</div><div class="l">assistència</div></button>${risk ? `<button class="risktag2 rtag" data-act="pbox" data-proj="${pscope}" aria-label="En risc. Veure estadístiques">En risc</button>` : ''}` : '';
   const who = `<div class="who"><b>${esc(u.name)}</b> · ${esc(sectionLabel(u))}${u.instrument ? ', ' + esc(u.instrument) : ''}</div>`;
   let hero;
   if (!census) hero = `${who}<div class="hrow2"><p class="meta">No compta a l’assistència.</p></div>`;
   else if (ns) {
     const dd = daysTo(ns.date), when = dd === 0 ? 'avui' : dd === 1 ? 'demà' : `d’aquí a ${dd} dies`;
-    hero = `${who}<div class="hwrap"><div class="herorow"><h1 class="hero">${WD(ns.date)}<br><em>${dmy(ns.date)}</em></h1></div>
-      <div class="hrow2"><div><p class="meta"><b>${esc(timeRange(ns))}</b>${ns.place ? ' · ' + esc(ns.place) : ''}<br>${isPerf(ns) ? starI(14) : ''}${esc(ns.type || 'Assaig')}, ${when}</p>
+    hero = `${who}<div class="hwrap"><div class="herorow"><h1 class="hero" data-fit="date">${WD(ns.date)}<br><em>${dmy(ns.date)}</em></h1></div>
+      <div class="hrow2"><div><p class="meta"><b>${esc(timeRange(ns))}</b><br>${isPerf(ns) ? starI(14) : ''}${esc(ns.type || 'Assaig')}${ns.place ? ' · ' + esc(ns.place) : ''}</p>
         <div style="margin-top:12px">${ns.projs.map(p => pj(p, '', true)).join(' ')}</div></div></div><div class="pcell">${pbox}</div></div>
-      ${own ? riskHint(u, pscope, true) : ''}
       ${own ? `<div class="btns"><button class="btn p" data-act="avis" data-kind="absence">No hi puc ser</button><button class="btn s" data-act="avis" data-kind="late">Arribaré tard</button></div>` : ''}`;
   } else hero = `${who}<div class="hwrap"><div class="herorow"><h1 class="hero" style="font-size:44px">Cap sessió<br><em>convocada</em></h1></div>
-      <div class="hrow2"><p class="meta">Quan es programi el proper assaig, el veuràs aquí i podràs avisar si no hi pots ser.</p></div><div class="pcell">${pbox}</div></div>${own ? riskHint(u, pscope, true) : ''}`;
+      <div class="hrow2"><p class="meta">Quan es programi el proper assaig, el veuràs aquí i podràs avisar si no hi pots ser.</p></div><div class="pcell">${pbox}</div></div>`;
   const list = mine.length ? mine.map((i, ix) => {
     const s = sessionById(i.sessionId), rev = i.reviewedBy ? userById(i.reviewedBy) : null;
     return `<div class="row" style="${ix ? '' : 'border-top:0;'}align-items:flex-start"><span style="margin-top:4px">${sdot(incKey(i))}</span><div style="flex:1;min-width:0">
@@ -1517,13 +1531,12 @@ function viewCal() {
   const L = allSessions();
   if (!L.length) return bar + emptyBox('Encara no hi ha sessions', 'Encara no hi ha assajos ni concerts programats.', canP ? '<button class="btn p" data-act="new-proj" style="margin:0 auto">+ Nou projecte</button>' : '');
   const sel = ui.calProj !== 'all', pc = S.projects.find(p => p.id === ui.calProj) || (ui.calProj === 'all' ? ongoingProject() : null);
-  const chips = `<div class="chips"><button class="chip ${!sel && !ui.calPast ? 'on' : ''}" data-act="cal-proj" data-id="all">Tot</button>${S.projects.length ? `<button class="chip ${sel ? 'on' : ''}" data-act="pick-proj" data-scope="cal">${pc ? `<span class="dot" style="background:${okColor(pc.color)}"></span>${esc(pc.name)}` : '<span class="dot" style="background:#9AA7B8"></span>Un projecte'} ${chv(sel ? 'color:#fff' : '')}</button>` : ''}<button class="chip ${ui.calPast ? 'on' : ''}" data-act="cal-past">Anteriors</button></div>`;
-  let ls = L.filter(s => ui.calPast ? s.date < TODAY : s.date >= TODAY);
+  const chips = `<div class="chips"><button class="chip ${!sel ? 'on' : ''}" data-act="cal-proj" data-id="all">Tot</button>${S.projects.length ? `<button class="chip ${sel ? 'on' : ''}" data-act="pick-proj" data-scope="cal">${pc ? `<span class="dot" style="background:${okColor(pc.color)}"></span>${esc(pc.name)}` : '<span class="dot" style="background:#9AA7B8"></span>Un projecte'} ${chv(sel ? 'color:#fff' : '')}</button>` : ''}<button class="chip ${ui.calPast ? 'on' : ''}" data-act="cal-past">Anteriors</button></div>`;
+  let ls = ui.calPast ? L.slice() : L.filter(s => s.date >= TODAY);   // «Anteriors» afegeix les passades (difuminades) a les futures
   if (sel) ls = ls.filter(s => (s.projIds || []).includes(ui.calProj));
-  if (ui.calPast) ls = ls.slice().reverse();
   const nx = L.find(s => s.date >= TODAY); let last = '';
-  const body = ls.map(s => { const k = monthYear(s.date); const head = k !== last ? `<div class="mon">${esc(k)}</div>` : ''; last = k; return head + scard(s, { next: nx && s.id === nx.id && !ui.calPast }); }).join('');
-  return bar + chips + (body || emptyBox(ui.calPast ? 'Cap sessió anterior' : 'Cap sessió pendent', 'No hi ha sessions amb aquest filtre.', '<button class="btn s" data-act="cal-proj" data-id="all" style="margin:0 auto">Treu el filtre</button>'));
+  const body = ls.map(s => { const k = monthYear(s.date); const head = k !== last ? `<div class="mon">${esc(k)}</div>` : ''; last = k; return head + scard(s, { next: nx && s.id === nx.id }); }).join('');
+  return bar + chips + (body || emptyBox('Cap sessió', 'No hi ha sessions amb aquest filtre.', '<button class="btn s" data-act="cal-proj" data-id="all" style="margin:0 auto">Treu el filtre</button>'));
 }
 /** Llista de projectes: gestió completa per a Junta/administració, consulta amb estat per a la resta. */
 function viewProjects() {
@@ -1592,7 +1605,7 @@ function selfTiles(u, sessions, compact) {
   if (!c.total) return '<p class="muted" style="padding:10px 0">Encara no tens sessions comptades en aquest període.</p>';
   const risk = isRisk(st, ui.statsProj), f = c.FJ + c.FNJ, open = ui.statsFalt || !compact;
   const tiles = `<div class="${compact ? 'kgrid3' : 'kgrid'}">${kt(toneCls(st.pct) + (compact ? ' sm' : ''), pctH(st.pct), 'Assistència' + (risk ? ' <span class="risktag2">En risc</span>' : ''))}${kt('bl' + (compact ? ' sm' : ''), pctH(punctualityRate(c)), 'Puntualitat')}${compact ? `<button class="kt sm" data-act="falt" style="text-align:left"><div class="n">${f}</div><div class="l" style="justify-content:space-between">${f === 1 ? 'Falta' : 'Faltes'} ${chv(open ? 'transform:rotate(180deg)' : '')}</div></button>` : ''}</div>`;
-  const det = open ? `<div class="kt" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:center"><button data-act="falt" style="display:flex;align-items:baseline;gap:10px;text-align:left"><span class="n">${f}</span><span class="muted" style="font-size:15px">${f === 1 ? 'Falta' : 'Faltes'}</span></button>${compact ? chv('transform:rotate(180deg)') : ''}</div>
+  const det = open ? `<div class="kt" style="margin-top:10px">${compact ? `<button class="fhead" data-act="falt" aria-expanded="true"><span style="display:flex;align-items:baseline;gap:10px"><span class="n">${f}</span><span class="muted" style="font-size:15px">${f === 1 ? 'Falta' : 'Faltes'}</span></span>${chv('transform:rotate(180deg)')}</button>` : `<div style="display:flex;align-items:baseline;gap:10px"><span class="n">${f}</span><span class="muted" style="font-size:15px">${f === 1 ? 'Falta' : 'Faltes'}</span></div>`}
     <div style="margin-top:12px;border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:8px"><span style="display:flex;gap:8px;align-items:center">${sdot('F')}<b>${c.FJ}</b> justificades</span><span style="display:flex;gap:8px;align-items:center">${sdot('X')}<b>${c.FNJ}</b> no justificades</span></div></div>` : '';
   return tiles + det + riskHint(u, ui.statsProj, u.id === ME);
 }
@@ -1619,8 +1632,9 @@ function perMusic(mem, sessions, secChips) {
   const rows = mem.filter(m => can.seeMember(m) && (!secChips || !ui.statsSec || m.section === ui.statsSec))
     .map(m => ({ m, ...userStats(m, sessions) })).filter(x => x.c.total).sort((a, b) => (a.pct ?? 1) - (b.pct ?? 1));
   const risk = rows.filter(r => isRisk(r, ui.statsProj));
-  const flt = ui.statsFlt === 'risk' ? 'risk' : 'all', list = flt === 'risk' ? risk : rows;
-  const chipsA = `<div class="chips" style="margin:0 0 4px"><button class="chip ${flt === 'all' ? 'on' : ''}" data-act="stats-flt" data-k="all">Tots <span style="font-weight:400">${rows.length}</span></button><button class="chip ${flt === 'risk' ? 'on' : ''}" data-act="stats-flt" data-k="risk">En risc <b ${flt === 'risk' ? '' : 'style="color:var(--sX)"'}>${risk.length}</b></button></div>`;
+  const byProject = ui.statsProj !== 'all';   // el filtre Tots/En risc només té sentit per projecte
+  const flt = byProject && ui.statsFlt === 'risk' ? 'risk' : 'all', list = flt === 'risk' ? risk : rows;
+  const chipsA = !byProject ? '' : `<div class="chips" style="margin:0 0 4px"><button class="chip ${flt === 'all' ? 'on' : ''}" data-act="stats-flt" data-k="all">Tots <span style="font-weight:400">${rows.length}</span></button><button class="chip ${flt === 'risk' ? 'on' : ''}" data-act="stats-flt" data-k="risk">En risc <b ${flt === 'risk' ? '' : 'style="color:var(--sX)"'}>${risk.length}</b></button></div>`;
   const chipsB = secChips ? `<div class="chips" style="margin:0 0 4px"><button class="chip ${!ui.statsSec ? 'on' : ''}" data-act="stats-sec" data-sec="">Totes</button>${SECTIONS.map(x => `<button class="chip ${ui.statsSec === x.id ? 'on' : ''}" data-act="stats-sec" data-sec="${x.id}">${esc(x.name)}</button>`).join('')}</div>` : '';
   const body = list.length ? list.map(r => {
     const lo = isRisk(r, ui.statsProj), f = r.c.FJ + r.c.FNJ;
@@ -1779,6 +1793,7 @@ function userSheet(x) {
     return `<option value="" ${x.countsFrom ? '' : 'selected'}>Des de la primera sessió</option>${custom}${rows.join('')}`;
   })();
   let staffOnly = rolesOf(x).every(r => r === 'admin' || r === 'director');
+  const editInstOnly = !editSection && level(me()) === 2 && !isNew && !staffOnly && !!x.section && x.section === (me() || {}).section;   // cap de secció: instrument sí, secció no
   sheet({
     title: isNew ? 'Nou usuari' : esc(x.name),
     body: `<div class="field"><span>Nom i cognoms</span><input class="inp" id="u-name" value="${esc(x.name || '')}" ${level(me()) >= 2 ? '' : 'disabled'}></div>
@@ -1788,6 +1803,9 @@ function userSheet(x) {
         ${insts.map(i => `<button type="button" class="pick" data-inst="${esc(i)}" aria-pressed="${(x.instrument || '').split(' / ').includes(i)}">${esc(i)}</button>`).join('')}</div>
         </div>
       <div class="field" id="u-staff-note" ${staffOnly ? '' : 'hidden'}><small class="muted">Aquest càrrec no pertany a cap secció.</small></div>` : ''}
+      ${editInstOnly ? `<div class="field" id="u-inst-wrap"><span>Instrument(s)</span><div class="pickers" id="u-inst">
+        ${insts.map(i => `<button type="button" class="pick" data-inst="${esc(i)}" aria-pressed="${(x.instrument || '').split(' / ').includes(i)}">${esc(i)}</button>`).join('')}</div>
+        <small>La secció no es pot canviar des d'aquí.</small></div>` : ''}
       <div class="field" id="u-from-wrap" ${staffOnly ? 'hidden' : ''}><span>Compta l'assistència des de</span>
         <select class="inp" id="u-from" ${canStart ? '' : 'disabled'}>${startOpts}</select>
         <small id="u-from-hint" class="muted"></small></div>
@@ -2517,14 +2535,14 @@ document.addEventListener('click', async e => {
     }
 
     /* calendari + estadístiques */
-    case 'cal-proj': ui.calProj = el.dataset.id; ui.calPast = false; save(); render(); return;
-    case 'cal-past': ui.calPast = !ui.calPast; render(); return;
+    case 'cal-proj': ui.calProj = el.dataset.id; save(); render(); return;
+    case 'cal-past': ui.calPast = !ui.calPast; render(); { const sc = $('#view .scroll'), nx = document.querySelector('.scard .spill.n'); if (sc) sc.scrollTop = ui.calPast && nx ? Math.max(0, nx.closest('.scard').offsetTop - 110) : 0; } return;
     case 'cal-mode': ui.calMode = el.dataset.id; save(); render(); return;
     case 'show-done': ui.calShowDone = !ui.calShowDone; render(); return;
     case 'stats-proj': ui.statsProj = el.dataset.id; save(); render(); return;
     case 'pick-proj': return projectPickerSheet(el.dataset.scope);
     case 'proj-pick-go': {
-      if (el.dataset.scope === 'cal') { ui.calProj = el.dataset.id; ui.calPast = false; } else ui.statsProj = el.dataset.id;
+      if (el.dataset.scope === 'cal') { ui.calProj = el.dataset.id; } else ui.statsProj = el.dataset.id;
       save(); closeSheet(); render(); return;
     }
     case 'stats-sec': ui.statsSec = el.dataset.sec; render(); return;
