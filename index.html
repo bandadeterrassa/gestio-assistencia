@@ -2,7 +2,7 @@
 <html lang="ca">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Banda de Terrassa · Assistència</title>
 <meta name="description" content="Gestió d'assistència, absències i projectes de la Banda de Terrassa.">
 <link rel="icon" href="favicon.ico?v=3" sizes="any">
@@ -449,6 +449,33 @@ button.mr{display:block;width:100%;text-align:left}
 .lgn-foot{font-size:12.5px;color:var(--ink2);max-width:34ch;margin:0;line-height:1.45}
 .help-intro{color:var(--ink2);line-height:1.45;margin-top:8px}
 
+/* ===== Ajustos de la 2a revisió ===== */
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+@media (max-width:519px){
+  html,body{background:var(--paper)}
+  body{display:block}
+  #app{position:fixed;inset:0;height:auto;max-width:none}
+  input,select,textarea{font-size:16px!important}
+}
+.hf{border-radius:34px;padding:22px 20px 24px;margin:0 -8px}
+.hwrap{position:relative}
+.hwrap .pcell{position:absolute;top:50%;right:2px;transform:translateY(-50%)}
+.herorow{min-height:0;margin-top:10px}
+.hf .hrow2 .meta{margin-top:0}
+.hrow2{margin-top:4px}
+.pbox .pl{font-size:11px;color:#9FB0C3;margin-top:2px;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero{white-space:nowrap}
+.sbox .sdate{flex:1;min-width:0;overflow:hidden}
+.risktag2{background:#B3262E;color:#fff}
+.mname{font-weight:400}
+.r .nm .a{font-weight:400}
+/* fulls: sense desplaçament lateral, dates una sota l'altra */
+#sheet-root .sheet,#sheet-root .bd{overflow-x:hidden}
+#sheet-root input[type=date],#sheet-root input[type=time]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;text-align:left;line-height:normal}
+#sheet-root input[type=date]::-webkit-date-and-time-value,#sheet-root input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0;min-height:1.2em}
+#sheet-root .row2:has(input[type=date]){grid-template-columns:minmax(0,1fr)}
+#sheet-root .row2>.field{min-width:0}
+
 </style>
 </head>
 <body>
@@ -495,8 +522,8 @@ const ORDER = ['P', 'R', 'FJ', 'FNJ', 'NP'];
 let TYPES = ['Assaig', 'Assaig extra', 'Assaig general', 'Concert', 'Cercavila', 'Sortida / intercanvi', 'Altres'];
 const LATE_CHIPS = [10, 15, 20, 25, 30];
 const PROJECT_COLORS = [
-  { name: 'Violeta', v: '#6F4BA6' }, { name: 'Magenta', v: '#B23A83' }, { name: 'Marró', v: '#7A5238' }, { name: 'Pruna', v: '#5E2F57' },
-  { name: 'Gris càlid', v: '#6F6A66' }, { name: 'Lila', v: '#8E78C8' }, { name: 'Cacau', v: '#4E3B31' }, { name: 'Malva', v: '#7A6F8F' },
+  { name: 'Violeta', v: '#6A4BA8' }, { name: 'Fúcsia', v: '#A0409E' }, { name: 'Rosa', v: '#C04573' },
+  { name: 'Terracota', v: '#A5553A' }, { name: 'Oliva', v: '#6F6B3A' }, { name: 'Pissarra', v: '#5E6B7C' },
 ];
 const ROLES = {
   musician: { name: 'Músic',        level: 1 },
@@ -1096,7 +1123,7 @@ function render() {
     tabs = true;
     const nav = navFor(u);
     if (!nav.some(n => n[0] === ui.tab)) ui.tab = nav[0][0];
-    if (ui.tab === 'perfil') html = `<div class="scroll flush"><div class="wrap">${toolbarHTML(true)}${viewPerfil(u)}</div></div>`;
+    if (ui.tab === 'perfil') html = `${toolbarHTML(false)}<div class="scroll">${viewPerfil(u)}</div>`;
     else {
       const inner = { llista: viewRoll, calendari: viewCal, estadistiques: viewStats, gestio: viewManage }[ui.tab]();
       html = `${toolbarHTML(false)}<div class="scroll">${bannerHTML()}${inner}</div>`;
@@ -1106,8 +1133,17 @@ function render() {
   tabbar.innerHTML = tabs ? tabbarHTML(u) : ''; tabbar.style.display = tabs ? '' : 'none';
   const s2 = $('#view .scroll'); if (s2 && scrollMem[key] != null) s2.scrollTop = scrollMem[key];
   lastKey = key; spaceDots(view);
+  fitTexts(); if (document.fonts && document.fonts.status !== 'loaded') document.fonts.ready.then(fitTexts);
 }
 
+/** Fa que certs textos grans càpiguen sempre en una sola línia: baixa la mida de la lletra només quan cal. */
+function fitTexts() {
+  const fit = (sel, start, min) => $$(sel).forEach(el => {
+    el.style.whiteSpace = 'nowrap'; el.style.fontSize = start + 'px';
+    let s = start; while (el.scrollWidth > el.clientWidth + 0.5 && s > min) { s -= 1; el.style.fontSize = s + 'px'; }
+  });
+  fit('.sbox .sdd', 36, 20); fit('.hero em', 50, 28);
+}
 /* ---------- entrada i pantalla d'arrencada ---------- */
 function passField(id, placeholder, value) {
   return `<div class="pass-wrap"><input class="inp" id="${id}" type="password" placeholder="${placeholder || '••••'}" value="${esc(value || '')}" autocomplete="off">
@@ -1147,24 +1183,27 @@ function riskHint(u, proj, self) {
 /* ---------- Perfil ---------- */
 function viewPerfil(u) {
   const own = u.id === ME, census = inCensus(u);
-  const st = census ? userStats(u, doneSessions('all')) : null;
   const ns = census ? allSessions().filter(s => !sessionIsDone(s) && inSession(s, u))[0] : null;
+  const ongoing = S.projects.filter(p => projectStatus(p) === 'ongoing');
+  const pproj = census ? ((ns && ongoing.find(p => (ns.projIds || []).includes(p.id))) || ongoing[0] || null) : null;   // el projecte en curs (el de la propera sessió, si n'hi ha diversos)
+  const pscope = pproj ? pproj.id : 'all';
+  const st = census ? userStats(u, doneSessions(pscope)) : null;
   const mine = S.incidents.filter(i => i.userId === u.id).sort(incSort);
-  const risk = st && st.pct != null && isRisk(st, 'all');
+  const risk = st && st.c.total > 0 && isRisk(st, pscope);
   const tone = st && st.pct != null ? (attendanceTone(st.pct) === 'alert' ? 'risk' : 'ok') : '';
-  const pbox = st ? `<button class="pbox ${tone}" data-act="tab" data-tab="estadistiques" aria-label="Assistència ${pct(st.pct)}. Veure estadístiques"><div class="n">${pctH(st.pct)}</div><div class="l">assistència</div>${risk ? '<span class="risktag">En risc</span>' : ''}</button>` : '';
+  const pbox = st ? `<button class="pbox ${tone}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><div class="n">${pctH(st.pct)}</div><div class="l">assistència</div>${pproj ? `<div class="pl">${esc(pproj.name)}</div>` : ''}${risk ? '<span class="risktag">En risc</span>' : ''}</button>` : '';
   const who = `<div class="who"><b>${esc(u.name)}</b> · ${esc(sectionLabel(u))}${u.instrument ? ', ' + esc(u.instrument) : ''}</div>`;
   let hero;
   if (!census) hero = `${who}<div class="hrow2"><p class="meta">No compta a l’assistència.</p></div>`;
   else if (ns) {
     const dd = daysTo(ns.date), when = dd === 0 ? 'avui' : dd === 1 ? 'demà' : `d’aquí a ${dd} dies`;
-    hero = `${who}<div class="herorow"><h1 class="hero">${WD(ns.date)}<br><em>${dmy(ns.date)}</em></h1><div class="pcell">${pbox}</div></div>
+    hero = `${who}<div class="hwrap"><div class="herorow"><h1 class="hero">${WD(ns.date)}<br><em>${dmy(ns.date)}</em></h1></div>
       <div class="hrow2"><div><p class="meta"><b>${esc(timeRange(ns))}</b>${ns.place ? ' · ' + esc(ns.place) : ''}<br>${isPerf(ns) ? starI(14) : ''}${esc(ns.type || 'Assaig')}, ${when}</p>
-        <div style="margin-top:12px">${ns.projs.map(p => pj(p, '', true)).join(' ')}</div></div></div>
-      ${own ? riskHint(u, 'all', true) : ''}
+        <div style="margin-top:12px">${ns.projs.map(p => pj(p, '', true)).join(' ')}</div></div></div><div class="pcell">${pbox}</div></div>
+      ${own ? riskHint(u, pscope, true) : ''}
       ${own ? `<div class="btns"><button class="btn p" data-act="avis" data-kind="absence">No hi puc ser</button><button class="btn s" data-act="avis" data-kind="late">Arribaré tard</button></div>` : ''}`;
-  } else hero = `${who}<div class="herorow"><h1 class="hero" style="font-size:44px">Cap sessió<br><em>convocada</em></h1><div class="pcell">${pbox}</div></div>
-      <div class="hrow2"><p class="meta">Quan es programi el proper assaig, el veuràs aquí i podràs avisar si no hi pots ser.</p></div>${own ? riskHint(u, 'all', true) : ''}`;
+  } else hero = `${who}<div class="hwrap"><div class="herorow"><h1 class="hero" style="font-size:44px">Cap sessió<br><em>convocada</em></h1></div>
+      <div class="hrow2"><p class="meta">Quan es programi el proper assaig, el veuràs aquí i podràs avisar si no hi pots ser.</p></div><div class="pcell">${pbox}</div></div>${own ? riskHint(u, pscope, true) : ''}`;
   const list = mine.length ? mine.map((i, ix) => {
     const s = sessionById(i.sessionId), rev = i.reviewedBy ? userById(i.reviewedBy) : null;
     return `<div class="row" style="${ix ? '' : 'border-top:0;'}align-items:flex-start"><span style="margin-top:4px">${sdot(incKey(i))}</span><div style="flex:1;min-width:0">
@@ -1180,7 +1219,7 @@ function viewPerfil(u) {
     ${own && mine.some(i => i.status !== 'accepted') ? hint('pendent', 'Pots editar un avís (el llapis) mentre no estigui justificat, i eliminar-lo mentre no l’hagin revisat.') : ''}
     ${list}
     ${own && u.section ? `<div class="h" style="margin:26px 0 8px">La meva secció<small>${esc(SEC[u.section].name)}</small></div><div class="hr2"></div>
-      ${mem.map((m, ix) => `<div class="row" style="${ix ? '' : 'border-top:0;'}padding:11px 0"><b class="s17">${esc(m.name)}</b>${m.instrument ? `<span class="badge">${esc(m.instrument)}</span>` : ''}<span class="s13 muted" style="margin-left:auto">${roleHTML(m)}</span></div>`).join('') || '<div class="muted" style="padding:14px 0">Ets l’únic músic d’aquesta secció.</div>'}` : ''}
+      ${mem.map((m, ix) => `<div class="row" style="${ix ? '' : 'border-top:0;'}padding:11px 0"><span class="s17 mname">${esc(m.name)}</span>${m.instrument ? `<span class="badge">${esc(m.instrument)}</span>` : ''}<span class="s13 muted" style="margin-left:auto">${roleHTML(m)}</span></div>`).join('') || '<div class="muted" style="padding:14px 0">Ets l’únic músic d’aquesta secció.</div>'}` : ''}
     ${own ? `<div class="h" style="margin:26px 0 8px">Compte</div><div class="hr2"></div>
       <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Credencials</div><div class="d">Usuari <b style="color:var(--ink)">${esc(u.username)}</b></div></div><button class="btn s sm" data-act="change-password" style="height:40px;padding:0 16px">Canvia la contrasenya</button></div>
       <div class="set"><div style="flex:1"><div class="t">Sessió</div><div class="d">Tanca la sessió en aquest dispositiu.</div></div><button class="btn s sm" data-act="logout" style="height:40px;padding:0 16px">Surt</button></div>` : ''}
@@ -1223,7 +1262,7 @@ function rollOverview(cur) {
     : hasRole(u, 'director') ? `<button class="btn s sm" data-act="edit-sess-project" data-sid="${cur.id}" style="width:100%;margin-top:12px">Canvia el projecte</button>` : '';
   // Qui no podrà venir i ho ha justificat. Només noms i instrument (sense motius).
   const fj = SECTIONS.flatMap(x => membersOf(x.id)).filter(m => inSession(cur, m) && (mark(cur.id, m.id) || {}).s === 'FJ');
-  const fjBlock = fj.length ? hh('Faltes justificades', String(fj.length), 22) + fj.map((m, ix) => `<div class="row" style="${ix ? '' : 'border-top:0;'}padding:11px 0"><b class="s17">${esc(m.name)}</b>${m.instrument ? `<span class="badge">${esc(m.instrument)}</span>` : ''}</div>`).join('') : '';
+  const fjBlock = fj.length ? hh('Faltes justificades', String(fj.length), 22) + '<div class="hr2"></div>' + fj.map((m, ix) => `<div class="row" style="${ix ? '' : 'border-top:0;'}padding:11px 0"><span class="s17 mname">${esc(m.name)}</span>${m.instrument ? `<span class="badge">${esc(m.instrument)}</span>` : ''}</div>`).join('') : '';
   return `<div class="s13 muted" style="margin:16px 4px 8px">${can.passList() ? 'Toca una secció per passar llista' : 'Toca una secció per consultar-la'}</div>
     <div class="sgrid">${tiles || '<div class="stile"><div class="sn">Cap músic convocat</div></div>'}</div>${kpis}${edit}${fjBlock}`;
 }
@@ -1270,7 +1309,7 @@ function incItem(i, review, hideName) {
   if (i.userId === ME && i.status !== 'accepted') acts.push(`<button class="ibtn s" data-act="inc-edit" data-id="${i.id}">${ico('pen', 18)}Edita</button>`);
   if (review && canAct) acts.push(`<button class="ibtn del push" data-act="inc-del" data-id="${i.id}" aria-label="Elimina l’avís de ${esc(t ? t.name : '')}">${ico('trash', 18)}Elimina</button>`);
   const state = i.status === 'pending' ? '' : ` · ${i.status === 'accepted' ? 'justificada' : 'no justificada'}${rev ? ' per ' + esc(rev.name) : ''}`;
-  return `<div class="inc">${hideName ? '' : `<div style="display:flex;align-items:center;gap:8px"><b class="s17">${esc(t ? t.name : '—')}</b>${t && t.instrument ? `<span class="badge">${esc(t.instrument)}</span>` : ''}</div>`}
+  return `<div class="inc">${hideName ? '' : `<div style="display:flex;align-items:center;gap:8px"><span class="s17 mname">${esc(t ? t.name : '—')}</span>${t && t.instrument ? `<span class="badge">${esc(t.instrument)}</span>` : ''}</div>`}
     <div style="display:flex;align-items:center;gap:9px;margin-top:${hideName ? 0 : 6}px">${sdot(incKey(i))}<span><b>${i.kind === 'late' ? 'Retard' + (i.min ? ' · ' + i.min + '′' : '') : 'Absència'}</b> · ${s ? shortDay(s.date) : 'sessió eliminada'}</span></div>
     ${i.reason && i.status !== 'rejected' ? `<div style="margin-top:6px">${esc(i.reason)}</div>` : ''}${i.reviewNote ? `<div class="s13 muted" style="margin-top:3px">Nota: ${esc(i.reviewNote)}</div>` : ''}
     <div class="s13 muted" style="margin-top:3px">Comunicat el ${fmtStamp(i.createdAt)}${i.edited ? ' · editat' : ''}${state}</div>
@@ -1500,7 +1539,7 @@ function viewProjects() {
     const st = projectStatus(p), [d, t] = cnt(p), a = canP ? 'edit-proj' : 'view-proj';
     const dates = p.from ? ddmm(p.from) + (p.to ? ' – ' + ddmm(p.to) : '') + ' · ' : '';
     if (st === 'ongoing') return `<div style="background:var(--field);border-radius:24px;padding:16px 18px;margin-top:10px;color:#fff"><button data-act="${a}" data-pid="${p.id}" style="display:block;width:100%;text-align:left;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700"><span class="dot" style="background:#B9A5E6;width:12px;height:12px"></span>${esc(p.name)}</div><span class="spill" style="background:rgba(255,255,255,.16);color:#fff">En curs</span></div><div class="s13" style="color:#C9D5E2;margin-top:6px">${dates}${d}/${t} assajos fets</div></button>${act(p, true)}</div>`;
-    return `<div class="pcard">${frame([p.color])}<button data-act="${a}" data-pid="${p.id}" style="display:block;width:100%;text-align:left"><div class="nm"><span>${esc(p.name)}</span>${st === 'done' ? '<span class="spill o">Acabat</span>' : st === 'upcoming' ? '<span class="spill w">Proper</span>' : ''}</div><div class="s13 muted" style="margin-top:4px">${dates}${d}/${t} assajos fets</div></button>${act(p, false)}</div>`;
+    return `<div class="pcard">${frame([p.color])}<button data-act="${a}" data-pid="${p.id}" style="display:block;width:100%;text-align:left"><div class="nm"><span>${esc(p.name)}</span>${st === 'done' ? '<span class="spill o">Acabat</span>' : ''}</div><div class="s13 muted" style="margin-top:4px">${dates}${d}/${t} assajos fets</div></button>${act(p, false)}</div>`;
   };
   return `<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 4px 0"><span class="s13 muted">${ps.length} ${ps.length === 1 ? 'projecte' : 'projectes'}</span>${doneN ? `<span style="display:flex;align-items:center;gap:10px"><span class="s13">Mostra els acabats (${doneN})</span><button class="sw" role="switch" aria-pressed="${!!ui.calShowDone}" data-act="show-done" aria-label="Mostra els projectes acabats"></button></span>` : ''}</div>${ps.map(card).join('')}`;
 }
@@ -1519,7 +1558,7 @@ function sessionInfo(sid) {
   }
   const seeAll = lvl >= 3;
   const rel = S.incidents.filter(i => i.sessionId === s.id && i.status === 'accepted' && i.userId !== u.id && (seeAll || (inCensus(u) && u.section && (userById(i.userId) || {}).section === u.section)));
-  const relHTML = rel.length ? `<div class="fl">${seeAll ? 'Avisos justificats' : 'De la teva secció faltarà'}</div>${rel.map(i => { const t = userById(i.userId) || {}; return `<div class="dwho">${sdot(i.kind === 'late' ? 'R' : 'F')}<span style="flex:1"><b>${esc(t.name || '—')}</b>${seeAll ? ` <span class="s13 muted">${i.kind === 'late' ? 'arriba ' + (i.min || '') + '′ tard' : 'no hi serà'}</span>` : ''}</span></div>`; }).join('')}` : '';
+  const relHTML = rel.length ? `<div class="fl">${seeAll ? 'Avisos justificats' : 'De la teva secció faltarà'}</div>${rel.map(i => { const t = userById(i.userId) || {}; return `<div class="dwho">${sdot(i.kind === 'late' ? 'R' : 'F')}<span style="flex:1"><span class="mname">${esc(t.name || '—')}</span>${seeAll ? ` <span class="s13 muted">${i.kind === 'late' ? 'arriba ' + (i.min || '') + '′ tard' : 'no hi serà'}</span>` : ''}</span></div>`; }).join('')}` : '';
   const acts = [];
   if (!past && inCensus(u) && inSession(s, u)) acts.push(['Envia un avís', 'avis-from-sess']);
   if (lvl >= 2) acts.push([can.passList() ? 'Passa llista' : 'Consulta la llista', 'goto-sess']);
@@ -1585,7 +1624,7 @@ function perMusic(mem, sessions, secChips) {
   const chipsB = secChips ? `<div class="chips" style="margin:0 0 4px"><button class="chip ${!ui.statsSec ? 'on' : ''}" data-act="stats-sec" data-sec="">Totes</button>${SECTIONS.map(x => `<button class="chip ${ui.statsSec === x.id ? 'on' : ''}" data-act="stats-sec" data-sec="${x.id}">${esc(x.name)}</button>`).join('')}</div>` : '';
   const body = list.length ? list.map(r => {
     const lo = isRisk(r, ui.statsProj), f = r.c.FJ + r.c.FNJ;
-    return `<button class="mr" data-act="member-detail" data-mid="${r.m.id}"><div class="mr1"><b class="s17">${esc(r.m.name)}</b>${r.m.instrument ? `<span class="badge">${esc(r.m.instrument)}</span>` : ''}${lo ? '<span class="risktag2">En risc</span>' : ''}</div>
+    return `<button class="mr" data-act="member-detail" data-mid="${r.m.id}"><div class="mr1"><span class="s17 mname">${esc(r.m.name)}</span>${r.m.instrument ? `<span class="badge">${esc(r.m.instrument)}</span>` : ''}${lo ? '<span class="risktag2">En risc</span>' : ''}</div>
       <div class="mr2"><div class="trk"><div class="fill ${attendanceTone(r.pct) === 'alert' ? 'low' : ''}" style="width:${Math.round((r.pct || 0) * 100)}%"></div></div><span class="pv ${attendanceTone(r.pct) === 'alert' ? 'red' : ''}">${pctH(r.pct)}</span></div>
       <div class="mr3">${r.c.P + r.c.R} de ${r.c.total} sessions · ${f} ${f === 1 ? 'falta' : 'faltes'}${r.c.R ? ' · ' + r.c.R + (r.c.R === 1 ? ' retard' : ' retards') : ''}</div></button>`;
   }).join('') : `<div class="empty" style="padding:24px 0"><h2>${flt === 'risk' ? 'Ningú no està en risc' : 'Cap músic amb dades'}</h2><p>${flt === 'risk' ? 'Tots els músics estan per sobre del mínim.' : 'Encara no hi ha dades d’aquest grup.'}</p></div>`;
@@ -1623,13 +1662,9 @@ function manageUsers() {
   const u = me(), lvl = level(u);
   const secs = lvl >= 3 ? SECTIONS.map(x => x.id) : [u.section];
   const q = normText(ui.search);
-  const feeF = canFee() ? (ui.feeFilter || 'all') : 'all';
-  const feeOk = x => feeF === 'all' || (hasFee(x) && (feeF === 'pending' ? !x.feePaid : x.feePaid));
-  const fc = feeCounts();
-  const feePanel = canFee() ? `<div class="fsum"><span class="s13 muted" style="display:flex;gap:6px;align-items:center">${euro(true, true)}pagada ${euro(false, true)}pendent</span><button class="btn s" data-act="fee-reset">Reinicia les quotes</button></div>
-    <div class="chips"><button class="chip ${feeF === 'all' ? 'on' : ''}" data-act="fee-filter" data-v="all">Totes</button><button class="chip ${feeF === 'pending' ? 'on' : ''}" data-act="fee-filter" data-v="pending">Pendents${fc.pending ? ` <span style="font-weight:400">${fc.pending}</span>` : ''}</button><button class="chip ${feeF === 'paid' ? 'on' : ''}" data-act="fee-filter" data-v="paid">Pagades${fc.paid ? ` <span style="font-weight:400">${fc.paid}</span>` : ''}</button></div>` : '';
+  const feeF = 'all', feeOk = () => true;
   const head = `<div style="margin-top:12px"><span class="muted">${lvl >= 3 ? `${S.users.filter(x => x.active !== false).length} usuaris · ${censusUsers().length} al cens` : `${membersOf(u.section).length} músics a la teva secció`}</span></div>
-    <input class="srch" id="usearch" placeholder="Cerca…" value="${esc(ui.search)}" style="margin-top:10px" aria-label="Cerca un usuari">${feePanel}`;
+    <input class="srch" id="usearch" placeholder="Cerca…" value="${esc(ui.search)}" style="margin-top:10px" aria-label="Cerca un usuari">`;
   const blocks = secs.map(sid => {
     const list = S.users.filter(x => x.section === sid && feeOk(x) && (!q || normText(x.name).includes(q) || normText(x.username).includes(q))).sort(byInstrumentOrder(sid));
     if (!list.length && (q || feeF !== 'all')) return '';
@@ -1645,7 +1680,7 @@ function manageUsers() {
 }
 function userRow(x) {
   const rl = roleHTML(x);
-  return `<div class="row" style="padding:2px 0;gap:6px"><button class="urow" data-act="edit-user" data-uid="${x.id}" aria-label="Edita ${esc(x.name)}"><span class="uline ${x.active === false ? 'dim' : ''}"><b class="s17">${esc(x.name)}</b>${x.instrument ? `<span class="badge">${esc(x.instrument)}</span>` : ''}${rl ? `<span class="usep">·</span><span class="muted">${rl}</span>` : ''}${x.active === false ? '<span class="usep">·</span><span class="muted">inactiu</span>' : ''}</span></button>${hasFee(x) ? `<button class="eurb" data-act="fee" data-uid="${x.id}" aria-label="Quota ${x.feePaid ? 'pagada' : 'pendent'}. Toca per canviar-ho">${euro(x.feePaid)}</button>` : ''}</div>`;
+  return `<div class="row" style="padding:2px 0;gap:6px"><button class="urow" data-act="edit-user" data-uid="${x.id}" aria-label="Edita ${esc(x.name)}"><span class="uline ${x.active === false ? 'dim' : ''}"><span class="s17 mname">${esc(x.name)}</span>${x.instrument ? `<span class="badge">${esc(x.instrument)}</span>` : ''}${rl ? `<span class="usep">·</span><span class="muted">${rl}</span>` : ''}${x.active === false ? '<span class="usep">·</span><span class="muted">inactiu</span>' : ''}</span></button>${hasFee(x) ? `<button class="eurb" data-act="fee" data-uid="${x.id}" aria-label="Quota ${x.feePaid ? 'pagada' : 'pendent'}. Toca per canviar-ho">${euro(x.feePaid)}</button>` : ''}</div>`;
 }
 function manageConfig() {
   const c = S.config;
@@ -1656,6 +1691,8 @@ function manageConfig() {
     ${row('Faltes màximes per risc', 'Si les faltes d’un músic (justificades o no) passen d’aquest valor, queda <b>en risc</b>.', `<div style="text-align:right"><div style="font:700 28px/1 var(--sf);letter-spacing:-.02em">${pcn(c.maxFaltesPct)}</div><div style="margin-top:6px">${edit('edit-rules')}</div></div>`)}
     ${row('Els retards compten com a assistència', 'Si ho desactives, un retard resta al percentatge.', `<label class="switch"><input type="checkbox" data-act="toggle-late" ${c.countLateAsPresent ? 'checked' : ''} aria-label="Els retards compten com a assistència"><span></span></label>`)}
     ${row('Cens d’assistència', `Els músics que compten per al percentatge d’assistència. El director i l’administració no hi són. Ara hi ha ${censusUsers().length} músics.`)}
+    ${hh('Quotes', '', 20)}
+    ${row('Reinicia les quotes', 'Posa la quota de tots els músics com a pendent per començar una temporada nova. Després es pot tornar a marcar una a una.', `<button class="btn del sm" data-act="fee-reset" style="height:40px;padding:0 16px">Reinicia</button>`)}
     ${hh('Llocs d’assaig', '', 20)}
     ${row('Llocs disponibles', esc((c.places || []).join(' · ') || 'Cap definit'), edit('edit-places'))}
     ${hh('Tipus d’activitat', '', 20)}
@@ -1677,13 +1714,13 @@ function helpSheet() {
   const CAL = R('📅', 'Calendari', `Consulta el repertori, els assajos i concerts programats.`);
   const PERFIL = R('👤', 'Perfil', `Comunica una absència o un retard amb antelació. Mentre no estigui justificat, el pots editar, i mentre no l'hagin revisat, també eliminar.`);
   const LATE = R('🗓️', `Qui s'incorpora més tard`, `A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.`);
-  const QUOTA = R('💶', 'Quota', `A la fitxa del músic pots marcar si ha pagat la quota; a la llista surt com un € (verd si ha pagat, groc si no). Pots filtrar els pendents, i «Reinicia les quotes» les posa totes com a pendents per començar una temporada nova.`);
+  const QUOTA = R('💶', 'Quota', `A la fitxa del músic pots marcar si ha pagat la quota; a la llista surt com un € (verd si ha pagat, groc si no).`);
   const blocks = {
     musician: `<p class="help-intro">Consulta el calendari, comunica absències i segueix la teva assistència.</p>${CAL}${PERFIL}${R('📊', 'Estadístiques', `Consulta la teva assistència i puntualitat.`)}`,
     leader: `<p class="help-intro">Tot el que fa un músic i, a més, la gestió de la teva secció.</p>${CAL}${PERFIL}${R('📋', 'Llista', `Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta la teva assistència i puntualitat, i les de tota la teva secció.`)}${LATE}`,
     director: `<p class="help-intro">Un accés de seguiment, sense poder passar llista ni editar res.</p>${R('📅', 'Calendari', `Consulta els assajos, concerts i el repertori de cada projecte, amb el percentatge d'assistència de les sessions ja passades.`)}${R('📋', 'Llista', `Consulta les llistes que ja han marcat els caps de secció i la Junta, i els avisos que han comunicat els músics.`)}${R('📊', 'Estadístiques', `Consulta l'assistència i la puntualitat de tota la banda.`)}<div class="privacy">Tot el teu accés és només de lectura: veus les dades que ja han marcat els caps de secció i la Junta, però no pots passar llista, justificar absències ni editar res.</div>`,
     board: `<p class="help-intro">Gestió d'assistència de tota la banda i seguiment general.</p>${R('📅', 'Calendari', `Consulta el repertori, els assajos i concerts programats, i en pots crear de nous.`)}${PERFIL}${R('📋', 'Llista', `Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta les dades generals i les de qualsevol músic.`)}${LATE}${QUOTA}`,
-    admin: `<p class="help-intro">Gestió completa de l'aplicació: dades, usuaris i configuració.</p>${R('📅', 'Calendari', `Crea i edita projectes i sessions.`)}${R('📋', 'Llista', `Passa llista de qualsevol secció, i justifica o rebutja absències. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta les dades generals i les de qualsevol músic.`)}${R('⚙️', 'Gestió', `Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.`)}${LATE}${QUOTA}`,
+    admin: `<p class="help-intro">Gestió completa de l'aplicació: dades, usuaris i configuració.</p>${R('📅', 'Calendari', `Crea i edita projectes i sessions.`)}${R('📋', 'Llista', `Passa llista de qualsevol secció, i justifica o rebutja absències. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta les dades generals i les de qualsevol músic.`)}${R('⚙️', 'Gestió', `Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.`)}${LATE}${QUOTA}${R('🔄', 'Reinicia les quotes', `Des de Configuració pots posar totes les quotes com a pendents per començar una temporada nova.`)}`,
   };
   const states = [['P', 'Present', `Ha vingut a l'hora.`], ['R', 'Retard', `Ha vingut, però tard.`], ['F', 'Justif.', `No ha vingut, però ho havia avisat i s'ha acceptat.`], ['X', 'No just.', `No ha vingut i no hi ha cap motiu acceptat.`]];
   sheet({
@@ -2037,7 +2074,7 @@ function repeatSheet(pid) {
 
 /** Nova temporada: posa totes les quotes com a pendents. Els canvis viatgen com qualsevol altra edició d'usuari (el servidor només ho deixa fer a Junta i administració). */
 function feeResetSheet() {
-  if (!canFee()) return;
+  if (!can.appConfig()) return;
   const paid = S.users.filter(x => x.feePaid === true);
   if (!paid.length) { toast('Totes les quotes ja són pendents'); return; }
   sheet({
@@ -2464,6 +2501,7 @@ document.addEventListener('click', async e => {
     case 'avis': return incidentSheet(el.dataset.kind);
     case 'new-incident': return incidentSheet();
     case 'avis-from-sess': closeSheet(); return incidentSheet('absence', el.dataset.sid);
+    case 'pbox': ui.statsProj = el.dataset.proj || 'all'; ui.tab = 'estadistiques'; save(); render(); return;
     case 'inc-filter': ui.incFilter = el.dataset.v; save(); render(); return;
     case 'inc-accept': return reviewIncident(el.dataset.id, true);
     case 'inc-reject': return reviewIncident(el.dataset.id, false);
@@ -2626,6 +2664,7 @@ document.addEventListener('input', e => {
     save();
   }
 });
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));   // sense pinça-zoom a iOS
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#sheet-root .sheet')) closeSheet(); });
 window.addEventListener('online', () => { if (ME && OFFLINE) flush(true); });
 window.addEventListener('offline', () => { if (ME) setOffline(true); });
