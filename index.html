@@ -152,6 +152,8 @@ body{display:flex;align-items:center;justify-content:center}
 .sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--rule);margin:0 auto 14px;flex:none}
 .sheet .hd{display:flex;justify-content:space-between;align-items:flex-start;flex:none}
 .sheet h2{font:700 22px/1.15 var(--sf);letter-spacing:-.01em;max-width:280px;padding-top:8px}
+.sheet.ctr .hd{align-items:center}
+.sheet.ctr h2{padding-top:0}
 .sheet .bd{overflow-y:auto;flex:1;min-height:0;padding-bottom:6px;scrollbar-width:none}
 .sheet .foot{display:flex;gap:10px;padding:12px 0 18px;flex:none;align-items:center}
 .sheet .foot .btn{flex:1;padding:0 8px;font-size:16px}
@@ -338,7 +340,9 @@ select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:ima
 .ibtn{height:44px;padding:0 18px;border-radius:22px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
 .ibtn.p{background:var(--field);color:#fff} .ibtn.s{border:1.5px solid var(--field);color:var(--field)} .ibtn.del{background:#F8DCDD;color:#8A1C23;border:1.5px solid #EDB4B8}
 .inc .ia .push{margin-left:auto}
-.inc .ia .ig{margin-left:auto;display:flex;gap:8px}
+.inc .ig{display:flex;gap:8px;flex:none}
+.inc .icl{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:3px}
+.inc .icl>div{min-width:0}
 .circb.del{background:#F8DCDD;border-color:#EDB4B8;color:#8A1C23}
 .circb.back{color:var(--ink)}
 
@@ -580,6 +584,30 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
   .scard:hover{box-shadow:0 2px 8px rgba(15,34,54,.12),0 0 0 1px rgba(15,34,54,.1)}
 }
 
+/* ===== Dies amb diverses sessions, convocatòria i prova de so ===== */
+.xpre{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.xchip{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:3px 10px;border-radius:13px;background:rgba(15,34,54,.07);font-size:12.5px;font-weight:500;color:var(--ink);line-height:1.2}
+.xchip b{font-weight:700;font-variant-numeric:tabular-nums}
+.xchip .ico{width:14px;height:14px;stroke-width:1.9}
+.scard.multi{align-items:flex-start}
+.scard.multi .d{padding-top:2px}
+.scard.multi .x{display:grid;gap:0}
+.scard.multi .blk{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:0 0 12px}
+.scard.multi .blk+.blk{border-top:1px solid var(--rule);padding-top:12px}
+.scard.multi .blk .bx{flex:1;min-width:0}
+.scard.multi .blk .a{font-size:17px;font-weight:700} .scard.multi .blk .a span{font-weight:400;color:var(--ink2);font-size:15px;margin-left:4px}
+.scard.multi .blk:last-of-type{padding-bottom:0}
+.scard.multi .shr{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.tyrow{padding:12px 0;border-top:1px solid var(--rule)} .tyrow:first-child{border-top:0}
+.tyrow .trh{display:flex;align-items:center;gap:10px;font-size:17px}
+
+@media (min-width:1040px){
+  .cgrid .scard.multi{grid-column:1/-1}
+  .scard.multi .x{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));column-gap:28px}
+  .scard.multi .blk,.scard.multi .blk+.blk{border-top:0;padding:0}
+  .scard.multi .blk+.blk{border-left:1px solid var(--rule);padding-left:28px}
+  .scard.multi .shr{grid-column:1/-1;margin-top:14px}
+}
 </style>
 </head>
 <body>
@@ -647,7 +675,7 @@ const LS_SESSION = 'bt:sessio';
 const LS_UI = 'bt:ui';
 
 /* ---------- icons ---------- */
-const IC={help:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5M12 16.8h.01"/>',out:'<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10"/>',swap:'<path d="M7 7h12M15 3l4 4-4 4M17 17H5M9 13l-4 4 4 4"/>',user:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.7-3.4 3.4-5.2 7-5.2s6.3 1.8 7 5.2"/>',cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/>',calp:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M12 12.5v5M9.5 15h5"/>',bars:'<path d="M5 20V11M12 20V4M19 20v-6"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',people:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.9-4.6 5.5-4.6S14 16 14.5 19"/><path d="M17 9h4M17 13h4M17 17h4"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',chd:'<path d="M6 9l6 6 6-6"/>',pen:'<path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z"/>',l:'<path d="M15 5l-7 7 7 7"/>',r:'<path d="M9 5l7 7-7 7"/>',chk:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',eyeoff:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',undo:'<path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/>',redo:'<path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/>',warn:'<path d="M12 4l9 16H3zM12 10v4M12 17h.01"/>',wifi:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01M3 3l18 18"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',star:'<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.7 1-5.9L3.5 9.7l5.9-.8z"/>',trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',share:'<path d="M12 15V4M8 8l4-4 4 4M6 12v7h12v-7"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',pin:'<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.3"/>',link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'};
+const IC={key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/>',sound:'<path d="M4 10v4h4l5 4V6L8 10H4z"/><path d="M16.5 9a4 4 0 0 1 0 6"/>',help:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5M12 16.8h.01"/>',out:'<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10"/>',swap:'<path d="M7 7h12M15 3l4 4-4 4M17 17H5M9 13l-4 4 4 4"/>',user:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.7-3.4 3.4-5.2 7-5.2s6.3 1.8 7 5.2"/>',cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/>',calp:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M12 12.5v5M9.5 15h5"/>',bars:'<path d="M5 20V11M12 20V4M19 20v-6"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',people:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.9-4.6 5.5-4.6S14 16 14.5 19"/><path d="M17 9h4M17 13h4M17 17h4"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',chd:'<path d="M6 9l6 6 6-6"/>',pen:'<path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z"/>',l:'<path d="M15 5l-7 7 7 7"/>',r:'<path d="M9 5l7 7-7 7"/>',chk:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',eyeoff:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',undo:'<path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/>',redo:'<path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/>',warn:'<path d="M12 4l9 16H3zM12 10v4M12 17h.01"/>',wifi:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01M3 3l18 18"/>',plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',star:'<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.7 1-5.9L3.5 9.7l5.9-.8z"/>',trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',share:'<path d="M12 15V4M8 8l4-4 4 4M6 12v7h12v-7"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',pin:'<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.3"/>',link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'};
 const ico=(k,s=22,st='')=>`<svg class="ico" viewBox="0 0 24 24" style="width:${s}px;height:${s}px;${st}">${IC[k]}</svg>`;
 const CHK='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const sd=k=>`<span class="sd ${k}"></span>`;
@@ -675,12 +703,17 @@ const uid = (p = '') => p + Date.now().toString(36) + Math.random().toString(36)
 const newId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid().padEnd(32, '0').slice(0, 32).replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 const pad = n => String(n).padStart(2, '0');
 const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const TODAY = isoDate(new Date());
-const NOW_HHMM = (() => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); })();
+let TODAY = isoDate(new Date());
+let NOW_HHMM = '00:00';
+/** Torna a llegir l'hora actual (es crida a cada pintada i a cada consulta de «sessió feta»). */
+function refreshClock() { const d = new Date(); TODAY = isoDate(d); NOW_HHMM = pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+refreshClock();
 /** Una sessió es considera "feta" quan ja ha passat la seva data, o quan és avui i ja ha passat l'hora de fi. */
 function sessionIsDone(s) {
+  refreshClock();
   if (s.date < TODAY) return true;
   if (s.date > TODAY) return false;
+  if (s.end && s.time && s.end <= s.time) return false;   // acaba passada la mitjanit (p. ex. 21:30–00:00): no és feta fins l'endemà
   return (s.end || '23:59') <= NOW_HHMM;
 }
 const parseISO = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
@@ -740,7 +773,8 @@ function projectFromRow(r) {
 }
 function sessionFromRow(r) {
   return { id: r.id, projIds: r.proj_ids || [], date: r.date, time: (r.time || '').slice(0, 5), end: (r.end_time || '').slice(0, 5),
-    type: r.type || 'Assaig', place: r.place || '', note: r.note || '' };
+    type: r.type || 'Assaig', place: r.place || '', note: r.note || '',
+    callTime: (r.call_time || '').slice(0, 5), callPlace: r.call_place || '', soundTime: (r.sound_time || '').slice(0, 5) };
 }
 function incidentFromRow(r) {
   return { id: r.id, userId: r.user_id, sessionId: r.session_id, kind: r.kind, min: r.min == null ? undefined : r.min,
@@ -751,7 +785,8 @@ function configFromRow(r) {
   if (!r) return structuredClone(DEFAULT.config);
   return { name: r.name, logo: r.logo || '', accentH: r.accent_h, maxFaltesPct: r.max_faltes_pct ?? 25,
     alertFNJ: r.alert_fnj, countLateAsPresent: r.count_late_as_present,
-    places: r.places || [], types: (r.types && r.types.length) ? r.types : null };
+    places: r.places || [], types: (r.types && r.types.length) ? r.types : null,
+    typeRules: (r.type_rules && typeof r.type_rules === 'object') ? r.type_rules : null };
 }
 function rowsToAttendance(rows) {
   const map = {};
@@ -926,9 +961,9 @@ const can = {
   section: sec => { const u = me(); if (!u || viewOnly(u)) return false; return level(u) >= 3 || (hasRole(u, 'leader') && u.section === sec); },
   manageUsers: () => { const u = me(); return !!u && level(u) >= 2 && !viewOnly(u); },
   createUsers: () => level(me()) >= 5,
-  manageProjects: () => level(me()) >= 4,
-  /** Editar el repertori: només qui gestiona projectes (Junta/administració). El director ho pot consultar, no editar. */
-  repertoire: () => level(me()) >= 4,
+  manageProjects: () => level(me()) >= 3,
+  /** Editar el repertori: qui gestiona projectes (direcció, Junta i administració). */
+  repertoire: () => level(me()) >= 3,
   appConfig: () => level(me()) >= 5,
   attendanceConfig: () => level(me()) >= 5,
   reviewIncident: inc => { const u = me(); if (!u) return false; const t = userById(inc.userId); return level(u) >= 4 || (hasRole(u, 'leader') && t && t.section === u.section); },
@@ -1121,7 +1156,7 @@ function pendingIncidents() {
 function currentSession() {
   const list = allSessions(); if (!list.length) return null;
   if (ui.sessionId) { const f = list.find(s => s.id === ui.sessionId); if (f) return f; }
-  return list.find(s => s.date >= TODAY) || list[list.length - 1];
+  return list.find(s => !sessionIsDone(s)) || list[list.length - 1];
 }
 
 
@@ -1132,7 +1167,21 @@ const dmy = s => fmtD(s, { day: 'numeric', month: 'long' });            // «9 d
 const shortDay = s => `${wdShort(s)} ${dmy(s)}`;
 const daysTo = s => Math.round((parseISO(s) - parseISO(TODAY)) / 864e5);
 /** Actuació = qualsevol sessió que no sigui un assaig (el tipus no comença per «Assaig»). */
-const isPerf = s => !(s.type || 'Assaig').toLowerCase().startsWith('assaig');
+/** Regles d'un tipus d'activitat (Gestió › Tipus d'activitat): actuació (★), convocatòria i prova de so. Sense regla: s'actua com abans (actuació si no comença per «assaig»). */
+const typeRule = t => {
+  t = t || 'Assaig';
+  const r = S.config.typeRules && S.config.typeRules[t];
+  return r ? { perf: !!r.perf, call: !!r.call, sound: !!r.sound } : { perf: !t.toLowerCase().startsWith('assaig'), call: false, sound: false };
+};
+const isPerf = s => typeRule(s.type).perf;
+/** Convocatòria i prova de so d'una sessió (només si el tipus ho permet i hi ha hora), per ordre cronològic. */
+function extrasOf(s) {
+  const r = typeRule(s.type), out = [];
+  if (r.sound && s.soundTime) out.push({ k: 'sound', t: s.soundTime, p: '' });
+  if (r.call && s.callTime) out.push({ k: 'call', t: s.callTime, p: s.callPlace && s.callPlace !== s.place ? s.callPlace : '' });
+  return out.sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
+}
+const extraChips = s => { const ex = extrasOf(s); return ex.length ? `<div class="xpre">${ex.map(e => `<span class="xchip">${ico(e.k === 'sound' ? 'sound' : 'clock', 14)}${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'} <b>${esc(e.t)}</b>${e.p ? ' · ' + esc(e.p) : ''}</span>`).join('')}</div>` : ''; };
 const starI = (sz = 15) => `<span class="perf" title="Actuació">${ico('star', sz, 'fill:currentColor')}</span>`;
 const hex2 = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const okColor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#6F4BA6';
@@ -1196,8 +1245,10 @@ const markHTML = (size = 44, img = 36, extra = '') => {
 function toolbarHTML(light) {
   const adm = !!REAL_ADMIN || hasRole(me(), 'admin');
   return `<div class="tb ${light ? 'lt' : ''}"><div class="brand">${markHTML()}<div class="bt"><div class="t1">${esc(S.config.name)}</div><div class="t2">Gestió d’assistència</div></div></div>
-    <div class="cap glass">${adm ? `<button data-act="impersonate" aria-label="Prova rols">${ico('swap')}</button>` : ''}<button data-act="show-help" aria-label="Com s’entén l’aplicació">${ico('help')}</button><button data-act="logout" aria-label="Surt">${ico('out')}</button></div></div>`;
+    <div class="cap glass">${adm ? `<button data-act="impersonate" aria-label="Prova rols">${ico('swap')}</button>` : ''}${needsPwBtn(me()) ? `<button data-act="change-password" aria-label="Canvia la contrasenya">${ico('key')}</button>` : ''}<button data-act="show-help" aria-label="Com s’entén l’aplicació">${ico('help')}</button><button data-act="logout" aria-label="Surt">${ico('out')}</button></div></div>`;
 }
+/** Qui no té pestanya Perfil (director, administrador) canvia la contrasenya des de la capçalera o la barra lateral. */
+const needsPwBtn = u => (hasRole(u, 'admin') || viewOnly(u)) && (!REAL_ADMIN || ME === REAL_ADMIN);
 /** Pestanyes segons el rol (mateixes regles que fins ara). */
 function navFor(u) {
   const lvl = level(u), vo = viewOnly(u), t = [];
@@ -1214,7 +1265,7 @@ function tabbarHTML(u) {
   const role = hasRole(u, 'admin') ? 'Administrador' : hasRole(u, 'director') ? 'Director' : (u.instrument || '');
   return `<div class="sb-brand">${markHTML()}<div class="bt"><div class="t1">${esc(S.config.name)}</div><div class="t2">Gestió d’assistència</div></div></div>`
     + `<nav class="glass" aria-label="Seccions">${ts.map(([id, ic, name]) => `<button class="t ${ui.tab === id ? 'on' : ''}" data-act="tab" data-tab="${id}" aria-label="${name}" title="${name}" ${ui.tab === id ? 'aria-current="page"' : ''}>${ico(ic)}<span class="tl">${name}</span>${id === 'llista' && pend ? `<span class="bdg" aria-label="${pend} avisos pendents">${pend}</span>` : ''}</button>`).join('')}</nav>`
-    + `<div class="sb-foot">${adm ? `<button class="sb-act" data-act="impersonate">${ico('swap')}<span>Prova rols</span></button>` : ''}<button class="sb-act" data-act="show-help">${ico('help')}<span>Ajuda</span></button><div class="sn">${esc(u.name)}</div><div class="s13 muted">${esc(role)}</div><button class="btn s sm" data-act="logout" style="margin-top:12px;width:100%">Surt</button></div>`;
+    + `<div class="sb-foot">${adm ? `<button class="sb-act" data-act="impersonate">${ico('swap')}<span>Prova rols</span></button>` : ''}${needsPwBtn(u) ? `<button class="sb-act" data-act="change-password">${ico('key')}<span>Canvia la contrasenya</span></button>` : ''}<button class="sb-act" data-act="show-help">${ico('help')}<span>Ajuda</span></button><div class="sn">${esc(u.name)}</div><div class="s13 muted">${esc(role)}</div><button class="btn s sm" data-act="logout" style="margin-top:12px;width:100%">Surt</button></div>`;
 }
 function bannerHTML() {
   let h = '';
@@ -1227,6 +1278,7 @@ function bannerHTML() {
 const scrollMem = {}; let lastKey = '';
 const scrKey = () => [ME ? 'm' : 'l', ui.tab, ui.llistaMode, ui.calMode, ui.manage, ui.rollSec || ''].join('|');
 function render() {
+  refreshClock();
   const view = $('#view'), tabbar = $('#tabbar'); if (!view) return;
   const sc = $('#view .scroll'); if (sc) scrollMem[lastKey] = sc.scrollTop;
   const key = scrKey(); const u = me();
@@ -1353,7 +1405,7 @@ function viewRoll() {
   const cur = currentSession();
   if (!cur) return bar + emptyBox('Cap sessió', 'Afegeix assajos al projecte des del Calendari.');
   const list = allSessions(), i = list.findIndex(s => s.id === cur.id);
-  const nx = list.find(s => s.date >= TODAY), now = !!nx && nx.id === cur.id;
+  const nx = list.find(s => !sessionIsDone(s)), now = !!nx && nx.id === cur.id;
   const nav = `<div style="display:flex;gap:8px"><button class="nb" data-act="sess-prev" aria-label="Sessió anterior" ${i <= 0 ? 'disabled' : ''}>${ico('l', 20)}</button><button class="nb" data-act="sess-next" aria-label="Sessió següent" ${i >= list.length - 1 ? 'disabled' : ''}>${ico('r', 20)}</button></div>`;
   const box = `<div class="sbox ${now ? '' : 'off'}"><div class="top"><button class="sdate" data-act="sess-pick" aria-label="Tria una sessió"><span class="swd">${WD(cur.date)}</span><span class="sdd">${dmy(cur.date)}</span></button>${nav}</div>
     <div class="smeta">${isPerf(cur) ? starI(14) : ''}${esc(cur.type || 'Assaig')}${timeRange(cur) ? ' · ' + esc(timeRange(cur)) : ''} · ${esc(cur.place || 'Sense lloc')}</div>
@@ -1422,13 +1474,12 @@ function incItem(i, review, hideName) {
   if (review && canAct && i.status !== 'pending') right.push(`<button class="circb back" data-act="inc-reopen" data-id="${i.id}" aria-label="Torna-la a pendent" title="Torna-la a pendent">${ico('undo', 20)}</button>`);
   if (i.userId === ME && i.status !== 'accepted') right.push(`<button class="circb" data-act="inc-edit" data-id="${i.id}" aria-label="Edita l’avís" title="Edita">${ico('pen', 20)}</button>`);
   if (review && canAct) right.push(`<button class="circb del" data-act="inc-del" data-id="${i.id}" aria-label="Elimina l’avís de ${esc(t ? t.name : '')}" title="Elimina">${ico('trash', 20)}</button>`);
-  const acts = left.concat(right.length ? [`<span class="ig">${right.join('')}</span>`] : []);
   const state = i.status === 'pending' ? '' : ` · ${i.status === 'accepted' ? 'justificada' : 'no justificada'}${rev ? ' per ' + esc(rev.name) : ''}`;
   return `<div class="inc">${hideName ? '' : `<div style="display:flex;align-items:center;gap:8px"><span class="s17 mname">${esc(t ? t.name : '—')}</span>${t && t.instrument ? `<span class="badge">${esc(t.instrument)}</span>` : ''}</div>`}
     <div style="display:flex;align-items:center;gap:9px;margin-top:${hideName ? 0 : 6}px">${sdot(incKey(i))}<span><b>${i.kind === 'late' ? 'Retard' + (i.min ? ' · ' + i.min + '′' : '') : 'Absència'}</b> · ${s ? shortDay(s.date) : 'sessió eliminada'}</span></div>
     ${i.reason && i.status !== 'rejected' ? `<div style="margin-top:6px">${esc(i.reason)}</div>` : ''}${i.reviewNote ? `<div class="s13 muted" style="margin-top:3px">Nota: ${esc(i.reviewNote)}</div>` : ''}
-    <div class="s13 muted" style="margin-top:3px">Comunicat el ${fmtStamp(i.createdAt)}${i.edited ? ' · editat' : ''}${state}</div>
-    ${acts.length ? `<div class="ia">${acts.join('')}</div>` : ''}</div>`;
+    <div class="icl"><div class="s13 muted">Comunicat el ${fmtStamp(i.createdAt)}${i.edited ? ' · editat' : ''}${state}</div>${right.length ? `<span class="ig">${right.join('')}</span>` : ''}</div>
+    ${left.length ? `<div class="ia">${left.join('')}</div>` : ''}</div>`;
 }
 function viewAvisos(u) {
   const all = S.incidents.filter(i => can.viewIncidents(i)).sort(incSort);
@@ -1608,7 +1659,8 @@ function deleteIncidentSheet(id) {
 }
 
 /* ---------- Calendari ---------- */
-function scard(s, opts = {}) {
+/** Estat de la sessió per al músic que mira el calendari (la «pastilla» de la dreta). */
+function scardPill(s, opts = {}) {
   const u = me(), census = inCensus(u), mine = census && inSession(s, u);
   const inc = census ? S.incidents.find(i => i.userId === u.id && i.sessionId === s.id) : null;
   const mk = census ? mark(s.id, u.id) : null;
@@ -1617,13 +1669,32 @@ function scard(s, opts = {}) {
   if (inc) pill = inc.status === 'pending' ? '<span class="spill w">Pendent</span>' : inc.status === 'accepted' ? (inc.kind === 'late' ? '<span class="spill r">Retard</span>' : '<span class="spill f">Justif.</span>') : '<span class="spill x">No justif.</span>';
   else if (mk && s.date <= TODAY && mine) pill = { P: '', R: '<span class="spill r">Retard</span>', FJ: '<span class="spill f">Justif.</span>', FNJ: '<span class="spill x">No justif.</span>', NP: '' }[mk.s] || pill;
   else if (census && !mine) pill = '<span class="spill o">No hi toques</span>';
-  if (viewOnly(u) && s.date < TODAY) { const c = sessionCounts(s); if (c.total > 0 && c.none < c.total) pill = `<span class="spill w">${pct(rate(c))}</span>`; }
+  if (viewOnly(u) && sessionIsDone(s)) { const c = sessionCounts(s); if (c.total > 0 && c.none < c.total) pill = `<span class="spill w">${pct(rate(c))}</span>`; }
+  return pill;
+}
+function scard(s, opts = {}) {
+  const pill = scardPill(s, opts);
   const short = (s.type || 'Assaig') === 'Assaig';
-  return `<button class="scard ${s.date < TODAY ? 'past' : ''}" data-act="sess-info" data-sid="${s.id}">${frame(s.projs.map(p => p.color))}
+  return `<button class="scard ${sessionIsDone(s) ? 'past' : ''}" data-act="sess-info" data-sid="${s.id}">${frame(s.projs.map(p => p.color))}
     <div class="d"><b>${Number(s.date.slice(8, 10))}</b><span>${wdShort(s.date)}</span></div>
     <div class="x"><div class="a">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}${short && timeRange(s) ? `<span>${esc(timeRange(s))}</span>` : ''}</div>
       <div class="s13 muted" style="margin-top:2px">${short ? '' : (timeRange(s) ? esc(timeRange(s)) + ' · ' : '')}${esc(s.place || 'Sense lloc')}</div>
-      <div class="tagp">${s.projs.map(p => pj(p)).join('')}</div></div>${pill}</button>`;
+      ${extraChips(s)}<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div></div>${pill}</button>`;
+}
+/** Un dia amb més d'una sessió: una sola targeta amb un bloc per sessió. Si totes són del mateix projecte, l'etiqueta del projecte surt una sola vegada. */
+function dayCard(g, nextId) {
+  const first = g[0], projs = [];
+  g.forEach(s => s.projs.forEach(p => { if (!projs.some(x => x.id === p.id)) projs.push(p); }));
+  const same = projs.length === 1;
+  const cols = same ? [projs[0].color] : projs.slice(0, 2).map(p => p.color);
+  const blocks = g.map(s => {
+    const short = (s.type || 'Assaig') === 'Assaig';
+    return `<button class="blk" data-act="sess-info" data-sid="${s.id}"><div class="bx"><div class="a">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}${timeRange(s) ? `<span>${esc(timeRange(s))}</span>` : ''}</div>
+      <div class="s13 muted" style="margin-top:2px">${esc(s.place || 'Sense lloc')}</div>${extraChips(s)}${same ? '' : `<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div>`}</div>${scardPill(s, { next: s.id === nextId })}</button>`;
+  }).join('');
+  return `<div class="scard multi ${g.every(sessionIsDone) ? 'past' : ''}">${frame(cols)}
+    <div class="d"><b>${Number(first.date.slice(8, 10))}</b><span>${wdShort(first.date)}</span></div>
+    <div class="x">${blocks}${same ? `<div class="tagp shr">${pj(projs[0])}</div>` : ''}</div></div>`;
 }
 function viewCal() {
   const u = me(), canP = can.manageProjects();
@@ -1634,10 +1705,12 @@ function viewCal() {
   if (!L.length) return bar + emptyBox('Encara no hi ha sessions', 'Encara no hi ha assajos ni concerts programats.', canP ? '<button class="btn p" data-act="new-proj" style="margin:0 auto">+ Nou projecte</button>' : '');
   const sel = ui.calProj !== 'all', pc = S.projects.find(p => p.id === ui.calProj) || (ui.calProj === 'all' ? ongoingProject() : null);
   const chips = `<div class="chips"><button class="chip ${!sel ? 'on' : ''}" data-act="cal-proj" data-id="all">Tot</button>${S.projects.length ? `<button class="chip ${sel ? 'on' : ''}" data-act="pick-proj" data-scope="cal">${pc ? `<span class="dot" style="background:${okColor(pc.color)}"></span>${esc(pc.name)}` : '<span class="dot" style="background:#9AA7B8"></span>Un projecte'} ${chv(sel ? 'color:#fff' : '')}</button>` : ''}<button class="chip ${ui.calPast ? 'on' : ''}" data-act="cal-past">Anteriors</button></div>`;
-  let ls = ui.calPast ? L.slice() : L.filter(s => s.date >= TODAY);   // «Anteriors» afegeix les passades (difuminades) a les futures
+  let ls = ui.calPast ? L.slice() : L.filter(s => !sessionIsDone(s));   // «Anteriors» afegeix les passades (difuminades) a les futures
   if (sel) ls = ls.filter(s => (s.projIds || []).includes(ui.calProj));
-  const nx = L.find(s => s.date >= TODAY); let last = '';
-  const body = ls.map(s => { const k = monthYear(s.date); const head = k !== last ? `<div class="mon">${esc(k)}</div>` : ''; last = k; return head + scard(s, { next: nx && s.id === nx.id }); }).join('');
+  const nx = L.find(s => !sessionIsDone(s)); let last = '';
+  const groups = []; ls.forEach(x => { const g = groups[groups.length - 1]; if (g && g[0].date === x.date) g.push(x); else groups.push([x]); });
+  const body = groups.map(g => { const k = monthYear(g[0].date); const head = k !== last ? `<div class="mon">${esc(k)}</div>` : ''; last = k;
+    return head + (g.length > 1 ? dayCard(g, nx && nx.id) : scard(g[0], { next: nx && g[0].id === nx.id })); }).join('');
   return bar + chips + (body ? `<div class="cgrid">${body}</div>` : emptyBox('Cap sessió', 'No hi ha sessions amb aquest filtre.', '<button class="btn s" data-act="cal-proj" data-id="all" style="margin:0 auto">Treu el filtre</button>'));
 }
 /** Llista de projectes: gestió completa per a Junta/administració, consulta amb estat per a la resta. */
@@ -1672,8 +1745,18 @@ function sessionInfo(sid) {
     stats = `<div class="fl">Assistència${lvl >= 3 ? '' : ' de la teva secció'}</div><div style="line-height:1.5"><b>${cc.P + cc.R}</b> de ${cc.total} presents${sr != null ? ` · assistència <b>${pct(sr)}</b> · puntualitat <b>${pct(punctualityRate(cc))}</b>` : (cc.none ? ` · falten ${cc.none} per marcar` : '')}</div>`;
   }
   const seeAll = lvl >= 3;
-  const rel = S.incidents.filter(i => i.sessionId === s.id && i.status === 'accepted' && i.userId !== u.id && (seeAll || (inCensus(u) && u.section && (userById(i.userId) || {}).section === u.section)));
-  const relHTML = rel.length ? `<div class="fl">${seeAll ? 'Avisos justificats' : 'De la teva secció faltarà'}</div>${rel.map(i => { const t = userById(i.userId) || {}; return `<div class="dwho">${sdot(i.kind === 'late' ? 'R' : 'F')}<span style="flex:1"><span class="mname">${esc(t.name || '—')}</span>${seeAll ? ` <span class="s13 muted">${i.kind === 'late' ? 'arriba ' + (i.min || '') + '′ tard' : 'no hi serà'}</span>` : ''}</span></div>`; }).join('')}` : '';
+  // Absents: avisos acceptats + faltes marcades a mà (només si la persona no ha enviat cap avís; si n'ha enviat, compta només si està acceptat).
+  const rel = [];
+  S.users.forEach(t => {
+    if (t.id === u.id || !inCensus(t) || !inSession(s, t)) return;
+    if (!(seeAll || (inCensus(u) && u.section && t.section === u.section))) return;
+    const inc = S.incidents.find(i => i.userId === t.id && i.sessionId === s.id);
+    if (inc) { if (inc.status === 'accepted') rel.push({ userId: t.id, kind: inc.kind, min: inc.min }); return; }
+    const mk = mark(s.id, t);
+    if (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) rel.push({ userId: t.id, kind: 'absence', min: null });
+  });
+  rel.sort((a, b) => ((userById(a.userId) || {}).name || '').localeCompare((userById(b.userId) || {}).name || '', 'ca'));
+  const relHTML = rel.length ? `<div class="fl">${seeAll ? 'Absències' : 'De la teva secció faltarà'}</div>${rel.map(i => { const t = userById(i.userId) || {}; return `<div class="dwho">${sdot(i.kind === 'late' ? 'R' : 'F')}<span style="flex:1"><span class="mname">${esc(t.name || '—')}</span>${seeAll ? ` <span class="s13 muted">${i.kind === 'late' ? 'arriba ' + (i.min || '') + '′ tard' : 'no hi serà'}</span>` : ''}</span></div>`; }).join('')}` : '';
   const acts = [];
   if (!past && inCensus(u) && inSession(s, u)) acts.push(['Envia un avís', 'avis-from-sess']);
   if (lvl >= 2) acts.push([can.passList() ? 'Passa llista' : 'Consulta la llista', 'goto-sess']);
@@ -1684,10 +1767,11 @@ function sessionInfo(sid) {
     body: `<div class="dtype">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}</div>
       <div class="dpills">${ps.map(p => pj(p, 'lg')).join('') || '<span class="muted">Sense projecte</span>'}</div>
       <div class="ig"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(s) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Lloc</div><b>${esc(s.place || 'Sense especificar')}</b></div></div></div>
+      ${extrasOf(s).length ? `<div class="ig" style="margin-top:10px">${extrasOf(s).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>` : ''}
       ${mine ? `<div class="dstate">${sdot(incKey(mine))}<span style="flex:1">${myTxt}</span>${mine.status !== 'accepted' ? `<button class="circb" data-act="inc-edit" data-id="${mine.id}" aria-label="Edita l’avís" style="width:40px;height:40px">${ico('pen', 18)}</button>` : ''}</div>` : ''}
       ${s.note ? `<div class="dnote"><div class="s13 muted">Nota</div>${esc(s.note)}</div>` : ''}
       ${ps.filter(p => p.repertoire).map(p => `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Repertori</b><br><span class="s13 muted">${esc(p.name)}</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>`).join('')}
-      ${stats}${relHTML}`,
+      ${relHTML}`,
     foot: acts.length ? `<div style="display:grid;gap:8px;width:100%">${acts.map((a, i) => `<button class="btn ${i === 0 ? 'p' : 's'}" data-act="${a[1]}" data-sid="${s.id}">${a[0]}</button>`).join('')}</div>` : `<button class="btn s" data-act="sheet-close">Tanca</button>`,
   });
 }
@@ -1817,7 +1901,7 @@ function manageConfig() {
     ${hh('Llocs d’assaig', '', 20)}
     ${row('Llocs disponibles', esc((c.places || []).join(' · ') || 'Cap definit'), edit('edit-places'))}
     ${hh('Tipus d’activitat', '', 20)}
-    ${row('Tipus disponibles', esc(TYPES.join(' · ')), edit('edit-types'))}
+    ${row('Tipus d’activitat', esc(TYPES.map(t => t + (typeRule(t).perf ? ' ★' : '')).join(' · ')), edit('edit-types'))}
     ${hh('Seccions', '', 20)}
     ${row('Seccions i instruments', `${SECTIONS.length} seccions. Afegeix, edita, reordena o elimina seccions i els seus instruments.`, edit('edit-instruments', 'Gestiona'))}
     ${hh('Dades', '', 20)}
@@ -1839,7 +1923,7 @@ function helpSheet() {
   const blocks = {
     musician: `<p class="help-intro">Consulta el calendari, comunica absències i segueix la teva assistència.</p>${CAL}${PERFIL}${R('📊', 'Estadístiques', `Consulta la teva assistència i puntualitat.`)}`,
     leader: `<p class="help-intro">Tot el que fa un músic i, a més, la gestió de la teva secció.</p>${CAL}${PERFIL}${R('📋', 'Llista', `Passa llista d'assistència als músics de la teva secció, i justifica les absències o retards que et comuniquin. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta la teva assistència i puntualitat, i les de tota la teva secció.`)}${LATE}`,
-    director: `<p class="help-intro">Un accés de seguiment, sense poder passar llista ni editar res.</p>${R('📅', 'Calendari', `Consulta els assajos, concerts i el repertori de cada projecte, amb el percentatge d'assistència de les sessions ja passades.`)}${R('📋', 'Llista', `Consulta les llistes que ja han marcat els caps de secció i la Junta, i els avisos que han comunicat els músics.`)}${R('📊', 'Estadístiques', `Consulta l'assistència i la puntualitat de tota la banda.`)}<div class="privacy">Tot el teu accés és només de lectura: veus les dades que ja han marcat els caps de secció i la Junta, però no pots passar llista, justificar absències ni editar res.</div>`,
+    director: `<p class="help-intro">Un accés de seguiment, amb permís per editar sessions i projectes (com la Junta), però sense passar llista.</p>${R('📅', 'Calendari', `Consulta i edita els assajos, concerts i projectes (repertori inclòs), amb el percentatge d'assistència de les sessions ja passades.`)}${R('📋', 'Llista', `Consulta les llistes que ja han marcat els caps de secció i la Junta, i els avisos que han comunicat els músics.`)}${R('📊', 'Estadístiques', `Consulta l'assistència i la puntualitat de tota la banda.`)}<div class="privacy">Veus les dades que ja han marcat els caps de secció i la Junta, però no pots passar llista ni justificar absències. Sí que pots crear i editar sessions i projectes, repertori inclòs.</div>`,
     board: `<p class="help-intro">Gestió d'assistència de tota la banda i seguiment general.</p>${R('📅', 'Calendari', `Consulta el repertori, els assajos i concerts programats, i en pots crear de nous.`)}${PERFIL}${R('📋', 'Llista', `Passa llista de qualsevol secció, i justifica o rebutja absències de tota la banda. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta les dades generals i les de qualsevol músic.`)}${LATE}${QUOTA}`,
     admin: `<p class="help-intro">Gestió completa de l'aplicació: dades, usuaris i configuració.</p>${R('📅', 'Calendari', `Crea i edita projectes i sessions.`)}${R('📋', 'Llista', `Passa llista de qualsevol secció, i justifica o rebutja absències. Un avís es pot eliminar des d'Avisos.`)}${R('📊', 'Estadístiques', `Consulta les dades generals i les de qualsevol músic.`)}${R('⚙️', 'Gestió', `Crea i edita usuaris (credencials incloses), i configura seccions, instruments, llocs d'assaig i els llindars d'assistència i puntualitat.`)}${LATE}${QUOTA}${R('🔄', 'Reinicia les quotes', `Des de Configuració pots posar totes les quotes com a pendents per començar una temporada nova.`)}`,
   };
@@ -1864,8 +1948,8 @@ function subscribeSheet() {
       <a class="btn p" href="${esc(webcal)}" style="width:100%;margin-top:14px">Afegeix a Apple Calendar</a>
       <a class="btn p" href="${esc(googleUrl)}" target="_blank" rel="noopener" style="width:100%;margin-top:10px">Afegeix a Google Calendar</a>
       <div class="fl">Un altre calendari (Outlook…)</div><input class="inp" readonly value="${esc(CALENDAR_FEED_URL)}" onclick="this.select()" aria-label="Enllaç del calendari">
-      <button class="btn s sm" data-act="copy-feed" style="width:100%;margin-top:10px">Copia l’enllaç</button>`,
-    foot: '<button class="btn s" data-act="sheet-close">Tanca</button>',
+      <button class="btn s sm" data-act="copy-feed" style="width:100%;margin-top:10px">Copia l’enllaç</button><div style="height:18px"></div>`,
+    cls: 'ctr',
   });
 }
 let installPrompt = null;
@@ -2141,6 +2225,7 @@ function sessionSheet(s, pid) {
       <div class="row2"><div class="field"><span>Inici</span><input class="inp" type="time" id="s-time" value="${esc(s.time || '20:00')}"></div>
         <div class="field"><span>Fi</span><input class="inp" type="time" id="s-end" value="${esc(s.end || '22:00')}"></div></div>
       <div class="field"><span>Tipus</span><select class="inp" id="s-type">${TYPES.map(t => `<option ${t === (s.type || 'Assaig') ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div id="s-extra"></div>
       <div class="field"><span>Lloc</span><select class="inp" id="s-place">
         <option value="" ${!s.place ? 'selected' : ''}>Sense especificar</option>
         ${places.map(pl => `<option value="${esc(pl)}" ${s.place === pl ? 'selected' : ''}>${esc(pl)}</option>`).join('')}</select></div>
@@ -2156,12 +2241,35 @@ function sessionSheet(s, pid) {
     b.setAttribute('aria-pressed', String(!on));
   });
   toggle('#s-projs', chosen, 'pid');
+  // Convocatòria i prova de so: només si el tipus ho permet (Gestió › Tipus d'activitat)
+  const ext = { call: s.callTime || '', sound: s.soundTime || '', cplace: s.callPlace || '' };
+  const drawExtra = () => {
+    if ($('#s-call')) ext.call = $('#s-call').value;
+    if ($('#s-sound')) ext.sound = $('#s-sound').value;
+    if ($('#s-cplace')) ext.cplace = $('#s-cplace').value;
+    const r = typeRule($('#s-type').value), box = $('#s-extra');
+    const pl = [...new Set([...places, ...(ext.cplace ? [ext.cplace] : [])])];
+    box.innerHTML = !(r.call || r.sound) ? '' : `<div class="row2" style="${r.call && r.sound ? '' : 'grid-template-columns:minmax(0,1fr)'}">
+        ${r.call ? `<div class="field"><span>Convocatòria</span><input class="inp" type="time" id="s-call" value="${esc(ext.call)}"></div>` : ''}
+        ${r.sound ? `<div class="field"><span>Prova de so</span><input class="inp" type="time" id="s-sound" value="${esc(ext.sound)}"></div>` : ''}</div>
+      ${r.call ? `<div class="field"><span>Lloc de la convocatòria</span><select class="inp" id="s-cplace"><option value="" ${!ext.cplace ? 'selected' : ''}>El mateix que la sessió</option>${pl.map(p => `<option value="${esc(p)}" ${ext.cplace === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></div>` : ''}
+      <small class="hint" style="display:block;margin-top:6px;color:var(--ink2)">Opcional. Han de ser abans de l’inici i surten al Calendari i al calendari subscrit.</small>`;
+    enhanceFields(box);
+  };
+  $('#s-type').addEventListener('change', drawExtra); drawExtra();
   sheetSave = () => {
     const date = $('#s-date').value;
     if (!date) { toast('Falta la data'); return false; }
     if (!chosen.size) { toast('Tria almenys un projecte'); return false; }
+    if ($('#s-call')) ext.call = $('#s-call').value;
+    if ($('#s-sound')) ext.sound = $('#s-sound').value;
+    if ($('#s-cplace')) ext.cplace = $('#s-cplace').value;
+    const stype = $('#s-type').value, rl = typeRule(stype), st0 = $('#s-time').value;
+    if (rl.call && ext.call && st0 && ext.call >= st0) { toast('La convocatòria ha de ser abans de l’inici'); return false; }
+    if (rl.sound && ext.sound && st0 && ext.sound >= st0) { toast('La prova de so ha de ser abans de l’inici'); return false; }
     const rec = { id: s.id || newId(), projIds: [...chosen], date, time: $('#s-time').value, end: $('#s-end').value,
-      type: $('#s-type').value, place: $('#s-place').value, note: $('#s-note').value.trim() };
+      type: stype, place: $('#s-place').value, note: $('#s-note').value.trim(),
+      callTime: ext.call, callPlace: ext.cplace, soundTime: ext.sound };
     const i = S.sessions.findIndex(x => x.id === rec.id);
     if (i >= 0) S.sessions[i] = rec; else S.sessions.push(rec);
     ui.sessionId = rec.id; save(); return true;
@@ -2315,16 +2423,35 @@ function placesSheet() {
 }
 /** Gestió dels tipus d'activitat (Assaig, Concert...): un per línia, en l'ordre que apareixeran als desplegables. */
 function typesSheet() {
+  const rows = TYPES.map(t => ({ n: t, ...typeRule(t) }));
+  const draw = () => {
+    $('#tt-rows').innerHTML = rows.map((r, i) => `<div class="tyrow"><div class="trh">${r.isNew ? `<input class="inp" id="tt-new-${i}" value="${esc(r.n)}" placeholder="Nom del tipus" style="flex:1;height:44px">` : `<b style="flex:1;min-width:0">${esc(r.n)}</b>`}<button type="button" class="circb del" data-tdel="${i}" aria-label="Treu «${esc(r.n || 'nou')}» de la llista" style="width:40px;height:40px">${ico('trash', 18)}</button></div>
+      <div class="pickers" style="margin-top:8px">${[['perf', '★ Actuació'], ['call', 'Convocatòria'], ['sound', 'Prova de so']].map(([k, l]) => `<button type="button" class="pick" data-ti="${i}" data-tk="${k}" aria-pressed="${r[k]}">${l}</button>`).join('')}</div></div>`).join('');
+  };
   sheet({
     title: 'Tipus d\'activitat',
-    body: `<div class="field"><span>Un tipus per línia</span><textarea class="inp" id="c-types" rows="8">${esc(TYPES.join('\n'))}</textarea>
-      <small>Aquests tipus surten al desplegable en crear o editar una sessió. Si n'elimines un que ja s'estigui fent servir en alguna sessió, aquella sessió el manté igualment.</small></div>`,
+    body: `<p class="muted" style="margin:6px 0 4px">Per a cada tipus, tria si és una <b>actuació</b> (porta l’estrella) i si pot tenir <b>hora de convocatòria</b> i <b>prova de so</b>. Els canvis valen per a tot el calendari, també per al calendari subscrit.</p>
+      <div id="tt-rows"></div>
+      <button type="button" class="btn s sm" id="tt-add" style="margin-top:12px;width:100%">+ Afegeix un tipus</button>
+      <small class="muted" style="display:block;margin-top:10px;line-height:1.4">Si treus un tipus que ja s’està fent servir, aquelles sessions el mantenen igualment amb les seves regles.</small>`,
     foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
   });
+  draw();
+  const root = $('#tt-rows');
+  root.addEventListener('click', e => {
+    const p = e.target.closest('[data-tk]'); if (p) { const r = rows[+p.dataset.ti]; r[p.dataset.tk] = !r[p.dataset.tk]; syncNames(); draw(); return; }
+    const d = e.target.closest('[data-tdel]'); if (d) { syncNames(); rows.splice(+d.dataset.tdel, 1); draw(); }
+  });
+  const syncNames = () => rows.forEach((r, i) => { const el = $('#tt-new-' + i); if (el) r.n = el.value; });
+  $('#tt-add').addEventListener('click', () => { syncNames(); rows.push({ n: '', perf: false, call: false, sound: false, isNew: true }); draw(); const el = $('#tt-new-' + (rows.length - 1)); if (el) el.focus(); });
   sheetSave = () => {
-    const vals = $('#c-types').value.split('\n').map(v => v.trim()).filter(Boolean);
-    if (!vals.length) { toast('Cal almenys un tipus'); return false; }
-    TYPES = vals;
+    syncNames();
+    const names = rows.map(r => r.n.trim()).filter(Boolean);
+    if (!names.length) { toast('Cal almenys un tipus'); return false; }
+    if (new Set(names.map(n => n.toLowerCase())).size !== names.length) { toast('Hi ha dos tipus amb el mateix nom'); return false; }
+    const tr = { ...(S.config.typeRules || {}) };   // les regles de tipus que es treuen de la llista es conserven
+    rows.forEach(r => { const n = r.n.trim(); if (n) tr[n] = { perf: !!r.perf, call: !!r.call, sound: !!r.sound }; });
+    TYPES = names; S.config.typeRules = tr;
     save(); toast('Tipus actualitzats'); return true;
   };
 }
@@ -2512,11 +2639,11 @@ function demo() {
 
 /* ================= Fulls (contenidor) ================= */
 let sheetSave = null;
-function sheet({ title, body, foot }) {
+function sheet({ title, body, foot, cls }) {
   const label = String(title).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   sheetSave = null;
   const root = $('#sheet-root');
-  root.innerHTML = `<div class="dim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label)}"><div class="grab"></div>
+  root.innerHTML = `<div class="dim" data-act="sheet-close"></div><div class="sheet ${cls || ''}" role="dialog" aria-modal="true" aria-label="${esc(label)}"><div class="grab"></div>
     <div class="hd"><h2>${title}</h2><button class="circ" data-act="sheet-close" aria-label="Tanca" style="background:rgba(15,34,54,.07)">${ico('x', 20)}</button></div>
     <div class="bd">${body || ''}</div>${foot ? `<div class="foot">${foot}</div>` : ''}</div>`;
   spaceDots(root); enhanceFields(root);
@@ -2526,14 +2653,14 @@ function sheet({ title, body, foot }) {
 function enhanceFields(root) {
   root.querySelectorAll('input[type=date],input[type=time]').forEach(inp => {
     if (inp.closest('.dfield')) return;
-    const isDate = inp.type === 'date', optional = inp.id === 'p-from' || inp.id === 'p-to';
+    const isDate = inp.type === 'date', optional = ['p-from', 'p-to', 's-call', 's-sound'].includes(inp.id);
     const wrap = document.createElement('div'); wrap.className = 'dfield';
     const txt = document.createElement('span'); txt.className = 'dv';
     inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(txt);
     wrap.insertAdjacentHTML('beforeend', ico(isDate ? 'calp' : 'clock', 20));
     let clr = null;
     if (optional) {
-      clr = document.createElement('button'); clr.type = 'button'; clr.className = 'dclr'; clr.setAttribute('aria-label', 'Esborra la data'); clr.innerHTML = ico('x', 16);
+      clr = document.createElement('button'); clr.type = 'button'; clr.className = 'dclr'; clr.setAttribute('aria-label', isDate ? 'Esborra la data' : 'Esborra l’hora'); clr.innerHTML = ico('x', 16);
       clr.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); inp.value = ''; inp.dispatchEvent(new Event('change', { bubbles: true })); });
       wrap.appendChild(clr);
     }
@@ -2829,7 +2956,15 @@ window.addEventListener('online', () => { if (ME && OFFLINE) flush(true); });
 window.addEventListener('offline', () => { if (ME) setOffline(true); });
 
 /* ================= Init ================= */
+let nextSig = null;
+setInterval(() => {
+  if (!ME) return;
+  const n = allSessions().find(x => !sessionIsDone(x)); const sig = TODAY + '|' + (n ? n.id : '');
+  if (nextSig !== null && sig !== nextSig && !$('#sheet-root .sheet')) render();
+  nextSig = sig;
+}, 30000);
 document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && ME && !$('#sheet-root .sheet')) render();
   if (document.visibilityState === 'hidden') { if (t1) { clearTimeout(t1); flush(); } return; }
   // En tornar a l'app: si fa estona que no s'ha actualitzat i no hi ha res pendent ni cap full obert, es baixen les dades noves.
   if (!ME || !LOAD_OK || saving || t1 || Date.now() - LAST_LOAD < 60000 || $('#sheet-root .sheet')) return;
