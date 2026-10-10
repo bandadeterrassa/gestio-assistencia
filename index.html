@@ -233,7 +233,7 @@ input[type=date].inp,input[type=time].inp{width:100%;min-width:0;max-width:100%;
 .minin::-webkit-outer-spin-button,.minin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .minin::placeholder{color:var(--ink3);font-size:20px}
 .minin:focus,.rsn:focus{border-color:var(--field)}
-.rsn.rsn-w{height:auto;border-radius:18px;padding:9px 14px;line-height:1.35;resize:none;display:block}
+.rsn.rsn-w{height:auto;min-height:40px;border-radius:20px;padding:9px 14px;line-height:20px;resize:none;display:block;overflow:hidden;box-sizing:border-box;font-family:inherit}
 .minin.has{background:var(--field);border-color:var(--field);color:#fff;font-weight:700}
 .minrow .minin{width:34px;height:34px;font-size:13px} .minrow .minin::placeholder{font-size:16px} .minrow .minin.has{background:var(--sR);border-color:var(--sR)}
 .rsnrow{padding:0 0 10px 0}
@@ -608,7 +608,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .scard.multi .blk .bx{flex:1;min-width:0}
 .scard.multi .blk .a{font-size:17px;font-weight:700} .scard.multi .blk .a span{font-weight:400;color:var(--ink2);font-size:15px;margin-left:4px}
 .scard.multi .blk:last-of-type{padding-bottom:0}
-.scard.multi .shr{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.scard.multi .shr{margin-top:10px;display:flex;justify-content:flex-start}
 .tyrow{padding:12px 0;border-top:1px solid var(--rule)} .tyrow:first-child{border-top:0}
 .tyrow .trh{display:flex;align-items:center;gap:10px;font-size:17px}
 
@@ -617,7 +617,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
   .scard.multi .x{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));column-gap:28px}
   .scard.multi .blk,.scard.multi .blk+.blk{border-top:0;padding:0}
   .scard.multi .blk+.blk{border-left:1px solid var(--rule);padding-left:28px}
-  .scard.multi .shr{grid-column:1/-1;margin-top:14px}
+  .scard.multi .shr{grid-column:1/-1;margin-top:12px}
 }
 .hf .tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .hf .tap:active{opacity:.75}
@@ -1338,7 +1338,7 @@ function render() {
   tabbar.innerHTML = tabs ? tabbarHTML(u) : ''; tabbar.style.display = tabs ? '' : 'none';
   const s2 = $('#view .scroll'); if (s2 && scrollMem[key] != null) s2.scrollTop = scrollMem[key];
   lastKey = key; spaceDots(view);
-  fitTexts(); if (document.fonts && document.fonts.status !== 'loaded') document.fonts.ready.then(fitTexts);
+  fitTexts(); growNotes(); if (document.fonts && document.fonts.status !== 'loaded') document.fonts.ready.then(() => { fitTexts(); growNotes(); });
 }
 
 /** Fa que certs textos grans càpiguen sempre en una sola línia: baixa la mida de la lletra només quan cal. */
@@ -1488,9 +1488,11 @@ function rollSection(cur, sec, fixed) {
 /** Camp de nota/motiu de la llista: màxim 20 lletres; si ja n'hi ha una de més llarga (d'abans), es mostra sencera en diverses línies. */
 function noteField(m, mk, ph, label, bc) {
   const v = mk.note || '', st = bc ? ` style="border-color:${bc}"` : '';
-  return v.length > 20
-    ? `<textarea class="rsn rsn-w"${st} rows="${Math.min(4, Math.ceil(v.length / 28))}" data-act="note" data-mid="${m.id}" placeholder="${esc(ph)}" aria-label="${esc(label)}">${esc(v)}</textarea>`
-    : `<input class="rsn"${st} maxlength="20" data-act="note" data-mid="${m.id}" placeholder="${esc(ph)}" value="${esc(v)}" aria-label="${esc(label)}">`;
+  return `<textarea class="rsn rsn-w"${st} rows="1" maxlength="${Math.max(20, v.length)}" data-act="note" data-mid="${m.id}" placeholder="${esc(ph)}" aria-label="${esc(label)}">${esc(v)}</textarea>`;
+}
+/** Els camps de motiu comencen d'una línia i creixen només si el text ho demana. */
+function growNotes(root) {
+  (root || document).querySelectorAll('textarea.rsn-w').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight + (t.offsetHeight - t.clientHeight)) + 'px'; });
 }
 function rollRow(cur, m) {
   if (!inSession(cur, m)) return `<div class="r"><div class="nm"><div class="a">${esc(m.name)}</div><div class="c">${esc(m.instrument || '')}</div></div><span class="stp N">No fa el projecte</span></div>`;
@@ -1793,15 +1795,14 @@ function sessionInfo(sid) {
   // Absents: avisos acceptats + faltes marcades a mà (només si la persona no ha enviat cap avís; si n'ha enviat, compta només si està acceptat).
   const rel = [];
   S.users.forEach(t => {
-    if (t.id === u.id || !inCensus(t) || !inSession(s, t)) return;
-    if (!(seeAll || (inCensus(u) && u.section && t.section === u.section))) return;
+    if (!inCensus(t) || !inSession(s, t)) return;
     const inc = S.incidents.find(i => i.userId === t.id && i.sessionId === s.id);
     if (inc) { if (inc.status === 'accepted') rel.push({ userId: t.id, kind: inc.kind, min: inc.min }); return; }
     const mk = mark(s.id, t);
-    if (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) rel.push({ userId: t.id, kind: 'absence', min: null });
+    if (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) rel.push({ userId: t.id, kind: 'absence', min: null, dot: mk.s === 'FNJ' ? 'X' : 'F' });
   });
   rel.sort((a, b) => ((userById(a.userId) || {}).name || '').localeCompare((userById(b.userId) || {}).name || '', 'ca'));
-  const relHTML = rel.length ? `<div class="fl">${seeAll ? 'Absències' : 'De la teva secció faltarà'}</div>${rel.map(i => { const t = userById(i.userId) || {}; return `<div class="dwho">${sdot(i.kind === 'late' ? 'R' : 'F')}<span style="flex:1"><span class="mname">${esc(t.name || '—')}</span>${seeAll ? ` <span class="s13 muted">${i.kind === 'late' ? 'arriba ' + (i.min || '') + '′ tard' : 'no hi serà'}</span>` : ''}</span></div>`; }).join('')}` : '';
+  const relHTML = rel.length ? `<div class="fl">Absències · ${rel.length}</div>${rel.map(i => { const t = userById(i.userId) || {}; return `<div class="dwho">${sdot(i.kind === 'late' ? 'R' : (i.dot || 'F'))}<span style="flex:1"><span class="mname">${esc(t.name || '—')}</span>${i.kind === 'late' ? ` <span class="s13 muted">arriba ${i.min || ''}′ tard</span>` : ''}</span></div>`; }).join('')}` : '';
   const acts = [];
   if (!past && inCensus(u) && inSession(s, u)) acts.push(['Envia un avís', 'avis-from-sess']);
   if (lvl >= 2) acts.push([can.passList() ? 'Passa llista' : 'Consulta la llista', 'goto-sess']);
@@ -3040,6 +3041,7 @@ document.addEventListener('input', e => {
   const el = e.target;
   if (el.id === 'usearch') { ui.search = el.value; const v = el.value; render(); const s = $('#usearch'); if (s) { s.value = v; s.focus(); s.setSelectionRange(v.length, v.length); } return; }
   if (el.dataset && el.dataset.act === 'note') {
+    if (el.tagName === 'TEXTAREA') growNotes(el.parentNode);
     const cur = currentSession(); if (!cur) return;
     const mk = mark(cur.id, el.dataset.mid); if (!mk) return;
     S.attendance[aKey(cur.id, el.dataset.mid)] = { ...mk, note: el.value, by: ME, at: stamp() };
@@ -3047,7 +3049,7 @@ document.addEventListener('input', e => {
   }
 });
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));   // sense pinça-zoom a iOS
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#sheet-root .sheet')) closeSheet(); if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.tap[role=button]')) { e.preventDefault(); e.target.click(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches && e.target.matches('textarea.rsn')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Escape' && $('#sheet-root .sheet')) closeSheet(); if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.tap[role=button]')) { e.preventDefault(); e.target.click(); } });
 window.addEventListener('online', () => { if (ME && OFFLINE) flush(true); });
 window.addEventListener('offline', () => { if (ME) setOffline(true); });
 
