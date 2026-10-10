@@ -343,8 +343,10 @@ select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:ima
 .ibtn.p{background:var(--field);color:#fff} .ibtn.s{border:1.5px solid var(--field);color:var(--field)} .ibtn.del{background:#F8DCDD;color:#8A1C23;border:1.5px solid #EDB4B8}
 .inc .ia .push{margin-left:auto}
 .inc{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px}
-.inc .incm{min-width:0}
+.inc .inch{min-width:0;align-self:center}
+.inc .incr{grid-column:1/-1}
 .inc .igb{display:flex;gap:8px;align-self:start;margin-top:-6px}
+.inc .incr>:first-child{margin-top:8px}
 .inc .ia{grid-column:1/-1}
 .circb.del{background:#F8DCDD;border-color:#EDB4B8;color:#8A1C23}
 .circb.back{color:var(--ink)}
@@ -616,11 +618,13 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .hf .tap:active{opacity:.75}
 .hf .tap:focus-visible{outline:2px solid #fff;outline-offset:4px;border-radius:12px}
 /* Percentatge: xip al costat del nom; el títol aprofita tot l'ample */
-.hf .who{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px}
+.hf .who{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px}
 .chipP{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 13px 0 11px;border-radius:16px;background:rgba(255,255,255,.14);font-size:12.5px;font-weight:500;color:#C9D5E2;white-space:nowrap}
 .chipP b{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.chipP .dot{width:8px;height:8px;border-radius:50%;background:#8FDDAE;flex:none}
-.chipP.risk{padding-right:4px}.chipP.risk .dot{background:#FF8A91}
+.chipP .dot{width:8px;height:8px;border-radius:50%;background:#C9D5E2;flex:none}
+.chipP.ok .dot{background:#8FDDAE}
+.chipP.risk .dot{background:#FF8A91}
+.chipP.risk:has(.tg){padding-right:4px}
 .chipP .tg{height:24px;padding:0 10px;border-radius:12px;background:rgba(255,138,145,.2);color:#FF8A91;display:inline-grid;place-items:center;font-size:12px;font-weight:700}
 .chipP:active{opacity:.8}
 .herorow .hero{max-width:none}
@@ -1209,7 +1213,7 @@ function extrasOf(s) {
   if (r.call && s.callTime) out.push({ k: 'call', t: s.callTime, p: s.callPlace && s.callPlace !== s.place ? s.callPlace : '' });
   return out.sort((a, b) => a.t < b.t ? -1 : a.t > b.t ? 1 : 0);
 }
-const extraChips = s => { const ex = extrasOf(s); return ex.length ? `<div class="xpre">${ex.map(e => `<span class="xchip">${ico(e.k === 'sound' ? 'sound' : 'clock', 14)}${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'} <b>${esc(e.t)}</b>${e.p ? ' · ' + esc(e.p) : ''}</span>`).join('')}</div>` : ''; };
+const extraChips = s => { const ex = extrasOf(s); return ex.length ? `<div class="xpre">${ex.map(e => `<span class="xchip">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'} <b>${esc(e.t)}</b>${e.p ? ' · ' + esc(e.p) : ''}</span>`).join('')}</div>` : ''; };
 const starI = (sz = 15) => `<span class="perf" title="Actuació">${ico('star', sz, 'fill:currentColor')}</span>`;
 const hex2 = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const okColor = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c : '#6F4BA6';
@@ -1390,7 +1394,7 @@ function viewPerfil(u) {
   const mine = S.incidents.filter(i => { if (i.userId !== u.id) return false; const ss = sessionById(i.sessionId); return !!ss && !sessionIsDone(ss); }).sort(incSort);
   const risk = !!(st && st.c.total > 0 && riskInfo(u, pscope));
   const tone = st && st.pct != null ? (attendanceTone(st.pct) === 'alert' ? 'risk' : 'ok') : '';
-  const pbox = st ? `<button class="chipP ${risk ? 'risk' : ''}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><i class="dot"></i><b>${pctH(st.pct)}</b>assistència${risk ? '<span class="tg">En risc</span>' : ''}</button>` : '';
+  const pbox = st ? `<button class="chipP ${risk || toneCls(st.pct) === 'r' ? 'risk' : toneCls(st.pct) === 'g' ? 'ok' : ''}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><i class="dot"></i><b>${pctH(st.pct)}</b>assistència${risk ? '<span class="tg">En risc</span>' : ''}</button>` : '';
   const who = `<div class="who"><b>${esc(u.name)}</b> · ${esc(sectionLabel(u))}${u.instrument ? ', ' + esc(u.instrument) : ''}${pbox}</div>`;
   let hero;
   if (!census) hero = `${who}<div class="hrow2"><p class="meta">No compta a l’assistència.</p></div>`;
@@ -1508,12 +1512,12 @@ function incItem(i, review, hideName) {
   if (review && canAct && i.status !== 'pending') right.push(`<button class="circb back" data-act="inc-reopen" data-id="${i.id}" aria-label="Torna-la a pendent" title="Torna-la a pendent">${ico('undo', 20)}</button>`);
   if (i.userId === ME && i.status !== 'accepted') right.push(`<button class="circb" data-act="inc-edit" data-id="${i.id}" aria-label="Edita l’avís" title="Edita">${ico('pen', 20)}</button>`);
   if (review && canAct) right.push(`<button class="circb del" data-act="inc-del" data-id="${i.id}" aria-label="Elimina l’avís de ${esc(t ? t.name : '')}" title="Elimina">${ico('trash', 20)}</button>`);
-  const state = i.status === 'pending' ? '' : ` · ${i.status === 'accepted' ? 'justificada' : 'no justificada'}${rev ? ' per ' + esc(rev.name) : ''}`;
-  return `<div class="inc"><div class="incm">${hideName ? '' : `<div style="display:flex;align-items:center;gap:8px"><span class="s17 mname">${esc(t ? t.name : '—')}</span>${t && t.instrument ? `<span class="badge">${esc(t.instrument)}</span>` : ''}</div>`}
-    <div style="display:flex;align-items:center;gap:9px;margin-top:${hideName ? 0 : 6}px">${sdot(incKey(i))}<span><b>${i.kind === 'late' ? 'Retard' + (i.min ? ' · ' + i.min + '′' : '') : 'Absència'}</b> · ${s ? shortDay(s.date) : 'sessió eliminada'}</span></div>
-    ${i.reason && i.status !== 'rejected' ? `<div style="margin-top:6px">${esc(i.reason)}</div>` : ''}${i.reviewNote ? `<div class="s13 muted" style="margin-top:3px">Nota: ${esc(i.reviewNote)}</div>` : ''}
-    <div class="s13 muted">Comunicat el ${fmtStamp(i.createdAt)}${i.edited ? ' · editat' : ''}${state}</div></div>
+  const state = i.status === 'pending' ? '' : ` · ${i.status === 'accepted' ? 'justificat' : 'no justificat'}${rev ? ' per ' + esc(rev.name) : ''}`;
+  return `<div class="inc"><div class="inch">${hideName ? '' : `<div style="display:flex;align-items:center;gap:8px"><span class="s17 mname">${esc(t ? t.name : '—')}</span>${t && t.instrument ? `<span class="badge">${esc(t.instrument)}</span>` : ''}</div>`}
+    <div style="display:flex;align-items:center;gap:9px;margin-top:${hideName ? 0 : 6}px">${sdot(incKey(i))}<span><b>${i.kind === 'late' ? 'Retard' + (i.min ? ' · ' + i.min + '′' : '') : 'Absència'}</b> · ${s ? shortDay(s.date) : 'sessió eliminada'}</span></div></div>
     ${right.length ? `<span class="igb">${right.join('')}</span>` : ''}
+    <div class="incr">${i.reason && i.status !== 'rejected' ? `<div style="margin-top:6px">${esc(i.reason)}</div>` : ''}${i.reviewNote ? `<div class="s13 muted" style="margin-top:3px">Nota: ${esc(i.reviewNote)}</div>` : ''}
+    <div class="s13 muted">Comunicat el ${fmtStamp(i.createdAt)}${i.edited ? ' · editat' : ''}${state}</div></div>
     ${left.length ? `<div class="ia">${left.join('')}</div>` : ''}</div>`;
 }
 function viewAvisos(u) {
@@ -1759,9 +1763,9 @@ function viewProjects() {
   const cnt = p => { const ss = sessionsOfProj(p.id).filter(s => !isPerf(s)); return [ss.filter(sessionIsDone).length, ss.length]; };
   const act = (p, dark) => canP ? `<div style="display:flex;align-items:center;gap:14px;margin-top:12px;font-weight:700"><button class="btn ${dark ? '' : 's'}" data-act="repeat-sessions" data-pid="${p.id}" style="height:40px;font-size:15px;padding:0 16px;${dark ? 'border:1.5px solid rgba(255,255,255,.6);color:#fff' : ''}">Assajos setmanals</button><button data-act="list-sessions" data-pid="${p.id}">Sessions</button></div>` : '';
   const card = p => {
-    const st = projectStatus(p), [d, t] = cnt(p), a = canP ? 'edit-proj' : 'view-proj';
+    const st = projectStatus(p), [d, t] = cnt(p), a = 'view-proj';
     const dates = p.from ? ddmm(p.from) + (p.to ? ' – ' + ddmm(p.to) : '') + ' · ' : '';
-    if (st === 'ongoing') return `<div style="background:var(--field);border-radius:24px;padding:16px 18px;margin-top:10px;color:#fff"><button data-act="${a}" data-pid="${p.id}" style="display:block;width:100%;text-align:left;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700"><span class="dot" style="background:#B9A5E6;width:12px;height:12px"></span>${esc(p.name)}</div><span class="spill" style="background:rgba(255,255,255,.16);color:#fff">En curs</span></div><div class="s13" style="color:#C9D5E2;margin-top:6px">${dates}${d}/${t} assajos fets</div></button>${act(p, true)}</div>`;
+    if (st === 'ongoing') return `<div style="background:var(--field);border-radius:24px;padding:16px 18px;margin-top:10px;color:#fff"><button data-act="${a}" data-pid="${p.id}" style="display:block;width:100%;text-align:left;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700"><span class="dot" style="background:#B9A5E6;width:12px;height:12px"></span>${esc(p.name)}</div></div><div class="s13" style="color:#C9D5E2;margin-top:6px">${dates}${d}/${t} assajos fets</div></button>${act(p, true)}</div>`;
     return `<div class="pcard">${frame([p.color])}<button data-act="${a}" data-pid="${p.id}" style="display:block;width:100%;text-align:left"><div class="nm"><span>${esc(p.name)}</span>${st === 'done' ? '<span class="spill o">Acabat</span>' : ''}</div><div class="s13 muted" style="margin-top:4px">${dates}${d}/${t} assajos fets</div></button>${act(p, false)}</div>`;
   };
   return `<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 4px 0"><span class="s13 muted">${ps.length} ${ps.length === 1 ? 'projecte' : 'projectes'}</span>${doneN ? `<span style="display:flex;align-items:center;gap:10px"><span class="s13">Mostra els acabats (${doneN})</span><button class="sw" role="switch" aria-pressed="${!!ui.calShowDone}" data-act="show-done" aria-label="Mostra els projectes acabats"></button></span>` : ''}</div><div class="pmgrid">${ps.map(card).join('')}</div>`;
@@ -2205,6 +2209,24 @@ function projectPickerSheet(scope) {
     body: `<ul class="picklist">${projectsOrdered().map(p => `<li>
       <button data-act="proj-pick-go" data-scope="${scope}" data-id="${p.id}" aria-current="${current === p.id}">
         <span style="display:flex;align-items:center;gap:8px"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</span>${current === p.id ? `<span style="color:var(--accent)">${ICON.check}</span>` : ''}</button></li>`).join('') || '<li class="empty">Encara no hi ha cap projecte.</li>'}</ul>`,
+  });
+}
+/** Detall d'un projecte en mode visualització (qui el pot editar té el botó «Edita el projecte»). */
+function projectInfo(pid) {
+  const p = S.projects.find(x => x.id === pid); if (!p) return;
+  const u = me(), st = projectStatus(p), canP = can.manageProjects();
+  const reh = sessionsOfProj(p.id).filter(isRehearsalType), tot = reh.length, done = reh.filter(sessionIsDone).length;
+  const allow = Math.floor(tot * maxFaltesRate() + 1e-9), min = Math.round((1 - maxFaltesRate()) * 100);
+  const dates = p.from ? `${fmtD(p.from, { day: 'numeric', month: 'long', year: 'numeric' })}${p.to ? ' – ' + fmtD(p.to, { day: 'numeric', month: 'long', year: 'numeric' }) : ''}` : '';
+  const allowTxt = allow > 0 ? `Pots faltar a <b>${allow}</b> ${allow === 1 ? 'sessió' : 'sessions'} d’aquest projecte` : 'No pots faltar a cap sessió d’aquest projecte';
+  sheet({
+    title: esc(p.name),
+    body: `<div class="dpills">${pj(p, 'lg')}</div>
+      <div class="ig"><div class="igc">${ico('cal', 20)}<div><div class="s13 muted">Dates</div><b>${esc(dates || 'Sense dates')}</b></div></div><div class="igc">${ico('list', 20)}<div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div></div></div>
+      ${inCensus(u) && tot > 0 ? `<div class="dstate" style="font-weight:600;line-height:1.35">${ico('chk', 20)}<span style="flex:1">${allowTxt}<br><span class="s13 muted" style="font-weight:400">Per mantenir un ${min}% d’assistència, sobre ${tot} assajos.</span></span></div>` : ''}
+      ${p.repertoire ? `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Repertori</b><br><span class="s13 muted">Obre les partitures</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>` : ''}
+      ${p.info ? `<div class="dnote"><div class="s13 muted">Informació del projecte</div>${esc(p.info)}</div>` : ''}`,
+    foot: canP ? `<button class="btn p" data-act="edit-proj" data-pid="${p.id}">Edita el projecte</button>` : '',
   });
 }
 function repertoireSheet(pid) {
@@ -2908,7 +2930,7 @@ document.addEventListener('click', async e => {
     }
     case 'new-proj': return projSheet({});
     case 'edit-proj': { const p = S.projects.find(x => x.id === el.dataset.pid); if (p) projSheet({ ...p }); return; }
-    case 'view-proj': return repertoireSheet(el.dataset.pid);
+    case 'view-proj': return projectInfo(el.dataset.pid);
     case 'del-proj': {
       if (!confirm('Eliminar el projecte? Les sessions que només pertanyien a aquest projecte també s\'eliminaran.')) return;
       const pid = el.dataset.pid;
