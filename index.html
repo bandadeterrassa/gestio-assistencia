@@ -279,6 +279,7 @@ select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:ima
 .scard .x{flex:1;min-width:0}
 .scard .x .a{font-size:17px;font-weight:700} .scard .x .a span{font-weight:400;color:var(--ink2);font-size:15px;margin-left:4px}
 .tagp{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.spill.dotp{background:none;padding:0 4px;min-width:20px;justify-content:center}
 .spill{align-self:flex-start;height:26px;padding:0 10px;border-radius:13px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;white-space:nowrap;margin-top:2px}
 .spill.r{background:#DCEAF5;color:#1D5A87} .spill.f{background:#F3E6C8;color:#6E4B08} .spill.n{background:var(--field);color:#fff} .spill.o{border:1.5px solid var(--rule);color:var(--ink2)} .spill.x{background:#F8DCDD;color:#7F1A20} .spill.w{background:#E3E8EE;color:var(--ink2)}
 .pcard{position:relative;background:#fff;border-radius:24px;padding:16px 16px 14px 28px;box-shadow:0 1px 2px rgba(15,34,54,.06),0 0 0 1px rgba(15,34,54,.06);overflow:hidden;margin-top:10px}
@@ -504,6 +505,10 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 @media (max-width:340px){.tb .t1{font-size:14px}}
 
 /* ===== Detall de sessió i camps de data/hora ===== */
+.pbx{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.pbx.one{grid-template-columns:1fr}
+.pbx>div{background:rgba(15,34,54,.05);border-radius:20px;padding:12px 16px}
+.pbx b{display:block;font-size:19px;line-height:1.2;font-weight:700;margin-top:2px;letter-spacing:-.01em}
 .dtype .perf{margin-right:0;vertical-align:0}
 .dtype{display:flex;align-items:center;gap:5px;font-size:17px;font-weight:600;color:var(--ink2);margin:2px 0 12px}
 .dfield{position:relative;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;border:1.5px solid var(--rule);border-radius:18px;background:#fff;font-size:17px;overflow:hidden}
@@ -1705,8 +1710,9 @@ function scardPill(s, opts = {}) {
   const mk = census ? mark(s.id, u.id) : null;
   let pill = '';
   if (opts.next) pill = '<span class="spill n">Propera</span>';
-  if (inc) pill = inc.status === 'pending' ? '<span class="spill w">Pendent</span>' : inc.status === 'accepted' ? (inc.kind === 'late' ? '<span class="spill r">Retard</span>' : '<span class="spill f">Justif.</span>') : '<span class="spill x">No justif.</span>';
-  else if (mk && s.date <= TODAY && mine) pill = { P: '', R: '<span class="spill r">Retard</span>', FJ: '<span class="spill f">Justif.</span>', FNJ: '<span class="spill x">No justif.</span>', NP: '' }[mk.s] || pill;
+  const dp = (k, t) => `<span class="spill dotp" role="img" aria-label="${t}" title="${t}">${sdot(k)}</span>`;
+  if (inc) pill = inc.status === 'pending' ? dp('W', 'Avís pendent') : inc.status === 'accepted' ? (inc.kind === 'late' ? dp('R', 'Retard') : dp('F', 'Falta justificada')) : dp('X', 'Falta no justificada');
+  else if (mk && s.date <= TODAY && mine) pill = { P: '', R: dp('R', 'Retard'), FJ: dp('F', 'Falta justificada'), FNJ: dp('X', 'Falta no justificada'), NP: '' }[mk.s] || pill;
   else if (census && !mine) pill = '<span class="spill o">No hi toques</span>';
   if (viewOnly(u) && sessionIsDone(s)) { const c = sessionCounts(s); if (c.total > 0 && c.none < c.total) pill = `<span class="spill w">${pct(rate(c))}</span>`; }
   return pill;
@@ -1800,7 +1806,7 @@ function sessionInfo(sid) {
   if (!past && inCensus(u) && inSession(s, u)) acts.push(['Envia un avís', 'avis-from-sess']);
   if (lvl >= 2) acts.push([can.passList() ? 'Passa llista' : 'Consulta la llista', 'goto-sess']);
   if (can.manageProjects()) acts.push(['Edita la sessió', 'sess-edit']); else if (hasRole(u, 'director')) acts.push(['Canvia el projecte', 'edit-sess-project']);
-  const myTxt = mine ? `${mine.kind === 'late' ? 'Arribaràs ' + (mine.min || '') + '′ tard' : 'No hi seràs'} · ${mine.status === 'pending' ? 'pendent de revisar' : mine.status === 'accepted' ? 'justificat' : 'no justificat'}` : '';
+  const myTxt = mine ? `${mine.kind === 'late' ? 'Arribaràs ' + (mine.min || '') + '′ tard' : 'No hi seràs'}${mine.status === 'pending' ? ' · pendent de revisar' : mine.status === 'rejected' ? ' · no justificat' : ''}` : '';
   sheet({
     title: `<span class="dwd">${WD(s.date)}</span><span style="font-size:28px;line-height:1.1">${dmy(s.date)}</span>`,
     body: `<div class="dtype">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}</div>
@@ -2218,12 +2224,11 @@ function projectInfo(pid) {
   const reh = sessionsOfProj(p.id).filter(isRehearsalType), tot = reh.length, done = reh.filter(sessionIsDone).length;
   const allow = Math.floor(tot * maxFaltesRate() + 1e-9), min = Math.round((1 - maxFaltesRate()) * 100);
   const dates = p.from ? `${fmtD(p.from, { day: 'numeric', month: 'long', year: 'numeric' })}${p.to ? ' – ' + fmtD(p.to, { day: 'numeric', month: 'long', year: 'numeric' }) : ''}` : '';
-  const allowTxt = allow > 0 ? `Pots faltar a <b>${allow}</b> ${allow === 1 ? 'sessió' : 'sessions'} d’aquest projecte` : 'No pots faltar a cap sessió d’aquest projecte';
+  const limVal = allow > 0 ? `${allow} ${allow === 1 ? 'assaig' : 'assajos'}` : 'Cap falta permesa';
   sheet({
-    title: esc(p.name),
-    body: `<div class="dpills">${pj(p, 'lg')}</div>
-      <div class="ig"><div class="igc">${ico('cal', 20)}<div><div class="s13 muted">Dates</div><b>${esc(dates || 'Sense dates')}</b></div></div><div class="igc">${ico('list', 20)}<div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div></div></div>
-      ${inCensus(u) && tot > 0 ? `<div class="dstate" style="font-weight:600;line-height:1.35">${ico('chk', 20)}<span style="flex:1">${allowTxt}<br><span class="s13 muted" style="font-weight:400">Per mantenir un ${min}% d’assistència, sobre ${tot} assajos.</span></span></div>` : ''}
+    title: `<span style="display:inline-flex;align-items:center;gap:10px"><span class="dot" style="background:${okColor(p.color)};width:14px;height:14px"></span>${esc(p.name)}</span>`,
+    body: `<div class="ig"><div class="igc">${ico('cal', 20)}<div><div class="s13 muted">Dates</div><b>${esc(dates || 'Sense dates')}</b></div></div></div>
+      <div class="pbx${inCensus(u) && tot > 0 ? '' : ' one'}"><div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div>${inCensus(u) && tot > 0 ? `<div><div class="s13 muted">Límit de faltes</div><b>${limVal}</b><div class="s13 muted" style="margin-top:2px">Assistència mínima ${min}%</div></div>` : ''}</div>
       ${p.repertoire ? `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Repertori</b><br><span class="s13 muted">Obre les partitures</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>` : ''}
       ${p.info ? `<div class="dnote"><div class="s13 muted">Informació del projecte</div>${esc(p.info)}</div>` : ''}`,
     foot: canP ? `<button class="btn p" data-act="edit-proj" data-pid="${p.id}">Edita el projecte</button>` : '',
