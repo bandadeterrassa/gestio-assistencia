@@ -507,7 +507,8 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 /* ===== Detall de sessió i camps de data/hora ===== */
 .pbx{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .pbx.one{grid-template-columns:1fr}
-.pbx>div{background:rgba(15,34,54,.05);border-radius:20px;padding:12px 16px}
+.pbx{align-items:stretch}
+.pbx>div{background:rgba(15,34,54,.05);border-radius:20px;padding:12px 16px;min-height:74px;display:flex;flex-direction:column;justify-content:center}
 .pbx b{display:block;font-size:19px;line-height:1.2;font-weight:700;margin-top:2px;letter-spacing:-.01em}
 .dtype .perf{margin-right:0;vertical-align:0}
 .dtype{display:flex;align-items:center;gap:5px;font-size:17px;font-weight:600;color:var(--ink2);margin:2px 0 12px}
@@ -1400,7 +1401,7 @@ function viewPerfil(u) {
   const risk = !!(st && st.c.total > 0 && riskInfo(u, pscope));
   const tone = st && st.pct != null ? (attendanceTone(st.pct) === 'alert' ? 'risk' : 'ok') : '';
   const pbox = st ? `<button class="chipP ${risk || toneCls(st.pct) === 'r' ? 'risk' : toneCls(st.pct) === 'g' ? 'ok' : ''}" data-act="pbox" data-proj="${pscope}" aria-label="Assistència ${pct(st.pct)}${pproj ? ' al projecte ' + esc(pproj.name) : ''}${risk ? ', en risc' : ''}. Veure estadístiques"><i class="dot"></i><b>${pctH(st.pct)}</b>assistència${risk ? '<span class="tg">En risc</span>' : ''}</button>` : '';
-  const who = `<div class="who"><b>${esc(u.name)}</b> · ${esc(sectionLabel(u))}${u.instrument ? ', ' + esc(u.instrument) : ''}${pbox}</div>`;
+  const who = `<div class="who"><span><b>${esc(u.name)}</b> · ${esc(sectionLabel(u))}${u.instrument ? ', ' + esc(u.instrument) : ''}</span>${pbox}</div>`;
   let hero;
   if (!census) hero = `${who}<div class="hrow2"><p class="meta">No compta a l’assistència.</p></div>`;
   else if (ns) {
@@ -1795,10 +1796,10 @@ function sessionInfo(sid) {
   // Absents: avisos acceptats + faltes marcades a mà (només si la persona no ha enviat cap avís; si n'ha enviat, compta només si està acceptat).
   const rel = [];
   S.users.forEach(t => {
-    if (!inCensus(t) || !inSession(s, t)) return;
+    if (t.id === u.id || !inCensus(t) || !inSession(s, t)) return;
     const inc = S.incidents.find(i => i.userId === t.id && i.sessionId === s.id);
     if (inc) { if (inc.status === 'accepted') rel.push({ userId: t.id, kind: inc.kind, min: inc.min }); return; }
-    const mk = mark(s.id, t);
+    const mk = mark(s.id, t.id);
     if (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) rel.push({ userId: t.id, kind: 'absence', min: null, dot: mk.s === 'FNJ' ? 'X' : 'F' });
   });
   rel.sort((a, b) => ((userById(a.userId) || {}).name || '').localeCompare((userById(b.userId) || {}).name || '', 'ca'));
@@ -2225,11 +2226,14 @@ function projectInfo(pid) {
   const reh = sessionsOfProj(p.id).filter(isRehearsalType), tot = reh.length, done = reh.filter(sessionIsDone).length;
   const allow = Math.floor(tot * maxFaltesRate() + 1e-9), min = Math.round((1 - maxFaltesRate()) * 100);
   const dates = p.from ? `${fmtD(p.from, { day: 'numeric', month: 'long', year: 'numeric' })}${p.to ? ' – ' + fmtD(p.to, { day: 'numeric', month: 'long', year: 'numeric' }) : ''}` : '';
-  const limVal = allow > 0 ? `${allow} ${allow === 1 ? 'assaig' : 'assajos'}` : 'Cap falta permesa';
+  // Límit personalitzat: les faltes que ja has fet (marcades o avisades i justificades) es descompten del límit del projecte.
+  const missed = reh.filter(x => inSession(x, u)).filter(x => { const mk = mark(x.id, u.id); if (mk) return mk.s === 'FJ' || mk.s === 'FNJ'; return S.incidents.some(i => i.userId === u.id && i.sessionId === x.id && i.kind === 'absence' && i.status === 'accepted'); }).length;
+  const left = Math.max(0, allow - missed);
+  const limVal = left > 0 ? `${left} ${left === 1 ? 'assaig' : 'assajos'}` : 'Cap falta permesa';
   sheet({
     title: `<span style="display:inline-flex;align-items:center;gap:10px"><span class="dot" style="background:${okColor(p.color)};width:14px;height:14px"></span>${esc(p.name)}</span>`,
     body: `<div class="ig"><div class="igc">${ico('cal', 20)}<div><div class="s13 muted">Dates</div><b>${esc(dates || 'Sense dates')}</b></div></div></div>
-      <div class="pbx${inCensus(u) && tot > 0 ? '' : ' one'}"><div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div>${inCensus(u) && tot > 0 ? `<div><div class="s13 muted">Límit de faltes</div><b>${limVal}</b><div class="s13 muted" style="margin-top:2px">Assistència mínima ${min}%</div></div>` : ''}</div>
+      <div class="pbx${inCensus(u) && tot > 0 ? '' : ' one'}"><div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div>${inCensus(u) && tot > 0 ? `<div><div class="s13 muted">Límit de faltes</div><b>${limVal}</b></div>` : ''}</div>
       ${p.repertoire ? `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Repertori</b><br><span class="s13 muted">Obre les partitures</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>` : ''}
       ${p.info ? `<div class="dnote"><div class="s13 muted">Informació del projecte</div>${esc(p.info)}</div>` : ''}`,
     foot: canP ? `<button class="btn p" data-act="edit-proj" data-pid="${p.id}">Edita el projecte</button>` : '',
