@@ -731,6 +731,8 @@ const uid = (p = '') => p + Date.now().toString(36) + Math.random().toString(36)
 const newId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid().padEnd(32, '0').slice(0, 32).replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 const pad = n => String(n).padStart(2, '0');
 const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** Identificador de la versió, visible a l'Ajuda i a la pantalla d'entrada: serveix per comprovar que el navegador ha carregat l'última. */
+const BUILD = '10/10 16:50';
 let TODAY = isoDate(new Date());
 let NOW_HHMM = '00:00';
 /** Torna a llegir l'hora actual (es crida a cada pintada i a cada consulta de «sessió feta»). */
@@ -1378,7 +1380,7 @@ function viewLogin() {
       <label class="lgn-toggle"><span>Mantenir la sessió iniciada</span><span class="switch"><input type="checkbox" id="lg-keep" ${L.keep ? 'checked' : ''}><span></span></span></label>
       <button class="lgn-btn" type="submit">Entra</button>
     </form>
-    <p class="lgn-foot">Si no recordes les credencials,<br>parla amb la Junta</p></div>`;
+    <p class="lgn-foot">Si no recordes les credencials,<br>parla amb la Junta</p><p class="lgn-foot" style="margin-top:10px;opacity:.55">Versió ${BUILD}</p></div>`;
 }
 function splash(then) {
   splashing = true;
@@ -1808,13 +1810,22 @@ function sessionInfo(sid) {
   if (!past && inCensus(u) && inSession(s, u)) acts.push(['Envia un avís', 'avis-from-sess']);
   if (lvl >= 2) acts.push([can.passList() ? 'Passa llista' : 'Consulta la llista', 'goto-sess']);
   if (can.manageProjects()) acts.push(['Edita la sessió', 'sess-edit']); else if (hasRole(u, 'director')) acts.push(['Canvia el projecte', 'edit-sess-project']);
-  const myTxt = mine ? `${mine.kind === 'late' ? 'Arribaràs ' + (mine.min || '') + '′ tard' : 'No hi seràs'}${mine.status === 'pending' ? ' · pendent de revisar' : mine.status === 'rejected' ? ' · no justificat' : ''}` : '';
+  // El meu estat en aquesta sessió: de l'avís si n'hi ha, o de la marca de la llista (justificada o no).
+  const mk0 = inCensus(u) && inSession(s, u) ? mark(s.id, u.id) : null;
+  let myKey = null, myTxt = '';
+  if (mine) {
+    myKey = incKey(mine);
+    const base = mine.kind === 'late' ? `Retard de ${mine.min || ''}′` : mine.status === 'accepted' ? 'Falta justificada' : mine.status === 'rejected' ? 'Falta no justificada' : 'Falta';
+    myTxt = base + (mine.status === 'pending' ? ' · pendent de revisar' : (mine.status === 'rejected' && mine.kind === 'late') ? ' · no justificat' : '');
+  } else if (mk0 && (mk0.s === 'R' || mk0.s === 'FJ' || mk0.s === 'FNJ')) {
+    myKey = CSS_KEY[mk0.s]; myTxt = mk0.s === 'R' ? `Retard de ${mk0.min || ''}′` : mk0.s === 'FJ' ? 'Falta justificada' : 'Falta no justificada';
+  }
   sheet({
     title: `<span class="dwd">${WD(s.date)}</span><span style="font-size:28px;line-height:1.1">${dmy(s.date)}</span>`,
     body: `<div class="dtype">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}</div>
       <div class="dpills">${ps.map(p => pj(p, 'lg')).join('') || '<span class="muted">Sense projecte</span>'}</div>
       <div class="ig"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(s) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Lloc</div><b>${esc(s.place || 'Sense especificar')}</b></div></div>${extrasOf(s).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>
-      ${mine ? `<div class="dstate">${sdot(incKey(mine))}<span style="flex:1">${myTxt}</span>${mine.status !== 'accepted' ? `<button class="circb" data-act="inc-edit" data-id="${mine.id}" aria-label="Edita l’avís" style="width:40px;height:40px">${ico('pen', 18)}</button>` : ''}</div>` : ''}
+      ${myKey ? `<div class="dstate">${sdot(myKey)}<span style="flex:1">${myTxt}</span>${mine && mine.status !== 'accepted' ? `<button class="circb" data-act="inc-edit" data-id="${mine.id}" aria-label="Edita l’avís" style="width:40px;height:40px">${ico('pen', 18)}</button>` : ''}</div>` : ''}
       ${s.note ? `<div class="dnote"><div class="s13 muted">Nota</div>${esc(s.note)}</div>` : ''}
       ${ps.filter(p => p.repertoire).map(p => `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Repertori</b><br><span class="s13 muted">${esc(p.name)}</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>`).join('')}
       ${relHTML}`,
@@ -1976,7 +1987,7 @@ function helpSheet() {
   const states = [['P', 'Present', `Ha vingut a l'hora.`], ['R', 'Retard', `Ha vingut, però tard.`], ['F', 'Justif.', `No ha vingut, però ho havia avisat i s'ha acceptat.`], ['X', 'No just.', `No ha vingut i no hi ha cap motiu acceptat.`]];
   sheet({
     title: `Com funciona l'aplicació`,
-    body: `<p class="help-intro" style="margin-top:6px">Aquesta app serveix per passar llista als assajos i concerts, seguir l'assistència de cada músic i gestionar absències i retards.</p>${blocks[r] || blocks.musician}
+    body: `<p class="help-intro" style="margin-top:6px">Aquesta app serveix per passar llista als assajos i concerts, seguir l'assistència de cada músic i gestionar absències i retards.</p><p class="s13 muted" style="margin-top:4px">Versió ${BUILD}</p>${blocks[r] || blocks.musician}
       <div class="fl">Els quatre estats</div><div style="display:grid;gap:10px">${states.map(([k, n, d]) => `<div style="display:flex;gap:12px;align-items:flex-start"><span style="margin-top:4px">${sdot(k)}</span><div><b>${n}</b><div class="s13 muted" style="line-height:1.4">${d}</div></div></div>`).join('')}</div>
       <div class="fl">Altres coses que veuràs</div>
       ${R('↩️', 'Desfés', `Quan envies, edites o elimines un avís, o en justifiques o denegues un, surt un «Desfés» durant uns segons per tornar enrere.`)}
