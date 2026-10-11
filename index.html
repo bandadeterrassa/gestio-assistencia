@@ -661,12 +661,20 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .fbd{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:13px;background:#FBE3E5;color:var(--sX);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
 .pmore{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;width:100%;border-radius:26px;border:1.5px solid var(--rule);background:#fff;font-size:16px;font-weight:700}
 .pl{display:grid;gap:4px}
+.pkscroll{max-height:236px;overflow-y:auto;overscroll-behavior:contain;margin:6px -4px 0;padding:0 4px;scrollbar-width:thin;display:grid;gap:4px;align-content:start}
+.pkscroll.multi{max-height:300px}
+.pkscroll:empty{display:none}
 #pk .pl+.pl{margin-top:4px}
 .psub .pj{text-transform:none;letter-spacing:0}
 .pj.sm0{height:20px;padding:0 8px;font-size:11.5px;border-radius:10px;vertical-align:middle}
 .psubt{display:block;font-size:13px;font-weight:400;color:var(--ink2);margin-top:1px;line-height:1.3}
-.pnin{display:block;width:100%;margin-top:4px;border:0;border-bottom:1.5px solid var(--rule);background:none;font-size:14px;padding:3px 0;color:var(--ink2);outline:none;border-radius:0}
-.pnin:focus{border-bottom-color:var(--field)}
+.pc .pnm{display:block;padding-top:3px}
+.pnin{display:block;width:100%;margin:5px 0 4px;border:1.5px solid var(--rule);background:#fff;font-size:14px;line-height:1.2;padding:7px 10px;color:var(--ink);outline:none;border-radius:10px}
+.pnin::placeholder{color:var(--ink3)}
+.pnin:focus{border-color:var(--field)}
+.padd2{display:grid;gap:8px;margin-top:8px}
+.padd2b{display:flex;gap:8px;justify-content:flex-end}
+.padd2b .btn{height:40px;font-size:15px}
 .pj.sm{height:20px;padding:0 8px;font-size:11.5px;border-radius:10px;margin-left:6px;vertical-align:middle}
 .psec{border-top:2px solid var(--rule);margin-top:24px;padding-top:16px;font-weight:700;font-size:17px}
 .psub .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
@@ -680,7 +688,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .pc.drag{box-shadow:0 6px 18px rgba(15,34,54,.2);background:#fff;position:relative;z-index:2}
 .pchk{width:24px;height:24px;border-radius:7px;border:2px solid var(--ink2);flex:none;display:grid;place-items:center;font-size:14px;color:#fff;font-weight:700}
 .pchk.on{background:var(--field);border-color:var(--field)}
-.pall{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:16px;background:rgba(15,34,54,.05);font-weight:700;font-size:16px;width:100%;text-align:left;margin-bottom:6px}
+.pall{display:flex;align-items:center;gap:10px;padding:3px 10px 3px 14px;min-height:40px;border-radius:12px;background:rgba(15,34,54,.05);font-weight:700;font-size:16px;width:100%;text-align:left;margin-bottom:4px}
 .pall small{margin-left:auto;font-weight:500;color:var(--ink2);font-size:13px;white-space:nowrap}
 .pout{font-size:11.5px;font-weight:700;color:var(--ink2);background:rgba(15,34,54,.08);border-radius:9px;padding:1px 7px;margin-left:6px;white-space:nowrap;display:inline-block}
 .psub{font:700 12px var(--sf);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:16px 0 6px}
@@ -2261,9 +2269,9 @@ function projSheet(p) {
         <small>Identifica el projecte al calendari i a les llistes.</small></div>
       <div class="row2"><div class="field"><span>Des de</span><input class="inp" type="date" id="p-from" value="${esc(p.from || '')}"></div>
         <div class="field"><span>Fins a</span><input class="inp" type="date" id="p-to" value="${esc(p.to || '')}"></div></div>
-      ${piecesBlock('p-pieces')}
-      <div class="field"><span>Enllaç a les partitures (Box)</span><input class="inp" id="p-rep" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures"></div>
       <div class="field"><span>Informació complementària</span><textarea class="inp" id="p-info" placeholder="Vestuari, notes de producció…">${esc(p.info || '')}</textarea></div>
+      <div class="field"><span>Enllaç a les partitures (Box)</span><input class="inp" id="p-rep" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures"></div>
+      ${piecesBlock('p-pieces')}
       <div class="field"><span>No fan el projecte</span>
         <div class="scroll-list" style="max-height:260px" id="p-excluded">${SECTIONS.map(sec => {
           const members = membersOf(sec.id);
@@ -2445,7 +2453,8 @@ function piecePicker(s, rep, done) {
     const hid = r => full.has(r.projId) && !outOfProj(r);
     const sel = rep.map((r, i) => hid(r) ? '' : `<div class="pc sel" data-i="${i}" data-t="tog" data-pid="${esc(r.pid)}"><button type="button" class="gr" aria-label="Reordena ${esc(r.name)}">⋮⋮</button>${chk(true)}<span class="pcn">${esc(r.name)}${subt(noteOfPiece(r.projId, r.pid))}${outOfProj(r) ? '<span class="pout">Fora del projecte</span>' : ''}</span></div>`).join('');
     let h = '';
-    projs.forEach(p => { const n = piecesOf(p).length; if (n) h += `<button type="button" class="pall" data-t="all" data-pr="${p.id}">${chk(allChosen(p, rep))}<span class="pcn">Tot el repertori<span class="psubt">${pj(p, 'sm0')}</span></span><small>${n} ${n === 1 ? 'peça' : 'peces'}</small></button>`; });
+    projs.forEach(p => { const n = piecesOf(p).length; if (n) h += `<button type="button" class="pall" data-t="all" data-pr="${p.id}">${chk(allChosen(p, rep))}<span class="pcn">Tot el repertori${pj(p, 'sm')}</span></button>`; });
+    h += `<div class="pkscroll ${multi ? 'multi' : ''}">`;
     if (sel) h += `<div class="pl" id="pk-sel">${sel}</div>`;
     projs.forEach(p => {
       const rest = piecesOf(p).filter(x => !rep.some(r => r.pid === x.id));
@@ -2453,6 +2462,7 @@ function piecePicker(s, rep, done) {
         h += `<div class="psub">${pj(p)}</div><div class="s13 muted">Aquest projecte encara no té peces.</div>` + (can.pieces() ? `<div class="padd"><input class="inp" data-pr="${p.id}" placeholder="Nom de la peça" maxlength="80"><button type="button" class="btn s sm" data-t="newp" data-pr="${p.id}">Afegeix</button></div>` : '');
       } else if (rest.length) h += `${multi ? `<div class="psub">${pj(p)}</div>` : ''}<div class="pl">${rest.map(x => `<div class="pc u" data-t="tog" data-pid="${esc(x.id)}" data-pr="${p.id}">${chk(false)}<span class="pcn">${esc(x.name)}${subt(x.note)}</span></div>`).join('')}</div>`;
     });
+    h += '</div>';
     $('#pk').innerHTML = h || '<div class="muted">Aquesta sessió no té cap projecte.</div>';
     if (focusIdx != null) { const n = rep.findIndex((_, i) => i === focusIdx); const g = $(`#pk .pc.sel[data-i="${n}"] .gr`); if (g) g.focus(); }
   };
@@ -2539,22 +2549,23 @@ function wirePieces(id, pcs) {
   let adding = false;
   const draw = focus => {
     cnt.textContent = pcs.length ? `${pcs.length} ${pcs.length === 1 ? 'peça' : 'peces'}` : '';
-    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn">${esc(x.name)}<input class="pnin" data-r="note" data-i="${i}" maxlength="60" value="${esc(x.note || '')}" placeholder="Subtítol o nota (opcional)" aria-label="Subtítol de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
-    add.innerHTML = adding ? `<div class="padd"><input class="inp" maxlength="80" placeholder="Nom de la peça" data-r="inp"><button type="button" class="btn p sm" data-r="ok">Afegeix</button></div>` : '<button type="button" class="btn s sm" data-r="open" style="width:auto">+ Afegeix una peça</button>';
+    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><span class="pnm">${esc(x.name)}</span><input class="pnin" data-r="note" data-i="${i}" maxlength="60" value="${esc(x.note || '')}" placeholder="Subtítol (opcional)" aria-label="Subtítol de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
+    add.innerHTML = adding ? `<div class="padd2"><input class="inp" maxlength="80" placeholder="Nom de la peça" data-r="inp"><input class="inp" maxlength="60" placeholder="Subtítol (opcional)" data-r="sub"><div class="padd2b"><button type="button" class="btn s sm" data-r="cancel">Cancel·la</button><button type="button" class="btn p sm" data-r="ok">Afegeix</button></div></div>` : '<button type="button" class="btn s sm" data-r="open" style="width:auto">+ Afegeix una peça</button>';
     if (adding) { const i = $('[data-r="inp"]', add); if (i) i.focus(); }
     if (focus != null) { const g = $(`.pc[data-i="${focus}"] .gr`, list); if (g) g.focus(); }
   };
   draw();
   dragList(list, '.pc', (order, focus) => { const nr = order.map(i => pcs[i]); const nf = focus != null ? order.indexOf(focus) : null; pcs.splice(0, pcs.length, ...nr); draw(nf); });
-  const addOne = () => { const i = $('[data-r="inp"]', add), name = i && i.value.trim(); if (!name) { toast('Escriu el nom de la peça'); return; } pcs.push({ id: newId().slice(0, 8), name }); draw(); const n = $('[data-r="inp"]', add); if (n) n.focus(); };
+  const addOne = () => { const i = $('[data-r="inp"]', add), sb = $('[data-r="sub"]', add), name = i && i.value.trim(), note = sb ? sb.value.trim() : ''; if (!name) { toast('Escriu el nom de la peça'); return; } pcs.push({ id: newId().slice(0, 8), name, ...(note ? { note } : {}) }); draw(); const n = $('[data-r="inp"]', add); if (n) n.focus(); };
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-r]'); if (!b) return;
     if (b.dataset.r === 'rm') { pcs.splice(Number(b.dataset.i), 1); draw(); }
     else if (b.dataset.r === 'open') { adding = true; draw(); }
     else if (b.dataset.r === 'ok') addOne();
+    else if (b.dataset.r === 'cancel') { adding = false; draw(); }
   });
   root.addEventListener('input', e => { const t = e.target; if (t.matches && t.matches('[data-r="note"]')) pcs[Number(t.dataset.i)].note = t.value.trim().slice(0, 60); });
-  root.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-r="inp"]')) { e.preventDefault(); addOne(); } });
+  root.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-r="inp"],[data-r="sub"]')) { e.preventDefault(); addOne(); } });
 }
 
 
