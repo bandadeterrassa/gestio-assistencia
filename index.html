@@ -268,12 +268,12 @@ select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:ima
 .stp.P{background:#D6EBDF;color:#14502F} .stp.R{background:#DCEAF5;color:#1D5A87} .stp.F{background:#F3E6C8;color:#6E4B08} .stp.X{background:#F8DCDD;color:#7F1A20} .stp.N{background:#E3E8EE;color:var(--ink2)}
 .seat{cursor:pointer}
 /* calendar cards */
-.scard{position:relative;background:#fff;border-radius:24px;padding:14px 14px 14px 26px;display:flex;gap:14px;align-items:center;box-shadow:0 1px 2px rgba(15,34,54,.06),0 0 0 1px rgba(15,34,54,.06);overflow:hidden;margin-top:10px;width:100%;text-align:left}
+.scard{position:relative;background:#fff;border-radius:24px;padding:14px 14px 14px 24px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 2px rgba(15,34,54,.06),0 0 0 1px rgba(15,34,54,.06);overflow:hidden;margin-top:10px;width:100%;text-align:left}
 .scard.past{opacity:.6}
 .par{position:absolute;inset:0;border-radius:24px;border-left:9px solid var(--c);pointer-events:none}
 .band{position:absolute;left:0;top:0;bottom:0;width:10px;display:flex;flex-direction:column}
 .band i{flex:1;display:block}
-.scard .d{width:44px;text-align:center;flex:none}
+.scard .d{width:38px;text-align:center;flex:none}
 .scard .d b{display:block;font:700 26px/1.1 var(--sf);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .scard .d span{font-size:13px;color:var(--ink2)}
 .scard .x{flex:1;min-width:0}
@@ -655,7 +655,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .xp .xpx{width:34px;height:34px;display:grid;place-items:center;color:var(--ink2);border-radius:17px;font-size:14px}
 .xp.add{padding:0 16px;background:var(--field);color:#fff;font-weight:700}
 .drow{display:block;padding:0}
-.drow .dtop{display:flex;gap:14px;align-items:center;width:100%;text-align:left;padding:14px 14px 14px 26px}
+.drow .dtop{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:14px 14px 14px 24px}
 .drow .chev{color:var(--ink2)}
 .drow .ded{padding:2px 16px 16px 26px;display:grid;gap:14px}
 .fbd{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:13px;background:#FBE3E5;color:var(--sX);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
@@ -670,7 +670,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .psub .pj{text-transform:none;letter-spacing:0}
 .pj.sm0{height:20px;padding:0 8px;font-size:11.5px;border-radius:10px;vertical-align:middle}
 .psubt{display:block;font-size:13px;font-weight:400;color:var(--ink2);margin-top:1px;line-height:1.3}
-.pc .pnm{display:block;padding-top:3px}
+.pnin-t{font-size:16px;color:var(--ink);padding-top:3px;margin-top:0}
 .pnin{display:block;width:100%;margin:2px 0 3px;border:0;border-bottom:1px solid var(--rule);background:none;font-size:14px;line-height:1.3;padding:4px 0 5px;color:var(--ink2);outline:none;border-radius:0}
 .pnin::placeholder{color:var(--ink3);opacity:.8}
 .pnin:focus{border-bottom-color:var(--field);color:var(--ink)}
@@ -1059,7 +1059,7 @@ const leaderOf = sec => S.users.find(u => u.active !== false && u.section === se
 
 /** El director és un rol de només consulta (excepte el repertori dels projectes). */
 const viewOnly = u => topRole(u) === 'director';
-/** Director «pur»: edita només el projecte d'una sessió i la seva preparació (l'horari, el lloc i la convocatòria són de la Junta i l'administració). */
+/** Director «pur»: edita només el projecte d'una sessió i la seva preparació (l'horari, la ubicació i la convocatòria són de la Junta i l'administració). */
 const dirOnly = () => { const u = me(); return !!u && hasRole(u, 'director') && level(u) < 4; };
 const can = {
   passList: () => { const u = me(); return !!u && level(u) >= 2 && !viewOnly(u); },
@@ -1542,7 +1542,7 @@ function viewPerfilDir(u) {
       <button class="dtop" data-act="prep-row" data-sid="${s.id}" aria-expanded="${open}">
         <div class="d"><b>${Number(s.date.slice(8, 10))}</b><span>${wdShort(s.date)}</span></div>
         <div class="x"><div class="a">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}</div>
-          <div class="s13 muted" style="margin-top:2px">${timeRange(s) ? esc(timeRange(s)) + ' · ' : ''}${esc(s.place || 'Sense lloc')}</div>${open ? `<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div>` : ''}</div>
+          <div class="s13 muted" style="margin-top:2px">${timeRange(s) ? esc(timeRange(s)) + ' · ' : ''}${esc(s.place || 'Sense ubicació')}</div>${open ? `<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div>` : ''}</div>
         ${nf ? `<span class="fbd" aria-label="${nf} ${nf === 1 ? 'falta avisada' : 'faltes avisades'}">${ico('user', 13)}${nf}</span>` : ''}<span class="chev">${ico('chevd', 20)}</span></button>
       ${open ? `<div class="ded">${prepFields(s)}</div>` : ''}</div>`;
   };
@@ -1568,7 +1568,7 @@ function viewRoll() {
   const nx = list.find(s => !sessionIsDone(s)), now = !!nx && nx.id === cur.id;
   const nav = `<div style="display:flex;gap:8px"><button class="nb" data-act="sess-prev" aria-label="Sessió anterior" ${i <= 0 ? 'disabled' : ''}>${ico('l', 20)}</button><button class="nb" data-act="sess-next" aria-label="Sessió següent" ${i >= list.length - 1 ? 'disabled' : ''}>${ico('r', 20)}</button></div>`;
   const box = `<div class="sbox ${now ? '' : 'off'}"><div class="top"><button class="sdate" data-act="sess-pick" aria-label="Tria una sessió"><span class="swd">${WD(cur.date)}</span><span class="sdd">${dmy(cur.date)}</span></button>${nav}</div>
-    <div class="smeta">${isPerf(cur) ? starI(14) : ''}${esc(cur.type || 'Assaig')}${timeRange(cur) ? ' · ' + esc(timeRange(cur)) : ''} · ${esc(cur.place || 'Sense lloc')}</div>
+    <div class="smeta">${isPerf(cur) ? starI(14) : ''}${esc(cur.type || 'Assaig')}${timeRange(cur) ? ' · ' + esc(timeRange(cur)) : ''} · ${esc(cur.place || 'Sense ubicació')}</div>
     <div class="spills">${cur.projs.map(p => pj(p, '', now)).join('')}</div></div>`;
   const mySec = hasRole(u, 'leader') && level(u) < 3 ? u.section : null;
   const body = mySec ? rollSection(cur, mySec, true) : (!ui.rollSec ? rollOverview(cur) : rollSection(cur, ui.rollSec, false));
@@ -1825,7 +1825,7 @@ function scard(s, opts = {}) {
   return `<button class="scard ${sessionIsDone(s) ? 'past' : ''}" data-act="sess-info" data-sid="${s.id}">${frame(s.projs.map(p => p.color))}
     <div class="d"><b>${Number(s.date.slice(8, 10))}</b><span>${wdShort(s.date)}</span></div>
     <div class="x"><div class="a">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}${short && timeRange(s) ? `<span>${esc(timeRange(s))}</span>` : ''}</div>
-      <div class="s13 muted" style="margin-top:2px">${short ? '' : (timeRange(s) ? esc(timeRange(s)) + ' · ' : '')}${esc(s.place || 'Sense lloc')}</div>
+      <div class="s13 muted" style="margin-top:2px">${short ? '' : (timeRange(s) ? esc(timeRange(s)) + ' · ' : '')}${esc(s.place || 'Sense ubicació')}</div>
       ${extraChips(s)}<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div></div>${pill}</button>`;
 }
 /** Un dia amb més d'una sessió: una sola targeta amb un bloc per sessió. Si totes són del mateix projecte, l'etiqueta del projecte surt una sola vegada. */
@@ -1837,7 +1837,7 @@ function dayCard(g, nextId) {
   const blocks = g.map(s => {
     const short = (s.type || 'Assaig') === 'Assaig';
     return `<button class="blk" data-act="sess-info" data-sid="${s.id}"><div class="bx"><div class="a">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}${timeRange(s) ? `<span>${esc(timeRange(s))}</span>` : ''}</div>
-      <div class="s13 muted" style="margin-top:2px">${esc(s.place || 'Sense lloc')}</div>${extraChips(s)}${same ? '' : `<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div>`}</div>${scardPill(s, { next: s.id === nextId })}</button>`;
+      <div class="s13 muted" style="margin-top:2px">${esc(s.place || 'Sense ubicació')}</div>${extraChips(s)}${same ? '' : `<div class="tagp">${s.projs.map(p => pj(p)).join('')}</div>`}</div>${scardPill(s, { next: s.id === nextId })}</button>`;
   }).join('');
   return `<div class="scard multi ${g.every(sessionIsDone) ? 'past' : ''}">${frame(cols)}
     <div class="d"><b>${Number(first.date.slice(8, 10))}</b><span>${wdShort(first.date)}</span></div>
@@ -1924,10 +1924,10 @@ function sessionInfo(sid) {
     title: `<span class="dwd">${WD(s.date)}</span><span style="font-size:28px;line-height:1.1">${dmy(s.date)}</span>`,
     body: `<div class="dtype">${isPerf(s) ? starI(15) : ''}${esc(s.type || 'Assaig')}</div>
       <div class="dpills">${ps.map(p => pj(p, 'lg')).join('') || '<span class="muted">Sense projecte</span>'}</div>
-      <div class="ig"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(s) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Lloc</div><b>${esc(s.place || 'Sense especificar')}</b></div></div>${extrasOf(s).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>
+      <div class="ig"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(s) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Ubicació</div><b>${esc(s.place || 'Sense especificar')}</b></div></div>${extrasOf(s).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>
       ${myKey ? `<div class="dstate">${sdot(myKey)}<span style="flex:1">${myTxt}</span>${mine && mine.status === 'pending' ? `<button class="circb" data-act="inc-edit" data-id="${mine.id}" aria-label="Edita l’avís" style="width:40px;height:40px">${ico('pen', 18)}</button>` : ''}</div>` : ''}
       ${s.note ? `<div class="dnote"><div class="s13 muted">Nota</div>${esc(s.note)}</div>` : ''}
-      ${repOf(s).length ? `<div class="fl">Repertori</div>${isAllRep(s) ? `<div style="font-weight:600">${ps.length > 1 ? 'Tot el repertori dels projectes' : 'Tot el repertori del projecte'}</div>` : `<div class="pl rl">${repOf(s).map((r, i) => `<div class="pc"><b>${i + 1}</b><span class="pcn">${esc(r.name)}${subt(noteOfPiece(r.projId, r.pid))}</span></div>`).join('')}</div>`}` : ''}
+      ${repOf(s).length ? `<div class="fl">Repertori</div>${isAllRep(s) ? `<div style="font-weight:600">${ps.length > 1 ? 'Tot el repertori dels projectes' : 'Tot el repertori del projecte'}</div>` : `<div class="pl rl">${repOf(s).map(r => `<div class="pc"><span class="pcn">${esc(repName(r))}${subt(noteOfPiece(r.projId, r.pid))}</span></div>`).join('')}</div>`}` : ''}
       ${(s.directorNote || '').trim() ? `<div class="dnote"><div class="s13 muted">Nota del director</div><div style="white-space:pre-wrap">${esc(s.directorNote)}</div></div>` : ''}
       ${relHTML}`,
     foot: acts.length ? `<div style="display:grid;gap:8px;width:100%">${acts.map((a, i) => `<button class="btn ${i === 0 ? 'p' : 's'}" data-act="${a[1]}" data-sid="${s.id}">${a[0]}</button>`).join('')}</div>` : `<button class="btn s" data-act="sheet-close">Tanca</button>`,
@@ -2056,8 +2056,8 @@ function manageConfig() {
     ${row('Cens d’assistència', `Els músics que compten per al percentatge d’assistència. El director i l’administració no hi són. Ara hi ha ${censusUsers().length} músics.`)}
     ${hh('Quotes', '', 20)}
     ${row('Reinicia les quotes', 'Posa la quota de tots els músics com a pendent per començar una temporada nova. Després es pot tornar a marcar una a una.', `<button class="btn del sm" data-act="fee-reset" style="height:40px;padding:0 16px">Reinicia</button>`)}
-    ${hh('Llocs d’assaig', '', 20)}
-    ${row('Llocs disponibles', esc((c.places || []).join(' · ') || 'Cap definit'), edit('edit-places'))}
+    ${hh('Ubicacions d’assaig', '', 20)}
+    ${row('Ubicacions disponibles', esc((c.places || []).join(' · ') || 'Cap definit'), edit('edit-places'))}
     ${hh('Tipus d’activitat', '', 20)}
     ${row('Tipus d’activitat', esc(TYPES.map(t => t + (typeRule(t).perf ? ' ★' : '')).join(' · ')), edit('edit-types'))}
     ${hh('Seccions', '', 20)}
@@ -2395,6 +2395,7 @@ const piecesOf = p => (p && Array.isArray(p.pieces)) ? p.pieces : [];
 const repOf = s => Array.isArray(s.rep) ? s.rep : [];
 /** Subtítol d'una peça: es llegeix del projecte (la sessió només desa el nom). */
 const noteOfPiece = (projId, pid) => { const p = projById(projId), x = p && piecesOf(p).find(y => y.id === pid); return (x && x.note) || ''; };
+const repName = r => { const p = projById(r.projId), x = p && piecesOf(p).find(y => y.id === r.pid); return (x && x.name) || r.name; };
 const subt = t => t ? `<small class="psubt">${esc(t)}</small>` : '';
 const PREP = {};   // esborranys de preparació per sessió (fins que es prem «Desa»): { rep, note }
 const prepDraft = s => PREP[s.id] || (PREP[s.id] = { rep: repOf(s).map(x => ({ ...x })), note: s.directorNote || '' });
@@ -2451,7 +2452,7 @@ function dragList(host, itemSel, onDone) {
 /** Xips amb les peces triades. Amb `sid`, les accions viatgen pel gestor general (Perfil); sense, es gestionen dins del full. */
 const repChips = (rep, sid) => {
   const at = sid ? `data-sid="${sid}"` : '';
-  return `<div class="xps">${rep.map((r, i) => `<span class="xp">${esc(r.name)}<button type="button" class="xpx" ${sid ? `data-act="prep-rm" ${at}` : 'data-a="rm"'} data-i="${i}" aria-label="Treu ${esc(r.name)}">✕</button></span>`).join('')}<button type="button" class="xp add" ${sid ? `data-act="prep-add" ${at}` : 'data-a="add"'}>+ Afegeix</button></div>`;
+  return `<div class="xps">${rep.map((r, i) => `<span class="xp">${esc(repName(r))}<button type="button" class="xpx" ${sid ? `data-act="prep-rm" ${at}` : 'data-a="rm"'} data-i="${i}" aria-label="Treu ${esc(r.name)}">✕</button></span>`).join('')}<button type="button" class="xp add" ${sid ? `data-act="prep-add" ${at}` : 'data-a="add"'}>+ Afegeix</button></div>`;
 };
 
 /** Selector de peces (full): llista de comprovació dels projectes de la sessió. `rep` es modifica en lloc; en tancar es crida `done`. */
@@ -2463,7 +2464,7 @@ function piecePicker(s, rep, done) {
   const draw = (focusIdx) => {
     const full = new Set(projs.filter(p => allChosen(p, rep)).map(p => p.id));   // projecte sencer triat: només es mostra «Tot el repertori»
     const hid = r => full.has(r.projId) && !outOfProj(r);
-    const sel = rep.map((r, i) => hid(r) ? '' : `<div class="pc sel" data-i="${i}" data-t="tog" data-pid="${esc(r.pid)}"><button type="button" class="gr" aria-label="Reordena ${esc(r.name)}">⋮⋮</button>${chk(true)}<span class="pcn">${esc(r.name)}${subt(noteOfPiece(r.projId, r.pid))}${outOfProj(r) ? '<span class="pout">Fora del projecte</span>' : ''}</span></div>`).join('');
+    const sel = rep.map((r, i) => hid(r) ? '' : `<div class="pc sel" data-i="${i}" data-t="tog" data-pid="${esc(r.pid)}"><button type="button" class="gr" aria-label="Reordena ${esc(r.name)}">⋮⋮</button>${chk(true)}<span class="pcn">${esc(repName(r))}${subt(noteOfPiece(r.projId, r.pid))}${outOfProj(r) ? '<span class="pout">Fora del projecte</span>' : ''}</span></div>`).join('');
     let h = `<div class="pkscroll ${multi ? 'multi' : ''}">`;
     if (sel) h += `<div class="pl" id="pk-sel">${sel}</div>`;
     projs.forEach(p => {
@@ -2473,7 +2474,9 @@ function piecePicker(s, rep, done) {
       } else h += `<div class="pgrp"><button type="button" class="pall" data-t="all" data-pr="${p.id}">${chk(allChosen(p, rep))}<span class="pcn">Tot el repertori${pj(p, 'sm')}</span></button>${rest.map(x => `<div class="pc u" data-t="tog" data-pid="${esc(x.id)}" data-pr="${p.id}">${chk(false)}<span class="pcn">${esc(x.name)}${subt(x.note)}</span></div>`).join('')}</div>`;
     });
     h += '</div>';
+    const keep = $('#pk .pkscroll'), top = keep ? keep.scrollTop : 0;
     $('#pk').innerHTML = h || '<div class="muted">Aquesta sessió no té cap projecte.</div>';
+    { const ns = $('#pk .pkscroll'); if (ns) ns.scrollTop = top; }
     if (focusIdx != null) { const n = rep.findIndex((_, i) => i === focusIdx); const g = $(`#pk .pc.sel[data-i="${n}"] .gr`); if (g) g.focus(); }
   };
   draw();
@@ -2523,7 +2526,7 @@ function prepSheet(sid, st) {
   const prep = st ? { rep: st.rep, note: st.note } : { rep: repOf(s).map(x => ({ ...x })), note: s.directorNote || '' };
   sheet({ title: 'Edita la sessió', body: `<div class="dwd" style="display:block">${WD(s.date)}</div><div style="font:700 28px/1.1 var(--sf)">${dmy(s.date)}</div>
       <div class="dtype" style="margin-top:6px">${isPerf(d) ? starI(15) : ''}${esc(d.type || 'Assaig')}</div>
-      <div class="ig" style="margin-top:0;margin-bottom:6px"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(d) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Lloc</div><b>${esc(s.place || 'Sense especificar')}</b></div></div>${extrasOf(d).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>
+      <div class="ig" style="margin-top:0;margin-bottom:6px"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(d) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Ubicació</div><b>${esc(s.place || 'Sense especificar')}</b></div></div>${extrasOf(d).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>
       <div class="field"><span>Projectes</span><div class="pickers" id="s-projs">${S.projects.map(p => `<button type="button" class="pick" data-pid="${p.id}" aria-pressed="${chosen.has(p.id)}"><span class="pdot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join('')}</div>
         <small>Un mateix assaig pot pertànyer a més d'un projecte.</small></div>
       ${prepHead}${prepBlock(prep)}`,
@@ -2559,7 +2562,7 @@ function wirePieces(id, pcs) {
   let adding = false;
   const draw = focus => {
     cnt.textContent = pcs.length ? `${pcs.length} ${pcs.length === 1 ? 'peça' : 'peces'}` : '';
-    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><span class="pnm">${esc(x.name)}</span><input class="pnin" data-r="note" data-i="${i}" maxlength="${Math.max(20, (x.note || '').length)}" value="${esc(x.note || '')}" placeholder="Descripció" aria-label="Descripció de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
+    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><input class="pnin pnin-t" data-r="name" data-i="${i}" maxlength="80" value="${esc(x.name)}" aria-label="Títol de la peça ${i + 1}"><input class="pnin" data-r="note" data-i="${i}" maxlength="${Math.max(20, (x.note || '').length)}" value="${esc(x.note || '')}" placeholder="Descripció" aria-label="Descripció de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
     add.innerHTML = adding ? `<div class="padd2"><input class="inp" maxlength="80" placeholder="Nom de la peça" data-r="inp"><input class="pnin" maxlength="20" placeholder="Descripció (màx. 20 caràcters)" data-r="sub" style="margin:4px 2px 6px"><div class="padd2b"><button type="button" class="btn s sm" data-r="cancel">Cancel·la</button><button type="button" class="btn p sm" data-r="ok">Afegeix</button></div></div>` : '<button type="button" class="btn s sm" data-r="open" style="width:auto">+ Afegeix una peça</button>';
     if (adding) { const i = $('[data-r="inp"]', add); if (i) i.focus(); }
     if (focus != null) { const g = $(`.pc[data-i="${focus}"] .gr`, list); if (g) g.focus(); }
@@ -2574,7 +2577,8 @@ function wirePieces(id, pcs) {
     else if (b.dataset.r === 'ok') addOne();
     else if (b.dataset.r === 'cancel') { adding = false; draw(); }
   });
-  root.addEventListener('input', e => { const t = e.target; if (t.matches && t.matches('[data-r="note"]')) pcs[Number(t.dataset.i)].note = t.value.trim().slice(0, 60); });
+  root.addEventListener('input', e => { const t = e.target; if (!t.matches) return; if (t.matches('[data-r="note"]')) pcs[Number(t.dataset.i)].note = t.value.trim().slice(0, 60); else if (t.matches('[data-r="name"]') && t.value.trim()) pcs[Number(t.dataset.i)].name = t.value.trim(); });
+  root.addEventListener('focusout', e => { const t = e.target; if (t.matches && t.matches('[data-r="name"]') && !t.value.trim()) t.value = pcs[Number(t.dataset.i)].name; });
   root.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-r="inp"],[data-r="sub"]')) { e.preventDefault(); addOne(); } });
 }
 
@@ -2612,7 +2616,7 @@ function sessionSheet(s, pid, st) {
       <div class="row2"><div class="field"><span>Inici</span><input class="inp" type="time" id="s-time" value="${esc(s.time || '20:00')}"></div>
         <div class="field"><span>Fi</span><input class="inp" type="time" id="s-end" value="${esc(s.end || '22:00')}"></div></div>
       <div class="field"><span>Tipus</span><select class="inp" id="s-type">${TYPES.map(t => `<option ${t === (s.type || 'Assaig') ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-      <div class="field"><span>Lloc</span><select class="inp" id="s-place">
+      <div class="field"><span>Ubicació</span><select class="inp" id="s-place">
         <option value="" ${!s.place ? 'selected' : ''}>Sense especificar</option>
         ${places.map(pl => `<option value="${esc(pl)}" ${s.place === pl ? 'selected' : ''}>${esc(pl)}</option>`).join('')}</select></div>
       <div id="s-extra"></div>
@@ -2640,7 +2644,7 @@ function sessionSheet(s, pid, st) {
     box.innerHTML = !(r.call || r.sound) ? '' : `<div class="row2" style="${r.call && r.sound ? '' : 'grid-template-columns:minmax(0,1fr)'}">
         ${r.call ? `<div class="field"><span>Convocatòria</span><input class="inp" type="time" id="s-call" value="${esc(ext.call)}"></div>` : ''}
         ${r.sound ? `<div class="field"><span>Prova de so</span><input class="inp" type="time" id="s-sound" value="${esc(ext.sound)}"></div>` : ''}</div>
-      ${r.call ? `<div class="field" id="s-cplace-wrap" ${ext.call ? '' : 'hidden'}><span>Lloc de la convocatòria</span><select class="inp" id="s-cplace"><option value="" ${!ext.cplace ? 'selected' : ''}>El mateix que la sessió</option>${pl.map(p => `<option value="${esc(p)}" ${ext.cplace === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></div>` : ''}
+      ${r.call ? `<div class="field" id="s-cplace-wrap" ${ext.call ? '' : 'hidden'}><span>Ubicació de la convocatòria</span><select class="inp" id="s-cplace"><option value="" ${!ext.cplace ? 'selected' : ''}>El mateix que la sessió</option>${pl.map(p => `<option value="${esc(p)}" ${ext.cplace === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></div>` : ''}
 `;
     enhanceFields(box);
     const cw = $('#s-cplace-wrap'), cin = $('#s-call');
@@ -2685,7 +2689,7 @@ function repeatSheet(pid) {
         <div class="field"><span>Fins a</span><input class="inp" type="date" id="r-to" value="${esc((p && p.to) || '')}"></div></div>
       <div class="row2"><div class="field"><span>Inici</span><input class="inp" type="time" id="r-time" value="21:30"></div>
         <div class="field"><span>Fi</span><input class="inp" type="time" id="r-end" value="00:00"></div></div>
-      <div class="field"><span>Lloc</span><select class="inp" id="r-place">
+      <div class="field"><span>Ubicació</span><select class="inp" id="r-place">
         <option value="">Sense especificar</option>
         ${(S.config.places || []).map(pl => `<option value="${esc(pl)}" ${pl === 'Aula 0P2' ? 'selected' : ''}>${esc(pl)}</option>`).join('')}</select></div>`,
     foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Genera</button>`,
@@ -2809,14 +2813,14 @@ function rulesSheet() {
 }
 function placesSheet() {
   sheet({
-    title: 'Llocs d\'assaig',
-    body: `<div class="field"><span>Un lloc per línia</span><textarea class="inp" id="c-places">${esc((S.config.places || []).join('\n'))}</textarea>
-      <small>Aquests llocs surten al desplegable en crear o editar una sessió.</small></div>`,
+    title: 'Ubicacions d\'assaig',
+    body: `<div class="field"><span>Una ubicació per línia</span><textarea class="inp" id="c-places">${esc((S.config.places || []).join('\n'))}</textarea>
+      <small>Aquestes ubicacions surten al desplegable en crear o editar una sessió.</small></div>`,
     foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>`,
   });
   sheetSave = () => {
     S.config.places = $('#c-places').value.split('\n').map(v => v.trim()).filter(Boolean);
-    save(); toast('Llocs actualitzats'); return true;
+    save(); toast('Ubicacions actualitzades'); return true;
   };
 }
 /** Gestió dels tipus d'activitat (Assaig, Concert...): un per línia, en l'ordre que apareixeran als desplegables. */
