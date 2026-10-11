@@ -661,17 +661,19 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .fbd{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:13px;background:#FBE3E5;color:var(--sX);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
 .pmore{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;width:100%;border-radius:26px;border:1.5px solid var(--rule);background:#fff;font-size:16px;font-weight:700}
 .pl{display:grid;gap:4px}
-.pkscroll{max-height:236px;overflow-y:auto;overscroll-behavior:contain;margin:6px -4px 0;padding:0 4px;scrollbar-width:thin;display:grid;gap:4px;align-content:start}
-.pkscroll.multi{max-height:300px}
+.pkscroll{max-height:250px;overflow-y:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px;scrollbar-width:thin;display:grid;gap:10px;align-content:start}
+.pgrp{display:grid;gap:2px}
+#pk{padding-top:14px}
+.pkscroll.multi{max-height:320px}
 .pkscroll:empty{display:none}
 #pk .pl+.pl{margin-top:4px}
 .psub .pj{text-transform:none;letter-spacing:0}
 .pj.sm0{height:20px;padding:0 8px;font-size:11.5px;border-radius:10px;vertical-align:middle}
 .psubt{display:block;font-size:13px;font-weight:400;color:var(--ink2);margin-top:1px;line-height:1.3}
 .pc .pnm{display:block;padding-top:3px}
-.pnin{display:block;width:100%;margin:5px 0 4px;border:1.5px solid var(--rule);background:#fff;font-size:14px;line-height:1.2;padding:7px 10px;color:var(--ink);outline:none;border-radius:10px}
-.pnin::placeholder{color:var(--ink3)}
-.pnin:focus{border-color:var(--field)}
+.pnin{display:block;width:100%;margin:2px 0 3px;border:0;border-bottom:1px solid var(--rule);background:none;font-size:14px;line-height:1.3;padding:4px 0 5px;color:var(--ink2);outline:none;border-radius:0}
+.pnin::placeholder{color:var(--ink3);opacity:.8}
+.pnin:focus{border-bottom-color:var(--field);color:var(--ink)}
 .padd2{display:grid;gap:8px;margin-top:8px}
 .padd2b{display:flex;gap:8px;justify-content:flex-end}
 .padd2b .btn{height:40px;font-size:15px}
@@ -679,7 +681,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .psec{border-top:2px solid var(--rule);margin-top:24px;padding-top:16px;font-weight:700;font-size:17px}
 .psub .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
 .pc{display:flex;align-items:center;gap:10px;background:rgba(15,34,54,.05);border-radius:12px;padding:3px 8px 3px 4px;font-size:16px;min-height:40px}
-.pc.u{background:none;padding:3px 4px;min-height:36px;cursor:pointer}
+.pc.u{background:none;padding:3px 4px 3px 14px;min-height:36px;cursor:pointer}
 .pc.sel{cursor:pointer}
 .pc .gr{color:var(--ink2);letter-spacing:-2px;width:30px;height:34px;touch-action:none;cursor:grab;display:grid;place-items:center;flex:none;user-select:none}
 .pc .num{width:26px;height:26px;border-radius:50%;background:rgba(15,34,54,.09);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;font-variant-numeric:tabular-nums}
@@ -688,7 +690,8 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .pc.drag{box-shadow:0 6px 18px rgba(15,34,54,.2);background:#fff;position:relative;z-index:2}
 .pchk{width:24px;height:24px;border-radius:7px;border:2px solid var(--ink2);flex:none;display:grid;place-items:center;font-size:14px;color:#fff;font-weight:700}
 .pchk.on{background:var(--field);border-color:var(--field)}
-.pall{display:flex;align-items:center;gap:10px;padding:3px 10px 3px 14px;min-height:40px;border-radius:12px;background:rgba(15,34,54,.05);font-weight:700;font-size:16px;width:100%;text-align:left;margin-bottom:4px}
+.pall{display:flex;align-items:center;gap:10px;padding:3px 10px 3px 14px;min-height:42px;border-radius:12px;background:rgba(15,34,54,.05);font-weight:700;font-size:16px;width:100%;text-align:left;margin-bottom:4px}
+.pall .pchk,.pc .pchk{width:24px;height:24px;min-width:24px;flex:0 0 24px}
 .pall small{margin-left:auto;font-weight:500;color:var(--ink2);font-size:13px;white-space:nowrap}
 .pout{font-size:11.5px;font-weight:700;color:var(--ink2);background:rgba(15,34,54,.08);border-radius:9px;padding:1px 7px;margin-left:6px;white-space:nowrap;display:inline-block}
 .psub{font:700 12px var(--sf);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:16px 0 6px}
@@ -698,6 +701,15 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .rl .pc{background:rgba(15,34,54,.05);padding:6px 12px;min-height:40px}
 .rl .pc b{width:20px;color:var(--ink2)}
 @media (min-width:700px){ .hf .hchips{grid-column:2;grid-row:3;align-self:start;margin-top:14px} .hf .prepbtn{grid-column:1/-1;margin-top:22px} .dock{margin:-36px 0 0;border-radius:0 0 36px 36px;padding:58px 28px 24px} .dock .pfld{max-width:none} }
+/* capçaleres dels fulls: la «x» amb més marge respecte a la vora i al contingut */
+#sheet-root .sheet{padding:16px 26px 0}
+.sheet .grab{margin-bottom:16px}
+.sheet .hd{gap:14px;margin-bottom:12px}
+.sheet .hd .circ{width:40px;height:40px;border-radius:20px;margin:2px 0 0 4px;flex:none}
+.sheet h2{padding-top:9px}
+.sheet.ctr h2{padding-top:0}
+.pgrp+.pgrp,#pk-sel+.pgrp{border-top:2px solid var(--rule);padding-top:10px}
+.pkscroll{gap:10px}
 </style>
 </head>
 <body>
@@ -1534,7 +1546,7 @@ function viewPerfilDir(u) {
         ${nf ? `<span class="fbd" aria-label="${nf} ${nf === 1 ? 'falta avisada' : 'faltes avisades'}">${ico('user', 13)}${nf}</span>` : ''}<span class="chev">${ico('chevd', 20)}</span></button>
       ${open ? `<div class="ded">${prepFields(s)}</div>` : ''}</div>`;
   };
-  const after = ns ? `${hh('Propers assajos', next.length ? `${next.length} ${next.length === 1 ? 'sessió' : 'sessions'}` : '', 24)}${next.length ? next.map(row).join('') : '<div class="muted" style="padding:6px 2px">No hi ha més sessions programades.</div>'}
+  const after = ns ? `${hh('Propers assajos', '', 24)}${next.length ? next.map(row).join('') : '<div class="muted" style="padding:6px 2px">No hi ha més sessions programades.</div>'}
     <button class="pmore" data-act="prep-more">Prepara més assajos<span class="muted">›</span></button>` : '';
   const acct = own ? `<div class="h" style="margin:26px 0 8px">Compte</div><div class="hr2"></div>
       <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Credencials</div><div class="d">Usuari <b style="color:var(--ink)">${esc(u.username)}</b></div></div><button class="btn s sm" data-act="change-password" style="height:40px;padding:0 16px">Canvia la contrasenya</button></div>
@@ -1857,7 +1869,7 @@ function viewProjects() {
   const doneN = all.filter(p => projectStatus(p) === 'done').length;
   const ps = all.filter(p => ui.calShowDone || projectStatus(p) !== 'done');
   const cnt = p => { const ss = sessionsOfProj(p.id).filter(s => !isPerf(s)); return [ss.filter(sessionIsDone).length, ss.length]; };
-  const act = (p, dark) => canP ? `<div style="display:flex;align-items:center;gap:14px;margin-top:12px;font-weight:700">${dirOnly() ? '' : `<button class="btn ${dark ? '' : 's'}" data-act="repeat-sessions" data-pid="${p.id}" style="height:40px;font-size:15px;padding:0 16px;${dark ? 'border:1.5px solid rgba(255,255,255,.6);color:#fff' : ''}">Assajos setmanals</button>`}<button data-act="list-sessions" data-pid="${p.id}">Sessions</button></div>` : '';
+  const act = (p, dark) => canP ? `<div style="display:flex;align-items:center;gap:14px;margin-top:12px;font-weight:700">${dirOnly() ? '' : `<button class="btn ${dark ? '' : 's'}" data-act="repeat-sessions" data-pid="${p.id}" style="height:40px;font-size:15px;padding:0 16px;${dark ? 'border:1.5px solid rgba(255,255,255,.6);color:#fff' : ''}">Assajos setmanals</button>`}<button class="btn ${dark ? '' : 's'}" data-act="list-sessions" data-pid="${p.id}" style="height:40px;font-size:15px;padding:0 16px;${dark ? 'border:1.5px solid rgba(255,255,255,.6);color:#fff' : ''}">Sessions</button></div>` : '';
   const card = p => {
     const st = projectStatus(p), [d, t] = cnt(p), a = 'view-proj';
     const dates = p.from ? ddmm(p.from) + (p.to ? ' – ' + ddmm(p.to) : '') + ' · ' : '';
@@ -2350,11 +2362,11 @@ function projectInfo(pid) {
   sheet({
     title: `<span style="display:inline-flex;align-items:center;gap:10px"><span class="dot" style="background:${okColor(p.color)};width:14px;height:14px"></span>${esc(p.name)}</span>`,
     body: `<div class="pbx one"><div><div class="s13 muted">Dates</div><b>${esc(dates || 'Sense dates')}</b></div></div>
-      <div class="pbx${inCensus(u) && tot > 0 ? '' : ' one'}"><div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div>${inCensus(u) && tot > 0 ? `<div><div class="s13 muted">Límit de faltes</div><b>${limVal}</b></div>` : ''}</div>
+      <div class="pbx${tot > 0 ? '' : ' one'}"><div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div>${tot > 0 ? `<div><div class="s13 muted">Límit de faltes</div><b>${inCensus(u) ? limVal : (allow > 0 ? `${allow} ${allow === 1 ? 'assaig' : 'assajos'}` : 'Cap falta permesa')}</b></div>` : ''}</div>
       ${p.info ? `<div class="dnote"><div class="s13 muted">Informació del projecte</div>${esc(p.info)}</div>` : ''}
       ${p.repertoire ? `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Partitures</b><br><span class="s13 muted">Obre l’enllaç del Box</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>` : ''}
       ${piecesOf(p).length ? `<div class="fl">Ordre del repertori</div><div class="pl rl">${piecesOf(p).map((x, i) => `<div class="pc"><b>${i + 1}</b><span class="pcn">${esc(x.name)}${subt(x.note)}</span></div>`).join('')}</div>` : ''}<div style="height:calc(env(safe-area-inset-bottom,0px) + 22px)"></div>`,
-    foot: canP ? `<button class="btn p" data-act="edit-proj" data-pid="${p.id}">Edita el projecte</button>` : '',
+    foot: canP ? `<div style="display:grid;gap:8px;width:100%"><button class="btn p" data-act="edit-proj" data-pid="${p.id}">Edita el projecte</button><button class="btn s" data-act="list-sessions" data-pid="${p.id}">Edita les sessions</button></div>` : '',
   });
 }
 function repertoireSheet(pid) {
@@ -2452,15 +2464,13 @@ function piecePicker(s, rep, done) {
     const full = new Set(projs.filter(p => allChosen(p, rep)).map(p => p.id));   // projecte sencer triat: només es mostra «Tot el repertori»
     const hid = r => full.has(r.projId) && !outOfProj(r);
     const sel = rep.map((r, i) => hid(r) ? '' : `<div class="pc sel" data-i="${i}" data-t="tog" data-pid="${esc(r.pid)}"><button type="button" class="gr" aria-label="Reordena ${esc(r.name)}">⋮⋮</button>${chk(true)}<span class="pcn">${esc(r.name)}${subt(noteOfPiece(r.projId, r.pid))}${outOfProj(r) ? '<span class="pout">Fora del projecte</span>' : ''}</span></div>`).join('');
-    let h = '';
-    projs.forEach(p => { const n = piecesOf(p).length; if (n) h += `<button type="button" class="pall" data-t="all" data-pr="${p.id}">${chk(allChosen(p, rep))}<span class="pcn">Tot el repertori${pj(p, 'sm')}</span></button>`; });
-    h += `<div class="pkscroll ${multi ? 'multi' : ''}">`;
+    let h = `<div class="pkscroll ${multi ? 'multi' : ''}">`;
     if (sel) h += `<div class="pl" id="pk-sel">${sel}</div>`;
     projs.forEach(p => {
-      const rest = piecesOf(p).filter(x => !rep.some(r => r.pid === x.id));
-      if (!piecesOf(p).length) {
-        h += `<div class="psub">${pj(p)}</div><div class="s13 muted">Aquest projecte encara no té peces.</div>` + (can.pieces() ? `<div class="padd"><input class="inp" data-pr="${p.id}" placeholder="Nom de la peça" maxlength="80"><button type="button" class="btn s sm" data-t="newp" data-pr="${p.id}">Afegeix</button></div>` : '');
-      } else if (rest.length) h += `${multi ? `<div class="psub">${pj(p)}</div>` : ''}<div class="pl">${rest.map(x => `<div class="pc u" data-t="tog" data-pid="${esc(x.id)}" data-pr="${p.id}">${chk(false)}<span class="pcn">${esc(x.name)}${subt(x.note)}</span></div>`).join('')}</div>`;
+      const all = piecesOf(p), rest = all.filter(x => !rep.some(r => r.pid === x.id));
+      if (!all.length) {
+        h += `<div class="pgrp"><div class="psub">${pj(p)}</div><div class="s13 muted">Aquest projecte encara no té peces.</div>` + (can.pieces() ? `<div class="padd"><input class="inp" data-pr="${p.id}" placeholder="Nom de la peça" maxlength="80"><button type="button" class="btn s sm" data-t="newp" data-pr="${p.id}">Afegeix</button></div>` : '') + '</div>';
+      } else h += `<div class="pgrp"><button type="button" class="pall" data-t="all" data-pr="${p.id}">${chk(allChosen(p, rep))}<span class="pcn">Tot el repertori${pj(p, 'sm')}</span></button>${rest.map(x => `<div class="pc u" data-t="tog" data-pid="${esc(x.id)}" data-pr="${p.id}">${chk(false)}<span class="pcn">${esc(x.name)}${subt(x.note)}</span></div>`).join('')}</div>`;
     });
     h += '</div>';
     $('#pk').innerHTML = h || '<div class="muted">Aquesta sessió no té cap projecte.</div>';
@@ -2549,8 +2559,8 @@ function wirePieces(id, pcs) {
   let adding = false;
   const draw = focus => {
     cnt.textContent = pcs.length ? `${pcs.length} ${pcs.length === 1 ? 'peça' : 'peces'}` : '';
-    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><span class="pnm">${esc(x.name)}</span><input class="pnin" data-r="note" data-i="${i}" maxlength="60" value="${esc(x.note || '')}" placeholder="Subtítol (opcional)" aria-label="Subtítol de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
-    add.innerHTML = adding ? `<div class="padd2"><input class="inp" maxlength="80" placeholder="Nom de la peça" data-r="inp"><input class="inp" maxlength="60" placeholder="Subtítol (opcional)" data-r="sub"><div class="padd2b"><button type="button" class="btn s sm" data-r="cancel">Cancel·la</button><button type="button" class="btn p sm" data-r="ok">Afegeix</button></div></div>` : '<button type="button" class="btn s sm" data-r="open" style="width:auto">+ Afegeix una peça</button>';
+    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><span class="pnm">${esc(x.name)}</span><input class="pnin" data-r="note" data-i="${i}" maxlength="${Math.max(20, (x.note || '').length)}" value="${esc(x.note || '')}" placeholder="Descripció" aria-label="Descripció de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
+    add.innerHTML = adding ? `<div class="padd2"><input class="inp" maxlength="80" placeholder="Nom de la peça" data-r="inp"><input class="pnin" maxlength="20" placeholder="Descripció (màx. 20 caràcters)" data-r="sub" style="margin:4px 2px 6px"><div class="padd2b"><button type="button" class="btn s sm" data-r="cancel">Cancel·la</button><button type="button" class="btn p sm" data-r="ok">Afegeix</button></div></div>` : '<button type="button" class="btn s sm" data-r="open" style="width:auto">+ Afegeix una peça</button>';
     if (adding) { const i = $('[data-r="inp"]', add); if (i) i.focus(); }
     if (focus != null) { const g = $(`.pc[data-i="${focus}"] .gr`, list); if (g) g.focus(); }
   };
