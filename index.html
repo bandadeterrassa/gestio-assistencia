@@ -587,6 +587,8 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
   #tabbar .sb-foot .sn{font-weight:700;font-size:16px;margin-top:12px}
   #tabbar .sb-foot .sn,#tabbar .sb-foot .muted,#tabbar .sb-foot .btn{margin-left:6px}
   #tabbar .sb-foot .btn{width:calc(100% - 12px)!important}
+  #tabbar .sb-foot .sb-act{padding:0 12px;gap:12px;font-size:15px;white-space:nowrap;text-align:left;justify-content:flex-start}
+  #tabbar .sb-foot .sb-act span{white-space:nowrap}
   .tb{display:none}
   .scroll{padding-top:36px}
   .scroll.flush{padding-top:28px}
@@ -943,6 +945,7 @@ async function fetchAll() {
     S.config.types = TYPES;
     BASE = snapshot();
     LOAD_OK = true; LOAD_ERR = false; LAST_LOAD = Date.now();
+    pushSync();
     return true;
   } catch (e) {
     if (errMsg(e).includes('sessio_caducada')) LAST_EXPIRED = true; else { console.warn(e); LOAD_ERR = true; }
@@ -1074,8 +1077,13 @@ const can = {
   pieces: () => level(me()) >= 3,
   appConfig: () => level(me()) >= 5,
   attendanceConfig: () => level(me()) >= 5,
-  /** Marcar un avís com a llegit o esborrar-lo: el cap de secció (els de la seva secció) i l'administrador. La Junta i la direcció només els consulten. */
-  reviewIncident: inc => { const u = me(); if (!u) return false; const t = userById(inc.userId); return level(u) >= 5 || (hasRole(u, 'leader') && !!t && !!u.section && t.section === u.section); },
+  /** Marcar un avís com a llegit o esborrar-lo: el cap de secció (els de la seva secció, però mai els seus), la Junta (els dels caps de secció) i l'administrador. La direcció només els consulta. */
+  reviewIncident: inc => {
+    const u = me(); if (!u) return false; const t = userById(inc.userId); if (!t) return false;
+    if (level(u) >= 5) return true;
+    if (hasRole(u, 'leader') && !!u.section && t.section === u.section && t.id !== u.id) return true;   // un cap de secció no pot llegir els seus propis avisos
+    return hasRole(u, 'board') && hasRole(t, 'leader');   // els avisos dels caps de secció els llegeix la Junta
+  },
   /** Consultar (sense poder actuar): també el director, com a responsable general de la banda. */
   viewIncidents: inc => level(me()) >= 3 || can.reviewIncident(inc),
   /** Credencials d'altres usuaris: només l'administrador (cadascú canvia la seva pròpia des del perfil). */
@@ -1514,7 +1522,7 @@ function viewPerfil(u) {
       ${mem.map((m, ix) => `<div class="row" style="${ix ? '' : 'border-top:0;'}padding:11px 0"><span class="s17 mname">${esc(m.name)}</span>${m.instrument ? `<span class="badge">${esc(m.instrument)}</span>` : ''}<span class="s13 muted" style="margin-left:auto">${roleHTML(m)}</span></div>`).join('') || '<div class="muted" style="padding:14px 0">Ets l’únic músic d’aquesta secció.</div>'}` : ''}
     ${own ? `<div class="h" style="margin:26px 0 8px">Compte</div><div class="hr2"></div>
       <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Credencials</div><div class="d">Usuari <b style="color:var(--ink)">${esc(u.username)}</b></div></div><button class="btn s sm" data-act="change-password" style="height:40px;padding:0 16px">Canvia la contrasenya</button></div>
-      <div class="set"><div style="flex:1"><div class="t">Sessió</div><div class="d">Tanca la sessió en aquest dispositiu.</div></div><button class="btn s sm" data-act="logout" style="height:40px;padding:0 16px">Surt</button></div>` : ''}
+      ${notifRow(u)}<div class="set"><div style="flex:1"><div class="t">Sessió</div><div class="d">Tanca la sessió en aquest dispositiu.</div></div><button class="btn s sm" data-act="logout" style="height:40px;padding:0 16px">Surt</button></div>` : ''}
     </div>`;
   return inner;
 }
@@ -1550,7 +1558,7 @@ function viewPerfilDir(u) {
     <button class="pmore" data-act="prep-more">Prepara més assajos<span class="muted">›</span></button>` : '';
   const acct = own ? `<div class="h" style="margin:26px 0 8px">Compte</div><div class="hr2"></div>
       <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Credencials</div><div class="d">Usuari <b style="color:var(--ink)">${esc(u.username)}</b></div></div><button class="btn s sm" data-act="change-password" style="height:40px;padding:0 16px">Canvia la contrasenya</button></div>
-      <div class="set"><div style="flex:1"><div class="t">Sessió</div><div class="d">Tanca la sessió en aquest dispositiu.</div></div><button class="btn s sm" data-act="logout" style="height:40px;padding:0 16px">Surt</button></div>` : '';
+      ${notifRow(u)}<div class="set"><div style="flex:1"><div class="t">Sessió</div><div class="d">Tanca la sessió en aquest dispositiu.</div></div><button class="btn s sm" data-act="logout" style="height:40px;padding:0 16px">Surt</button></div>` : '';
   return `<div class="hf ${dock ? 'dk' : ''}">${REAL_ADMIN && ME !== REAL_ADMIN ? `<div class="imp"><span>Veient l’aplicació com a <b>${esc(u.name)}</b></span><button class="btn" data-act="end-impersonate">Torna a l’administrador</button></div>` : ''}${OFFLINE ? `<div class="offline" role="alert"><span><b>No s’ha pogut connectar.</b> No es desarà res fins que torni.</span><button data-act="retry-net">Torna-ho a provar</button></div>` : ''}${hero}</div>${dock}
     <div style="padding-top:6px">${appHint()}${after}${acct}</div>`;
 }
@@ -2799,6 +2807,123 @@ function changePasswordSheet(forced) {
     toast('Contrasenya actualitzada'); return true;
   };
 }
+/* ---------- Notificacions push ---------- */
+const PUSH_SUPPORT = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_STANDALONE = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const urlB64 = str => { const pad = '='.repeat((4 - str.length % 4) % 4), raw = atob((str + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(raw, c => c.charCodeAt(0)); };
+async function pushReg() { return navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready); }
+async function pushSub() { try { if (!PUSH_SUPPORT()) return null; const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch { return null; } }
+async function pushSend(sub) {
+  const j = sub.toJSON();
+  const r = await sb.rpc('app_push_subscribe', { p_token: TOKEN, p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_ua: navigator.userAgent });
+  if (r.error) throw r.error;
+}
+async function pushEnable() {
+  if (!PUSH_SUPPORT()) throw new Error('no_suport');
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') throw new Error('denegat');
+  const reg = await pushReg();
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    const k = await sb.rpc('app_push_key'); if (k.error || !k.data) throw new Error('sense_clau');
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(k.data) });
+  }
+  await pushSend(sub);
+}
+async function pushDisable() {
+  const sub = await pushSub(); if (!sub) return;
+  try { await sb.rpc('app_push_unsubscribe', { p_token: TOKEN, p_endpoint: sub.endpoint }); } catch {}
+  try { await sub.unsubscribe(); } catch {}
+}
+/** Al sortir, aquest dispositiu deixa de rebre notificacions d'aquest compte. */
+async function pushForget() { try { await Promise.race([pushDisable(), new Promise(r => setTimeout(r, 2500))]); } catch {} }
+let pushSynced = false;
+/** Si el dispositiu ja estava subscrit, ho assegura al compte actual (p. ex. si el navegador renova la subscripció). */
+async function pushSync() {
+  if (pushSynced || !TOKEN || !me() || level(me()) < 2) return;
+  pushSynced = true;
+  try { if (PUSH_SUPPORT() && Notification.permission === 'granted') { const sub = await pushSub(); if (sub) await pushSend(sub); } } catch (e) { console.warn(e); }
+}
+const notifRow = u => (u.id === ME && level(u) >= 2)
+  ? `<div class="set"><div style="flex:1;min-width:0"><div class="t">Notificacions</div><div class="d">Avisos al mòbil, resums i faltes.</div></div><button class="btn s sm" data-act="notif" style="height:40px;padding:0 16px">Configura</button></div>` : '';
+
+async function notifSheet() {
+  const u = me(); if (!u || level(u) < 2) return;
+  sheet({ title: 'Notificacions', body: '<div class="muted" style="padding:20px 0">Carregant…</div>', foot: `<span class="spacer"></span><button class="btn" data-act="sheet-close">Tanca</button><button class="btn btn-primary" data-act="sheet-save">Desa</button>` });
+  let G;
+  try { const r = await sb.rpc('app_notif_get', { p_token: TOKEN }); if (r.error) throw r.error; G = r.data; }
+  catch (e) { console.warn(e); closeSheet(); toast('Les notificacions no estan disponibles ara mateix.'); return; }
+  const dir = !!G.director, board = level(u) >= 4, pr = G.prefs;
+  const N = { avisos: pr ? pr.avisos : (dir ? 'digest' : 'instant'), days: pr ? pr.days.slice() : [4], hour: pr ? pr.hour : 18, faltesAuto: pr ? pr.faltesAuto : false };
+  const GL = { ...G.global };
+  const sub = await pushSub();
+  const dev = { on: !!sub && PUSH_SUPPORT() && Notification.permission === 'granted' };
+  const root = $('#sheet-root'), DN = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
+  const hopts = sel => Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === sel ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`).join('');
+  const segb = (key, val, txt, on) => `<button class="${on ? 'on' : ''}" data-n="${key}" data-v="${val}">${txt}</button>`;
+  let note = '';
+  const draw = () => {
+    const unsupported = !PUSH_SUPPORT();
+    const devHelp = unsupported
+      ? (IS_IOS && !IS_STANDALONE() ? 'Al iPhone cal afegir primer l’aplicació a la pantalla d’inici (Comparteix → Afegeix a la pantalla d’inici) i obrir-la des d’allà.' : 'Aquest navegador no admet notificacions.')
+      : Notification.permission === 'denied' ? 'Has bloquejat les notificacions d’aquest lloc: activa-les als ajustos del navegador.' : '';
+    const devBlock = `<div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Aquest dispositiu</div><div class="d">${dev.on ? 'Les notificacions estan activades.' : 'Les notificacions estan desactivades.'}${devHelp ? ' ' + devHelp : ''}</div></div>
+      ${unsupported ? '' : `<button class="btn ${dev.on ? 's' : 'p'} sm" data-n="dev" style="height:40px;padding:0 16px">${dev.on ? 'Desactiva' : 'Activa'}</button>`}</div>
+      ${dev.on ? `<div style="margin:2px 0 4px"><button class="btn s sm" data-n="test" style="height:36px;padding:0 14px">Envia’m una prova</button></div>` : ''}`;
+    const modeBar = dir
+      ? `<div class="seg">${segb('avisos', 'digest', 'Resum de faltes', N.avisos !== 'off')}${segb('avisos', 'off', 'Cap', N.avisos === 'off')}</div>`
+      : `<div class="seg">${segb('avisos', 'instant', 'A l’instant', N.avisos === 'instant')}${segb('avisos', 'digest', 'Resum', N.avisos === 'digest')}${segb('avisos', 'off', 'Cap', N.avisos === 'off')}</div>`;
+    const modeTxt = dir ? 'Rebràs un missatge amb les faltes de les sessions d’aquell dia.'
+      : N.avisos === 'instant' ? (board ? 'Rebràs una notificació cada cop que un músic enviï un avís.' : 'Rebràs una notificació cada cop que un músic de la teva secció enviï un avís.')
+      : N.avisos === 'digest' ? 'Un sol missatge amb els avisos pendents i les faltes de les sessions d’aquell dia. Només s’envia si hi ha alguna cosa a dir.' : 'No rebràs cap avís.';
+    const when = N.avisos === 'digest' || (dir && N.avisos !== 'off') ? `<div class="field"><span>Quins dies</span><div class="hchips" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">${DN.map((d, i) => `<button class="chip ${N.days.includes(i + 1) ? 'on' : ''}" data-n="day" data-v="${i + 1}" style="height:40px;min-width:0;padding:0;justify-content:center">${d}</button>`).join('')}</div></div>
+      <div class="field"><span>A quina hora</span><select class="inp" id="n-hour">${hopts(N.hour)}</select></div>` : '';
+    const auto = GL.autoEnabled ? `<div class="set"><div style="flex:1;min-width:0"><div class="t">Faltes abans de cada sessió</div><div class="d">Resum automàtic ${GL.autoDaysBefore ? 'la vigília' : 'el mateix dia'} a les ${String(GL.autoHour).padStart(2, '0')}:00.</div></div>
+      <button class="btn ${N.faltesAuto ? 'p' : 's'} sm" data-n="fauto" style="height:40px;padding:0 16px">${N.faltesAuto ? 'Activat' : 'Desactivat'}</button></div>` : '';
+    const glob = board ? `<div class="h" style="margin:24px 0 8px">Resum automàtic de la banda</div><div class="hr2"></div>
+      <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Enviar les faltes abans de cada sessió</div><div class="d">Qui ho vulgui rebre ho activa al seu perfil.</div></div><button class="btn ${GL.autoEnabled ? 'p' : 's'} sm" data-n="gauto" style="height:40px;padding:0 16px">${GL.autoEnabled ? 'Activat' : 'Desactivat'}</button></div>
+      ${GL.autoEnabled ? `<div class="row2" style="display:flex;gap:12px"><div class="field" style="flex:1"><span>Hora</span><select class="inp" id="g-hour">${hopts(GL.autoHour)}</select></div>
+      <div class="field" style="flex:1"><span>Quan</span><select class="inp" id="g-days"><option value="0" ${GL.autoDaysBefore ? '' : 'selected'}>El mateix dia</option><option value="1" ${GL.autoDaysBefore ? 'selected' : ''}>La vigília</option></select></div></div>` : ''}` : '';
+    root.querySelector('.bd').innerHTML = `${devBlock}
+      <div class="h" style="margin:24px 0 8px">${dir ? 'Faltes' : 'Avisos dels músics'}</div><div class="hr2"></div>
+      ${modeBar}<div class="s13 muted" style="margin:10px 2px 0;line-height:1.4">${modeTxt}</div>${when}
+      ${auto}${glob}${note ? `<div class="privacy" style="margin-top:16px">${note}</div>` : ''}`;
+    enhanceFields(root);
+  };
+  const bd = root.querySelector('.bd');
+  bd.addEventListener('change', e => {
+    if (e.target.id === 'n-hour') N.hour = +e.target.value;
+    if (e.target.id === 'g-hour') GL.autoHour = +e.target.value;
+    if (e.target.id === 'g-days') GL.autoDaysBefore = +e.target.value;
+  });
+  bd.addEventListener('click', async e => {
+    const b = e.target.closest('[data-n]'); if (!b) return;
+    const k = b.dataset.n, v = b.dataset.v;
+    if (k === 'avisos') N.avisos = v;
+    else if (k === 'day') { const d = +v; N.days = N.days.includes(d) ? N.days.filter(x => x !== d) : [...N.days, d].sort(); if (!N.days.length) N.days = [d]; }
+    else if (k === 'fauto') N.faltesAuto = !N.faltesAuto;
+    else if (k === 'gauto') GL.autoEnabled = !GL.autoEnabled;
+    else if (k === 'dev') {
+      b.disabled = true;
+      try { if (dev.on) { await pushDisable(); dev.on = false; } else { await pushEnable(); dev.on = true; } }
+      catch (er) { console.warn(er); toast(String(er && er.message) === 'denegat' ? 'No s’ha concedit el permís de notificacions.' : 'No s’han pogut activar les notificacions.'); }
+    }
+    else if (k === 'test') { try { const r = await sb.rpc('app_notif_test', { p_token: TOKEN }); if (r.error) throw r.error; toast('Prova enviada. Arribarà en uns segons.'); } catch (er) { console.warn(er); toast('No s’ha pogut enviar la prova.'); } return; }
+    draw();
+  });
+  sheetSave = async () => {
+    try {
+      const h = $('#n-hour'); if (h) N.hour = +h.value;
+      let r = await sb.rpc('app_notif_save', { p_token: TOKEN, p: { avisos: N.avisos, days: N.days, hour: N.hour, faltesAuto: N.faltesAuto } }); if (r.error) throw r.error;
+      if (board) { const gh = $('#g-hour'), gd = $('#g-days'); if (gh) GL.autoHour = +gh.value; if (gd) GL.autoDaysBefore = +gd.value;
+        r = await sb.rpc('app_notif_global', { p_token: TOKEN, p: GL }); if (r.error) throw r.error; }
+      if (!dev.on && N.avisos !== 'off') toast('Desat. Recorda activar les notificacions en aquest dispositiu.'); else toast('Notificacions desades');
+      return true;
+    } catch (e) { console.warn(e); toast('No s’ha pogut desar.'); return false; }
+  };
+  draw();
+}
 function rulesSheet() {
   sheet({
     title: 'Regles d\'assistència',
@@ -3164,7 +3289,8 @@ document.addEventListener('click', async e => {
     case 'keep': { const L = loginState; L.user = $('#lg-user').value; L.pass = $('#lg-pass').value; L.keep = !L.keep; render(); return; }
     case 'logout': {
       if (t1) { clearTimeout(t1); await flush(); }   // no es perd cap canvi fet just abans de sortir
-      if (TOKEN) { try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} }
+      if (TOKEN) { await pushForget(); try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} }
+      pushSynced = false;
       ME = null; REAL_ADMIN = null; TOKEN = null; saveSession();
       const keepName = S.config.name, keepLogo = S.config.logo;   // de la banda, no de cap persona
       S = structuredClone(DEFAULT); S.config.name = keepName; S.config.logo = keepLogo; BASE = null; LOAD_OK = false; OFFLINE = false;
@@ -3355,6 +3481,7 @@ document.addEventListener('click', async e => {
 
     /* fulls */
     case 'change-password': return changePasswordSheet(false);
+    case 'notif': return notifSheet();
     case 'unlock-pass': {
       const wrap = document.getElementById('u-pass-wrap'); if (!wrap) return;
       wrap.innerHTML = passField('u-pass', 'Estableix-ne una de nova', '');
