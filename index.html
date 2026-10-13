@@ -305,6 +305,19 @@ select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:ima
 .srch{height:48px;border-radius:24px;background:#fff;border:1px solid var(--rule);width:100%;padding:0 18px;font-size:17px;outline:none}
 .quota{font-size:13px;font-weight:700;border-radius:12px;height:24px;padding:0 10px;display:inline-flex;align-items:center;white-space:nowrap}
 .quota.no{color:var(--fj-ink);background:#F3E6C8} .quota.ok{color:#14502F;background:#D6EBDF}
+.nstep{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;margin:24px 0 8px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+.nstep:first-child{margin-top:4px}
+.nstep b{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;display:grid;place-items:center;flex:none}
+.nopt{border:1.5px solid var(--rule);border-radius:16px;margin-top:8px;overflow:hidden}
+.nopt.on{border-color:var(--field);background:rgba(15,34,54,.04)}
+.nopt .nhd{display:block;width:100%;text-align:left;padding:12px 14px;color:var(--ink);cursor:pointer;height:auto;border:0;border-radius:0;place-items:initial;background:none}
+.nopt .t{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px}
+.nopt .t i{width:20px;height:20px;border-radius:50%;border:2px solid #B9C2CE;flex:none;position:relative}
+.nopt.on .t i{border-color:var(--field)} .nopt.on .t i::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--field)}
+.nopt .d{display:block;position:static;width:auto;text-align:left;font-size:13px;color:var(--ink2);margin:4px 0 0 30px;line-height:1.35}
+.nopt .more{padding:2px 14px 14px 14px}
+.nsum{display:block;background:rgba(15,34,54,.06);border-radius:16px;padding:12px 14px;margin-top:24px;font-size:14px;line-height:1.45}
+.nsum b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);margin-bottom:4px}
 .set{display:flex;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--rule)}
 .set .t{font-size:17px;font-weight:700} .set .d{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.35}
 .pcd{border:1.5px solid var(--rule);border-radius:22px;padding:10px 10px 12px;background:#fff;text-align:left}
@@ -1514,7 +1527,7 @@ function viewPerfil(u) {
   const mem = u.section ? membersOf(u.section) : [];
   const inner = `<div class="hf">${REAL_ADMIN && ME !== REAL_ADMIN ? `<div class="imp"><span>Veient l’aplicació com a <b>${esc(u.name)}</b></span><button class="btn" data-act="end-impersonate">Torna a l’administrador</button></div>` : ''}${OFFLINE ? `<div class="offline" role="alert"><span><b>No s’ha pogut connectar.</b> No es desarà res fins que torni.</span><button data-act="retry-net">Torna-ho a provar</button></div>` : ''}${hero}</div>
     <div style="padding-top:6px">
-    ${appHint()}
+    ${appHint()}${notifHint(u)}
     <div class="h" style="margin:22px 0 8px">Els meus avisos<small>${mine.length}</small></div><div class="hr2"></div>
     ${own && mine.some(i => i.status === 'pending') ? hint('pendent', 'Pots editar o eliminar un avís mentre el teu cap de secció no l’hagi llegit.') : ''}
     ${list}
@@ -1560,7 +1573,7 @@ function viewPerfilDir(u) {
       <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Credencials</div><div class="d">Usuari <b style="color:var(--ink)">${esc(u.username)}</b></div></div><button class="btn s sm" data-act="change-password" style="height:40px;padding:0 16px">Canvia la contrasenya</button></div>
       ${notifRow(u)}<div class="set"><div style="flex:1"><div class="t">Sessió</div><div class="d">Tanca la sessió en aquest dispositiu.</div></div><button class="btn s sm" data-act="logout" style="height:40px;padding:0 16px">Surt</button></div>` : '';
   return `<div class="hf ${dock ? 'dk' : ''}">${REAL_ADMIN && ME !== REAL_ADMIN ? `<div class="imp"><span>Veient l’aplicació com a <b>${esc(u.name)}</b></span><button class="btn" data-act="end-impersonate">Torna a l’administrador</button></div>` : ''}${OFFLINE ? `<div class="offline" role="alert"><span><b>No s’ha pogut connectar.</b> No es desarà res fins que torni.</span><button data-act="retry-net">Torna-ho a provar</button></div>` : ''}${hero}</div>${dock}
-    <div style="padding-top:6px">${appHint()}${after}${acct}</div>`;
+    <div style="padding-top:6px">${appHint()}${notifHint(u)}${after}${acct}</div>`;
 }
 
 /* ---------- Assistència (llista) ---------- */
@@ -2838,13 +2851,21 @@ async function pushDisable() {
 }
 /** Al sortir, aquest dispositiu deixa de rebre notificacions d'aquest compte. */
 async function pushForget() { try { await Promise.race([pushDisable(), new Promise(r => setTimeout(r, 2500))]); } catch {} }
-let pushSynced = false;
+let pushSynced = false, PUSH_ON = null;
 /** Si el dispositiu ja estava subscrit, ho assegura al compte actual (p. ex. si el navegador renova la subscripció). */
 async function pushSync() {
   if (pushSynced || !TOKEN || !me() || level(me()) < 2) return;
   pushSynced = true;
-  try { if (PUSH_SUPPORT() && Notification.permission === 'granted') { const sub = await pushSub(); if (sub) await pushSend(sub); } } catch (e) { console.warn(e); }
+  try {
+    if (!PUSH_SUPPORT()) return;
+    const sub = await pushSub(), on = !!sub && Notification.permission === 'granted';
+    if (on) await pushSend(sub);
+    if (PUSH_ON !== on) { PUSH_ON = on; render(); }
+  } catch (e) { console.warn(e); }
 }
+/** Consell per activar les notificacions: només a qui en pot rebre, si aquest dispositiu encara no les té i el navegador no les ha bloquejat. */
+const notifHint = u => (u.id === ME && level(u) >= 2 && (pushSync(), PUSH_ON === false) && PUSH_SUPPORT() && Notification.permission !== 'denied')
+  ? hintAct('notif', 'Activa les notificacions.', 'Rep els avisos de les faltes al mòbil.', 'Activa', 'notif') : '';
 const notifRow = u => (u.id === ME && level(u) >= 2)
   ? `<div class="set"><div style="flex:1;min-width:0"><div class="t">Notificacions</div><div class="d">Avisos al mòbil, resums i faltes.</div></div><button class="btn s sm" data-act="notif" style="height:40px;padding:0 16px">Configura</button></div>` : '';
 
@@ -2863,32 +2884,53 @@ async function notifSheet() {
   const hopts = sel => Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === sel ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`).join('');
   const segb = (key, val, txt, on) => `<button class="${on ? 'on' : ''}" data-n="${key}" data-v="${val}">${txt}</button>`;
   let note = '';
+  const hh2 = h => String(h).padStart(2, '0') + ':00';
+  const dayNames = ['dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte', 'diumenge'];
+  const daysTxt = ds => { const n = ds.map(d => dayNames[d - 1]); return n.length === 1 ? 'els ' + n[0] + 's' : 'els ' + n.slice(0, -1).join(', ') + ' i ' + n[n.length - 1]; };
+  const sw = (key, on, label) => `<label class="switch"><input type="checkbox" data-n="${key}" ${on ? 'checked' : ''} aria-label="${esc(label)}"><span></span></label>`;
+  const opt = (v, title, desc, extra) => `<div class="nopt ${N.avisos === v ? 'on' : ''}"><div class="nhd" tabindex="0" data-n="avisos" data-v="${v}" role="radio" aria-checked="${N.avisos === v}"><div class="t"><i></i>${title}</div><div class="d">${desc}</div></div>${N.avisos === v && extra ? `<div class="more">${extra}</div>` : ''}</div>`;
   const draw = () => {
     const unsupported = !PUSH_SUPPORT();
     const devHelp = unsupported
       ? (IS_IOS && !IS_STANDALONE() ? 'Al iPhone cal afegir primer l’aplicació a la pantalla d’inici (Comparteix → Afegeix a la pantalla d’inici) i obrir-la des d’allà.' : 'Aquest navegador no admet notificacions.')
       : Notification.permission === 'denied' ? 'Has bloquejat les notificacions d’aquest lloc: activa-les als ajustos del navegador.' : '';
-    const devBlock = `<div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Aquest dispositiu</div><div class="d">${dev.on ? 'Les notificacions estan activades.' : 'Les notificacions estan desactivades.'}${devHelp ? ' ' + devHelp : ''}</div></div>
-      ${unsupported ? '' : `<button class="btn ${dev.on ? 's' : 'p'} sm" data-n="dev" style="height:40px;padding:0 16px">${dev.on ? 'Desactiva' : 'Activa'}</button>`}</div>
-      ${dev.on ? `<div style="margin:2px 0 4px"><button class="btn s sm" data-n="test" style="height:36px;padding:0 14px">Envia’m una prova</button></div>` : ''}`;
-    const modeBar = dir
-      ? `<div class="seg">${segb('avisos', 'digest', 'Resum de faltes', N.avisos !== 'off')}${segb('avisos', 'off', 'Cap', N.avisos === 'off')}</div>`
-      : `<div class="seg">${segb('avisos', 'instant', 'A l’instant', N.avisos === 'instant')}${segb('avisos', 'digest', 'Resum', N.avisos === 'digest')}${segb('avisos', 'off', 'Cap', N.avisos === 'off')}</div>`;
-    const modeTxt = dir ? 'Rebràs un missatge amb les faltes de les sessions d’aquell dia.'
-      : N.avisos === 'instant' ? (board ? 'Rebràs una notificació cada cop que un músic enviï un avís.' : 'Rebràs una notificació cada cop que un músic de la teva secció enviï un avís.')
-      : N.avisos === 'digest' ? 'Un sol missatge amb els avisos pendents i les faltes de les sessions d’aquell dia. Només s’envia si hi ha alguna cosa a dir.' : 'No rebràs cap avís.';
-    const when = N.avisos === 'digest' || (dir && N.avisos !== 'off') ? `<div class="field"><span>Quins dies</span><div class="hchips" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">${DN.map((d, i) => `<button class="chip ${N.days.includes(i + 1) ? 'on' : ''}" data-n="day" data-v="${i + 1}" style="height:40px;min-width:0;padding:0;justify-content:center">${d}</button>`).join('')}</div></div>
-      <div class="field"><span>A quina hora</span><select class="inp" id="n-hour">${hopts(N.hour)}</select></div>` : '';
-    const auto = GL.autoEnabled ? `<div class="set"><div style="flex:1;min-width:0"><div class="t">Faltes abans de cada sessió</div><div class="d">Resum automàtic ${GL.autoDaysBefore ? 'la vigília' : 'el mateix dia'} a les ${String(GL.autoHour).padStart(2, '0')}:00.</div></div>
-      <button class="btn ${N.faltesAuto ? 'p' : 's'} sm" data-n="fauto" style="height:40px;padding:0 16px">${N.faltesAuto ? 'Activat' : 'Desactivat'}</button></div>` : '';
-    const glob = board ? `<div class="h" style="margin:24px 0 8px">Resum automàtic de la banda</div><div class="hr2"></div>
-      <div class="set" style="border-top:0"><div style="flex:1;min-width:0"><div class="t">Enviar les faltes abans de cada sessió</div><div class="d">Qui ho vulgui rebre ho activa al seu perfil.</div></div><button class="btn ${GL.autoEnabled ? 'p' : 's'} sm" data-n="gauto" style="height:40px;padding:0 16px">${GL.autoEnabled ? 'Activat' : 'Desactivat'}</button></div>
-      ${GL.autoEnabled ? `<div class="row2" style="display:flex;gap:12px"><div class="field" style="flex:1"><span>Hora</span><select class="inp" id="g-hour">${hopts(GL.autoHour)}</select></div>
-      <div class="field" style="flex:1"><span>Quan</span><select class="inp" id="g-days"><option value="0" ${GL.autoDaysBefore ? '' : 'selected'}>El mateix dia</option><option value="1" ${GL.autoDaysBefore ? 'selected' : ''}>La vigília</option></select></div></div>` : ''}` : '';
-    root.querySelector('.bd').innerHTML = `${devBlock}
-      <div class="h" style="margin:24px 0 8px">${dir ? 'Faltes' : 'Avisos dels músics'}</div><div class="hr2"></div>
-      ${modeBar}<div class="s13 muted" style="margin:10px 2px 0;line-height:1.4">${modeTxt}</div>${when}
-      ${auto}${glob}${note ? `<div class="privacy" style="margin-top:16px">${note}</div>` : ''}`;
+    const wantsAny = N.avisos !== 'off' || N.faltesAuto;
+    /* 1 · dispositiu */
+    const devBlock = `<div class="nstep"><b>1</b>Activa el dispositiu</div>
+      <div class="set" style="border-top:0;padding-top:4px"><div style="flex:1;min-width:0"><div class="t">Notificacions en aquest dispositiu</div>
+        <div class="d">${devHelp || (dev.on ? 'Activades. Les rebràs en aquest mòbil o ordinador.' : 'Desactivades. Sense això no t’arribarà res.')}</div></div>
+        ${unsupported ? '' : sw('dev', dev.on, 'Notificacions en aquest dispositiu')}</div>
+      ${dev.on ? `<button class="btn s sm" data-n="test" style="height:36px;padding:0 14px;margin:2px 0 0">Envia’m una prova</button>` : ''}`;
+    /* 2 · avisos */
+    const when = `<div class="field" style="margin-top:0"><span>Quins dies</span><div class="hchips" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">${DN.map((d, i) => `<button class="chip ${N.days.includes(i + 1) ? 'on' : ''}" data-n="day" data-v="${i + 1}" style="height:40px;min-width:0;padding:0;justify-content:center" aria-pressed="${N.days.includes(i + 1)}">${d}</button>`).join('')}</div></div>
+      <div class="field"><span>A quina hora</span><select class="inp" id="n-hour">${hopts(N.hour)}</select></div>`;
+    const avBlock = dir
+      ? `<div class="nstep"><b>2</b>Resum de faltes</div>
+         ${opt('digest', 'Vull rebre un resum', 'Un missatge amb les faltes de les sessions d’aquell dia.', when)}
+         ${opt('off', 'No vull rebre’l', 'No rebràs cap resum.')}`
+      : `<div class="nstep"><b>2</b>Avisos dels músics</div>
+         ${opt('instant', 'Cada avís, a l’instant', board ? 'Una notificació cada cop que un músic envia un avís.' : 'Una notificació cada cop que un músic de la teva secció envia un avís.')}
+         ${opt('digest', 'Un resum programat', 'Un sol missatge amb els avisos pendents i les faltes del dia, quan tu triïs. Si no hi ha res, no s’envia.', when)}
+         ${opt('off', 'Cap avís', 'No rebràs cap notificació d’avisos.')}`;
+    /* 3 · faltes automàtiques */
+    const autoBlock = `<div class="nstep"><b>3</b>Faltes abans de cada sessió</div>
+      ${GL.autoEnabled
+        ? `<div class="set" style="border-top:0;padding-top:4px"><div style="flex:1;min-width:0"><div class="t">Recompte de faltes</div><div class="d">${GL.autoDaysBefore ? 'La vigília' : 'El mateix dia'} de cada sessió, a les ${hh2(GL.autoHour)}, rebràs quantes faltes hi ha.</div></div>${sw('fauto', N.faltesAuto, 'Recompte de faltes abans de cada sessió')}</div>`
+        : `<div class="s13 muted" style="margin:6px 2px 0;line-height:1.4">Ara mateix no està activat per a la banda.${board ? ' Pots activar-lo més avall.' : ' El pot activar la Junta.'}</div>`}`;
+    /* 4 · Junta */
+    const glob = board ? `<div class="nstep" style="margin-top:26px"><b>★</b>Per a tota la banda</div>
+      <div class="set" style="border-top:0;padding-top:4px"><div style="flex:1;min-width:0"><div class="t">Enviar el recompte de faltes abans de cada sessió</div><div class="d">Ho rep qui ho activi al seu perfil. Si el desactives, ningú no el rep.</div></div>${sw('gauto', GL.autoEnabled, 'Enviar el recompte de faltes abans de cada sessió')}</div>
+      ${GL.autoEnabled ? `<div class="row2" style="display:flex;gap:12px"><div class="field" style="flex:1;margin-top:6px"><span>Quan</span><select class="inp" id="g-days"><option value="0" ${GL.autoDaysBefore ? '' : 'selected'}>El mateix dia</option><option value="1" ${GL.autoDaysBefore ? 'selected' : ''}>La vigília</option></select></div>
+      <div class="field" style="flex:1;margin-top:6px"><span>A les</span><select class="inp" id="g-hour">${hopts(GL.autoHour)}</select></div></div>` : ''}` : '';
+    /* resum en una frase */
+    const lines = [];
+    if (N.avisos === 'instant') lines.push(board ? 'Rebràs una notificació cada cop que un músic enviï un avís.' : 'Rebràs una notificació cada cop que un músic de la teva secció enviï un avís.');
+    if (N.avisos === 'digest') lines.push(`${daysTxt(N.days).replace(/^e/, 'E')} a les ${hh2(N.hour)} rebràs un resum amb ${dir ? 'les faltes de les sessions d’aquell dia' : 'els avisos pendents i les faltes del dia'}.`);
+    if (N.faltesAuto && GL.autoEnabled) lines.push(`${GL.autoDaysBefore ? 'La vigília' : 'El mateix dia'} de cada sessió, a les ${hh2(GL.autoHour)}, rebràs el recompte de faltes.`);
+    const sum = !lines.length ? 'No rebràs cap notificació.' : lines.join(' ');
+    const warn = wantsAny && !dev.on && !unsupported ? ' Recorda activar el dispositiu (pas 1).' : '';
+    root.querySelector('.bd').innerHTML = `${devBlock}${avBlock}${autoBlock}${glob}
+      <div class="nsum"><b>Resum</b><span>${esc(sum + warn)}</span></div>`;
     enhanceFields(root);
   };
   const bd = root.querySelector('.bd');
@@ -2897,6 +2939,7 @@ async function notifSheet() {
     if (e.target.id === 'g-hour') GL.autoHour = +e.target.value;
     if (e.target.id === 'g-days') GL.autoDaysBefore = +e.target.value;
   });
+  bd.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('nhd')) { e.preventDefault(); e.target.click(); } });
   bd.addEventListener('click', async e => {
     const b = e.target.closest('[data-n]'); if (!b) return;
     const k = b.dataset.n, v = b.dataset.v;
@@ -2906,7 +2949,7 @@ async function notifSheet() {
     else if (k === 'gauto') GL.autoEnabled = !GL.autoEnabled;
     else if (k === 'dev') {
       b.disabled = true;
-      try { if (dev.on) { await pushDisable(); dev.on = false; } else { await pushEnable(); dev.on = true; } }
+      try { if (dev.on) { await pushDisable(); dev.on = false; } else { await pushEnable(); dev.on = true; } PUSH_ON = dev.on; }
       catch (er) { console.warn(er); toast(String(er && er.message) === 'denegat' ? 'No s’ha concedit el permís de notificacions.' : 'No s’han pogut activar les notificacions.'); }
     }
     else if (k === 'test') { try { const r = await sb.rpc('app_notif_test', { p_token: TOKEN }); if (r.error) throw r.error; toast('Prova enviada. Arribarà en uns segons.'); } catch (er) { console.warn(er); toast('No s’ha pogut enviar la prova.'); } return; }
@@ -3290,7 +3333,7 @@ document.addEventListener('click', async e => {
     case 'logout': {
       if (t1) { clearTimeout(t1); await flush(); }   // no es perd cap canvi fet just abans de sortir
       if (TOKEN) { await pushForget(); try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} }
-      pushSynced = false;
+      pushSynced = false; PUSH_ON = null;
       ME = null; REAL_ADMIN = null; TOKEN = null; saveSession();
       const keepName = S.config.name, keepLogo = S.config.logo;   // de la banda, no de cap persona
       S = structuredClone(DEFAULT); S.config.name = keepName; S.config.logo = keepLogo; BASE = null; LOAD_OK = false; OFFLINE = false;
