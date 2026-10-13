@@ -2876,8 +2876,7 @@ async function notifSheet() {
   try { const r = await sb.rpc('app_notif_get', { p_token: TOKEN }); if (r.error) throw r.error; G = r.data; }
   catch (e) { console.warn(e); closeSheet(); toast('Les notificacions no estan disponibles ara mateix.'); return; }
   const dir = !!G.director, board = level(u) >= 4, pr = G.prefs;
-  const N = { avisos: pr ? pr.avisos : (dir ? 'digest' : 'instant'), days: pr ? pr.days.slice() : [4], hour: pr ? pr.hour : 18, faltesAuto: pr ? pr.faltesAuto : false };
-  const GL = { ...G.global };
+  const N = { avisos: pr ? pr.avisos : (dir ? 'digest' : 'instant'), days: pr ? pr.days.slice() : [4], hour: pr ? pr.hour : 18, faltesAuto: pr ? pr.faltesAuto : false, fHour: pr ? pr.faltesHour : 12, fDays: pr ? pr.faltesDaysBefore : 0 };
   const sub = await pushSub();
   const dev = { on: !!sub && PUSH_SUPPORT() && Notification.permission === 'granted' };
   const root = $('#sheet-root'), DN = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
@@ -2914,30 +2913,26 @@ async function notifSheet() {
          ${opt('off', 'Cap avís', 'No rebràs cap notificació d’avisos.')}`;
     /* 3 · faltes automàtiques */
     const autoBlock = `<div class="nstep"><b>3</b>Faltes abans de cada sessió</div>
-      ${GL.autoEnabled
-        ? `<div class="set" style="border-top:0;padding-top:4px"><div style="flex:1;min-width:0"><div class="t">Recompte de faltes</div><div class="d">${GL.autoDaysBefore ? 'La vigília' : 'El mateix dia'} de cada sessió, a les ${hh2(GL.autoHour)}, rebràs quantes faltes hi ha.</div></div>${sw('fauto', N.faltesAuto, 'Recompte de faltes abans de cada sessió')}</div>`
-        : `<div class="s13 muted" style="margin:6px 2px 0;line-height:1.4">Ara mateix no està activat per a la banda.${board ? ' Pots activar-lo més avall.' : ' El pot activar la Junta.'}</div>`}`;
-    /* 4 · Junta */
-    const glob = board ? `<div class="nstep" style="margin-top:26px"><b>★</b>Per a tota la banda</div>
-      <div class="set" style="border-top:0;padding-top:4px"><div style="flex:1;min-width:0"><div class="t">Enviar el recompte de faltes abans de cada sessió</div><div class="d">Ho rep qui ho activi al seu perfil. Si el desactives, ningú no el rep.</div></div>${sw('gauto', GL.autoEnabled, 'Enviar el recompte de faltes abans de cada sessió')}</div>
-      ${GL.autoEnabled ? `<div class="row2" style="display:flex;gap:12px"><div class="field" style="flex:1;margin-top:6px"><span>Quan</span><select class="inp" id="g-days"><option value="0" ${GL.autoDaysBefore ? '' : 'selected'}>El mateix dia</option><option value="1" ${GL.autoDaysBefore ? 'selected' : ''}>La vigília</option></select></div>
-      <div class="field" style="flex:1;margin-top:6px"><span>A les</span><select class="inp" id="g-hour">${hopts(GL.autoHour)}</select></div></div>` : ''}` : '';
+      <div class="set" style="border-top:0;padding-top:4px"><div style="flex:1;min-width:0"><div class="t">Recompte de faltes</div><div class="d">Una notificació abans de cada sessió amb quantes faltes hi ha${dir || board ? ' a tota la banda' : ' a la teva secció'}.</div></div>${sw('fauto', N.faltesAuto, 'Recompte de faltes abans de cada sessió')}</div>
+      ${N.faltesAuto ? `<div class="row2" style="display:flex;gap:12px"><div class="field" style="flex:1;margin-top:6px"><span>Quan</span><select class="inp" id="f-days">${[[0, 'El mateix dia'], [1, '1 dia abans'], [2, '2 dies abans']].map(([v, t]) => `<option value="${v}" ${N.fDays === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="field" style="flex:1;margin-top:6px"><span>A les</span><select class="inp" id="f-hour">${hopts(N.fHour)}</select></div></div>` : ''}`;
     /* resum en una frase */
     const lines = [];
     if (N.avisos === 'instant') lines.push(board ? 'Rebràs una notificació cada cop que un músic enviï un avís.' : 'Rebràs una notificació cada cop que un músic de la teva secció enviï un avís.');
     if (N.avisos === 'digest') lines.push(`${daysTxt(N.days).replace(/^e/, 'E')} a les ${hh2(N.hour)} rebràs un resum amb ${dir ? 'les faltes de les sessions d’aquell dia' : 'els avisos pendents i les faltes del dia'}.`);
-    if (N.faltesAuto && GL.autoEnabled) lines.push(`${GL.autoDaysBefore ? 'La vigília' : 'El mateix dia'} de cada sessió, a les ${hh2(GL.autoHour)}, rebràs el recompte de faltes.`);
+    if (N.faltesAuto) lines.push(`${['El mateix dia', '1 dia abans', '2 dies abans'][N.fDays] || 'El mateix dia'} de cada sessió, a les ${hh2(N.fHour)}, rebràs el recompte de faltes.`);
     const sum = !lines.length ? 'No rebràs cap notificació.' : lines.join(' ');
     const warn = wantsAny && !dev.on && !unsupported ? ' Recorda activar el dispositiu (pas 1).' : '';
-    root.querySelector('.bd').innerHTML = `${devBlock}${avBlock}${autoBlock}${glob}
+    root.querySelector('.bd').innerHTML = `${devBlock}${avBlock}${autoBlock}
       <div class="nsum"><b>Resum</b><span>${esc(sum + warn)}</span></div>`;
     enhanceFields(root);
   };
   const bd = root.querySelector('.bd');
   bd.addEventListener('change', e => {
     if (e.target.id === 'n-hour') N.hour = +e.target.value;
-    if (e.target.id === 'g-hour') GL.autoHour = +e.target.value;
-    if (e.target.id === 'g-days') GL.autoDaysBefore = +e.target.value;
+    if (e.target.id === 'f-hour') N.fHour = +e.target.value;
+    if (e.target.id === 'f-days') N.fDays = +e.target.value;
+    if (['n-hour', 'f-hour', 'f-days'].includes(e.target.id)) draw();
   });
   bd.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('nhd')) { e.preventDefault(); e.target.click(); } });
   bd.addEventListener('click', async e => {
@@ -2946,7 +2941,6 @@ async function notifSheet() {
     if (k === 'avisos') N.avisos = v;
     else if (k === 'day') { const d = +v; N.days = N.days.includes(d) ? N.days.filter(x => x !== d) : [...N.days, d].sort(); if (!N.days.length) N.days = [d]; }
     else if (k === 'fauto') N.faltesAuto = !N.faltesAuto;
-    else if (k === 'gauto') GL.autoEnabled = !GL.autoEnabled;
     else if (k === 'dev') {
       b.disabled = true;
       try { if (dev.on) { await pushDisable(); dev.on = false; } else { await pushEnable(); dev.on = true; } PUSH_ON = dev.on; }
@@ -2958,10 +2952,8 @@ async function notifSheet() {
   sheetSave = async () => {
     try {
       const h = $('#n-hour'); if (h) N.hour = +h.value;
-      let r = await sb.rpc('app_notif_save', { p_token: TOKEN, p: { avisos: N.avisos, days: N.days, hour: N.hour, faltesAuto: N.faltesAuto } }); if (r.error) throw r.error;
-      if (board) { const gh = $('#g-hour'), gd = $('#g-days'); if (gh) GL.autoHour = +gh.value; if (gd) GL.autoDaysBefore = +gd.value;
-        r = await sb.rpc('app_notif_global', { p_token: TOKEN, p: GL }); if (r.error) throw r.error; }
-      if (!dev.on && N.avisos !== 'off') toast('Desat. Recorda activar les notificacions en aquest dispositiu.'); else toast('Notificacions desades');
+      let r = await sb.rpc('app_notif_save', { p_token: TOKEN, p: { avisos: N.avisos, days: N.days, hour: N.hour, faltesAuto: N.faltesAuto, faltesHour: N.fHour, faltesDaysBefore: N.fDays } }); if (r.error) throw r.error;
+      if (!dev.on && (N.avisos !== 'off' || N.faltesAuto)) toast('Desat. Recorda activar les notificacions en aquest dispositiu.'); else toast('Notificacions desades');
       return true;
     } catch (e) { console.warn(e); toast('No s’ha pogut desar.'); return false; }
   };
