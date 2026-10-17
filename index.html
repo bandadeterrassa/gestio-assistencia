@@ -2127,7 +2127,7 @@ function memberDetail(mid) {
 /* ---------- Gestió ---------- */
 function viewManage() {
   const u = me(), lvl = level(u);
-  const isAdm = can.appConfig(), canBk = lvl >= 4;
+  const isAdm = can.appConfig(), canBk = lvl >= 5;
   const tabs = [['usuaris', 'Usuaris']]; if (canBk) tabs.push(['copies', 'Còpies']); if (isAdm) tabs.push(['config', 'Configuració']);
   if (!tabs.some(t => t[0] === ui.manage)) ui.manage = 'usuaris';
   const bar = tabs.length > 1 ? `<div class="seg" style="margin-top:14px">${tabs.map(([k, n]) => `<button class="${ui.manage === k ? 'on' : ''}" data-act="manage" data-id="${k}">${n}</button>`).join('')}</div>` : '';
