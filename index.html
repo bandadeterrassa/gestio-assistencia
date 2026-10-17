@@ -32,7 +32,7 @@ html,body{height:100%;background:#D9DCE1;font-family:var(--sf);color:var(--ink);
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 input,textarea{font:inherit;color:inherit}
 body{display:flex;align-items:center;justify-content:center}
-#app{position:relative;width:100%;height:100dvh;max-width:430px;background:var(--paper);overflow:hidden;isolation:isolate}
+#app{position:relative;width:100%;height:100dvh;max-width:430px;background:var(--paper);overflow:hidden;overflow:clip;isolation:isolate}
 @media (min-width:520px){ #app{height:min(900px,calc(100vh - 32px));border-radius:48px;box-shadow:0 30px 80px rgba(15,34,54,.28)} }
 .ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;display:block;flex:none}
 .scroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:calc(env(safe-area-inset-top,0px) + 88px) 20px 120px;scrollbar-width:none}
@@ -478,7 +478,8 @@ button.mr{display:block;width:100%;text-align:left}
 .help-intro{color:var(--ink2);line-height:1.45;margin-top:8px}
 
 /* ===== Ajustos de la 2a revisió ===== */
-html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+#view{overflow:clip}
 @media (max-width:519px){
   html,body{background:var(--paper)}
   body{display:block}
@@ -665,6 +666,8 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .pfld>span{font-weight:700;font-size:15px}
 .pfld>span small{font-weight:400;font-size:13px;color:var(--ink2);margin-left:8px}
 .pnote{display:block;width:100%;min-height:88px;padding:12px 14px;border:1.5px solid var(--rule);border-radius:16px;background:var(--paper);font-size:16px;line-height:1.35;resize:none;color:var(--ink)}
+.pnr{display:block;margin:0 0 6px}.pnr>span{display:block;font-size:13px;font-weight:600;margin:0 2px 2px}.pnp{width:100%}
+.rcnt{flex:none;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;background:rgba(15,34,54,.07);color:var(--ink);white-space:nowrap}.rcnt.low{background:#fde8e6;color:#9b2a1f}
 .xps{display:flex;flex-wrap:wrap;gap:6px}
 .xp{display:inline-flex;align-items:center;gap:2px;min-height:38px;padding:0 4px 0 14px;border-radius:19px;background:rgba(15,34,54,.07);font-size:15px;font-weight:600;color:var(--ink)}
 .xp .xpx{width:34px;height:34px;display:grid;place-items:center;color:var(--ink2);border-radius:17px;font-size:14px}
@@ -676,7 +679,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .fbd{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:13px;background:#FBE3E5;color:var(--sX);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
 .pmore{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;width:100%;border-radius:26px;border:1.5px solid var(--rule);background:#fff;font-size:16px;font-weight:700}
 .pl{display:grid;gap:4px}
-.pkscroll{max-height:250px;overflow-y:auto;overscroll-behavior:contain;margin:0 -4px;padding:0 4px;scrollbar-width:thin;display:grid;gap:10px;align-content:start}
+.pkscroll{max-height:250px;overflow-y:auto;margin:0 -4px;padding:0 4px;scrollbar-width:thin;display:grid;gap:10px;align-content:start}
 .pgrp{display:grid;gap:2px}
 #pk{padding-top:14px}
 .pkscroll.multi{max-height:320px}
@@ -689,9 +692,6 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .pnin{display:block;width:100%;margin:2px 0 3px;border:0;border-bottom:1px solid var(--rule);background:none;font-size:14px;line-height:1.3;padding:4px 0 5px;color:var(--ink2);outline:none;border-radius:0}
 .pnin::placeholder{color:var(--ink3);opacity:.8}
 .pnin:focus{border-bottom-color:var(--field);color:var(--ink)}
-.padd2{display:grid;gap:8px;margin-top:8px}
-.padd2b{display:flex;gap:8px;justify-content:flex-end}
-.padd2b .btn{height:40px;font-size:15px}
 .pj.sm{height:20px;padding:0 8px;font-size:11.5px;border-radius:10px;margin-left:6px;vertical-align:middle}
 .psec{border-top:2px solid var(--rule);margin-top:24px;padding-top:16px;font-weight:700;font-size:17px}
 .psub .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
@@ -725,6 +725,46 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .sheet.ctr h2{padding-top:0}
 .pgrp+.pgrp,#pk-sel+.pgrp{border-top:2px solid var(--rule);padding-top:10px}
 .pkscroll{gap:10px}
+
+/* ===== Full de projecte: pestanyes Dades / Repertori / Músics ===== */
+#sheet-root .sheet.psh{height:calc(100% - 60px)}
+.ptabs{flex:none;margin:2px 0 4px}
+.tpan[hidden]{display:none!important}
+#p-excluded{max-height:none!important;overflow:visible!important}
+.tpan>.field:first-child{margin-top:12px}
+.tpan>.pdt{margin-top:12px}
+.phd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px}
+.phd b{font-weight:700;font-size:17px}
+.phd .cnt{font-size:13px;color:var(--ink2);margin:0!important}
+#p-pieces .pl{border-top:0;display:grid;gap:6px}
+#p-pieces .pempty{padding:14px 4px}
+.phint{font-size:13px;line-height:1.4;color:var(--ink2);margin:14px 2px 0}
+@media (min-width:700px){
+  #sheet-root .sheet.psh{width:min(760px,calc(100% - 48px));height:min(720px,calc(100% - 96px))}
+  .tpan.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;align-content:start}
+  .tpan.g2>.row2{grid-column:1/-1}
+  .tpan.g2>.field:first-child{grid-column:auto}
+  .tpan.g2>.field:nth-child(2){margin-top:12px}
+  #p-excluded{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 28px;max-height:none!important}
+  #p-pieces .pcn{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);column-gap:18px;align-items:end}
+  .padd2   }
+@media (min-width:1040px){
+  #sheet-root .sheet.psh{width:min(840px,calc(100% - 48px))}
+  #sheet-root .psh .row2:has(input[type=date]){grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px}
+}
+#p-pieces .pl{gap:10px}
+#p-pieces .pc{padding:10px 8px 10px 6px;min-height:72px;border-radius:16px}
+#p-pieces .pcn{display:grid;gap:6px}
+#p-pieces .pnin{margin:0;padding:6px 0 7px}
+#p-pieces .pnin-t{padding-top:2px}
+#p-pieces .padd2{display:grid;gap:12px;margin-top:26px;padding-top:20px;border-top:2px solid var(--rule)}
+#p-pieces .padd2h{font-weight:700;font-size:17px}
+#p-pieces .padd2 .btn{width:100%;height:50px}
+@media (min-width:700px){
+  #p-pieces .padd2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);column-gap:16px;row-gap:14px}
+  #p-pieces .padd2h,#p-pieces .padd2 .btn{grid-column:1/-1}
+  #p-pieces .padd2 .btn{width:auto;justify-self:end;padding:0 28px}
+}
 </style>
 </head>
 <body>
@@ -939,25 +979,61 @@ async function fetchPublic() {
 }
 /** Carrega totes les dades amb la sessió de l'usuari, en una sola crida. El servidor ja amaga els motius escrits a qui no els ha
  *  de veure. Si alguna cosa falla no se'n dóna res per bo (una càrrega parcial faria creure que no hi ha dades). */
+const LS_CACHE = 'bt:cache', LS_PEND = 'bt:pend';
+let FROM_CACHE = false;   // les dades mostrades són l'última còpia local, no les del servidor
+/** Converteix la resposta d'`app_load` en l'estat de l'app (serveix tant per a la xarxa com per a la còpia local). */
+function applyData(d) {
+  const need = ['users', 'projects', 'sessions', 'attendance', 'incidents', 'sections'];
+  if (!d || need.some(k => !Array.isArray(d[k])) || !d.config) throw new Error('resposta incompleta');
+  S.users = d.users.map(userFromRow);
+  S.projects = d.projects.map(projectFromRow);
+  S.sessions = d.sessions.map(sessionFromRow);
+  S.attendance = rowsToAttendance(d.attendance);
+  S.incidents = d.incidents.map(incidentFromRow);
+  S.config = configFromRow(d.config);
+  applySections(d.sections);
+  if (S.config.types) TYPES = S.config.types;
+  S.config.types = TYPES;
+  BASE = snapshot();
+  LOAD_OK = true;
+}
+/** Última còpia local de les dades d'aquesta sessió (o false). */
+function loadCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(LS_CACHE) || 'null');
+    if (!c || c.token !== TOKEN || !c.d) return false;
+    applyData(c.d); FROM_CACHE = true; LAST_LOAD = c.t || 0; LOAD_ERR = false; return true;
+  } catch { return false; }
+}
+/** Canvis fets sense connexió que encara no han arribat al servidor: es tornen a posar a sobre de les dades carregades. */
+function applyPending() {
+  let ch = null;
+  try { const p = JSON.parse(localStorage.getItem(LS_PEND) || 'null'); if (p && p.token === TOKEN) ch = p.ch; } catch {}
+  if (!ch) return false;
+  const up = (arr, items) => (items || []).forEach(o => { const i = arr.findIndex(x => x.id === o.id); if (i >= 0) arr[i] = o; else arr.push(o); });
+  const del = (arr, ids) => { const s = new Set(ids || []); return arr.filter(x => !s.has(x.id)); };
+  const g = ch.projects || {}, ss = ch.sessions || {}, ii = ch.incidents || {}, uu = ch.users || {}, aa = ch.attendance || {};
+  up(S.projects, g.upsert); S.projects = del(S.projects, g.delete);
+  up(S.sessions, ss.upsert); S.sessions = del(S.sessions, ss.delete); S.sessions.forEach(s => { if (!Array.isArray(s.projIds)) s.projIds = []; });
+  up(S.incidents, ii.upsert); S.incidents = del(S.incidents, ii.delete);
+  (uu.update || []).forEach(o => { const u = S.users.find(x => x.id === o.id); if (u) Object.assign(u, o); });
+  S.users = del(S.users, uu.delete);
+  (aa.upsert || []).forEach(o => { S.attendance[`${o.sessionId}|${o.userId}`] = { s: o.s, min: o.min == null ? undefined : o.min, note: o.note || undefined, by: o.by || undefined, at: o.at || undefined }; });
+  (aa.delete || []).forEach(o => { delete S.attendance[`${o.sessionId}|${o.userId}`]; });
+  if (ch.config) { S.config = ch.config; if (S.config.types) TYPES = S.config.types; S.config.types = TYPES; }
+  return true;
+}
+function savePending(ch) { try { if (ch) localStorage.setItem(LS_PEND, JSON.stringify({ token: TOKEN, ch })); else localStorage.removeItem(LS_PEND); } catch {} }
 async function fetchAll() {
   LAST_EXPIRED = false;
   if (!TOKEN) return false;
   try {
     const { data: d, error } = await sb.rpc('app_load', { p_token: TOKEN });
     if (error) throw error;
-    const need = ['users', 'projects', 'sessions', 'attendance', 'incidents', 'sections'];
-    if (!d || need.some(k => !Array.isArray(d[k])) || !d.config) throw new Error('resposta incompleta');
-    S.users = d.users.map(userFromRow);
-    S.projects = d.projects.map(projectFromRow);
-    S.sessions = d.sessions.map(sessionFromRow);
-    S.attendance = rowsToAttendance(d.attendance);
-    S.incidents = d.incidents.map(incidentFromRow);
-    S.config = configFromRow(d.config);
-    applySections(d.sections);
-    if (S.config.types) TYPES = S.config.types;
-    S.config.types = TYPES;
-    BASE = snapshot();
-    LOAD_OK = true; LOAD_ERR = false; LAST_LOAD = Date.now();
+    applyData(d);
+    FROM_CACHE = false;
+    try { localStorage.setItem(LS_CACHE, JSON.stringify({ token: TOKEN, t: Date.now(), d })); } catch {}   // còpia local per poder obrir l'app sense connexió
+    LOAD_ERR = false; LAST_LOAD = Date.now();
     pushSync();
     return true;
   } catch (e) {
@@ -970,8 +1046,10 @@ async function load() {
   try { const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); ME = s && s.userId; REAL_ADMIN = (s && s.realAdminId) || null; TOKEN = (s && s.token) || null; if (!TOKEN) ME = null; } catch {}
   if (TOKEN) {
     const ok = await fetchAll();
-    if (!ok && LAST_EXPIRED) { ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); }   // sessió caducada: torna a la pantalla d'entrada
-    else if (!ok) { ME = null; toast('No s\'han pogut carregar les dades. Recarrega la pàgina.'); }
+    if (ok) { if (applyPending()) { LAST_LOAD = 0; save(); } }   // hi havia canvis sense enviar: s'hi tornen a posar i s'envien
+    else if (LAST_EXPIRED) { ME = null; REAL_ADMIN = null; TOKEN = null; saveSession(); }   // sessió caducada: torna a la pantalla d'entrada
+    else if (loadCache()) { applyPending(); OFFLINE = true; }   // sense connexió: s'obre amb l'última còpia local
+    else { ME = null; toast('No s\'han pogut carregar les dades. Recarrega la pàgina.'); }
   }
   if (!TOKEN) await fetchPublic();
   migrate();
@@ -1029,17 +1107,18 @@ async function flush(isRetry) {
   if (!LOAD_OK || !BASE || !TOKEN) return;
   if (saving) { again = true; return; }
   const { ch, next } = buildChanges();
-  if (!ch) return;
+  if (!ch) { if (FROM_CACHE && !saving) { saving = true; try { if (await fetchAll()) { OFFLINE = false; render(); } } finally { saving = false; } } return; }   // dades locals sense canvis: si ja hi ha xarxa, es posen al dia
   saving = true;
   try {
     const r = await sb.rpc('app_save', { p_token: TOKEN, p_changes: ch });
     if (r.error) throw r.error;
-    BASE = next; setOffline(false);
+    BASE = next; savePending(null); setOffline(false);
+    if (FROM_CACHE && !buildChanges().ch) { FROM_CACHE = false; if (await fetchAll()) render(); }   // ja hi ha xarxa: es baixen les dades al dia
   } catch (e) {
     const m = errMsg(e);
     if (m.includes('sessio_caducada')) { sessionExpired(); return; }
     if (m.includes('sense_permis')) { toast('No tens permís per fer aquest canvi.'); if (await fetchAll()) render(); else if (LAST_EXPIRED) sessionExpired(); return; }
-    console.warn(e); setOffline(true); toast('No s\'han pogut desar els canvis. Es tornarà a provar.', { err: true });
+    console.warn(e); savePending(ch); setOffline(true); toast('Sense connexió: els canvis es guarden al dispositiu i s\'enviaran quan torni la xarxa.', { err: true });
     if (!isRetry) { clearTimeout(retryT); retryT = setTimeout(() => flush(true), 10000); }
   } finally { saving = false; if (again) { again = false; save(); } }
 }
@@ -1050,6 +1129,7 @@ function save() {
 }
 function saveSession() {
   try { localStorage.setItem(LS_SESSION, JSON.stringify(ME && TOKEN ? { userId: ME, realAdminId: REAL_ADMIN, token: TOKEN } : null)); } catch {}
+  if (!(ME && TOKEN)) { try { localStorage.removeItem(LS_CACHE); } catch {} }   // sense sessió, la còpia local de les dades no es conserva (els canvis pendents sí, fins que s'enviïn)
 }
 /* ================= Usuaris, rols i permisos ================= */
 const me = () => S.users.find(u => u.id === ME) || null;
@@ -1413,10 +1493,20 @@ function tabbarHTML(u) {
 function bannerHTML() {
   let h = '';
   if (REAL_ADMIN && ME !== REAL_ADMIN) h += `<div class="imp"><span>Veient l’aplicació com a <b>${esc((me() || {}).name || '')}</b></span><button class="btn" data-act="end-impersonate">Torna a l’administrador</button></div>`;
-  if (OFFLINE) h += `<div class="offline" role="alert"><span style="display:flex;gap:10px;align-items:center">${ico('wifi', 22)}<span><b>No s’ha pogut connectar.</b> Pots mirar les dades, però els canvis no es desen fins que torni la xarxa.</span></span><button data-act="retry-net">Torna-ho a provar</button></div>`;
+  if (OFFLINE) h += `<div class="offline" role="alert"><span style="display:flex;gap:10px;align-items:center">${ico('wifi', 22)}<span><b>Sense connexió.</b> Veus l’última còpia de les dades; els canvis es guarden al dispositiu i s’enviaran quan torni la xarxa.</span></span><button data-act="retry-net">Torna-ho a provar</button></div>`;
   return h;
 }
 
+/** Posa un element a la vista dins del seu contenidor desplaçable, sense moure cap altre element (scrollIntoView sí que ho feia i podia deixar la pantalla desquadrada). */
+function scrollInto(el, where) {
+  let sc = el.parentElement;
+  while (sc && sc !== document.body) { const o = getComputedStyle(sc).overflowY; if ((o === 'auto' || o === 'scroll') && sc.scrollHeight > sc.clientHeight) break; sc = sc.parentElement; }
+  if (!sc || sc === document.body) return;
+  const r = el.getBoundingClientRect(), c = sc.getBoundingClientRect();
+  const top = r.top - c.top + sc.scrollTop;
+  const pad = sc.classList.contains('scroll') ? 92 : 0;   // sota la barra superior
+  sc.scrollTop = where === 'center' ? top - (sc.clientHeight - r.height) / 2 : top - pad;
+}
 /* ---------- render ---------- */
 const scrollMem = {}; let lastKey = '';
 const scrKey = () => [ME ? 'm' : 'l', ui.tab, ui.llistaMode, ui.calMode, ui.manage, ui.rollSec || ''].join('|');
@@ -1442,7 +1532,7 @@ function render() {
   tabbar.innerHTML = tabs ? tabbarHTML(u) : ''; tabbar.style.display = tabs ? '' : 'none';
   const s2 = $('#view .scroll'); if (s2 && scrollMem[key] != null) s2.scrollTop = scrollMem[key];
   lastKey = key; spaceDots(view);
-  if (ui.scrollTo) { const t = ui.scrollTo === 'fj' ? $('#fj-block') : null; ui.scrollTo = null; if (t) t.scrollIntoView({ block: 'start' }); }
+  if (ui.scrollTo) { const t = ui.scrollTo === 'fj' ? $('#fj-block') : null; ui.scrollTo = null; if (t) scrollInto(t, 'start'); }
   fitTexts(); growNotes(); if (document.fonts && document.fonts.status !== 'loaded') document.fonts.ready.then(() => { fitTexts(); growNotes(); });
 }
 
@@ -1948,7 +2038,7 @@ function sessionInfo(sid) {
       <div class="ig"><div class="igc">${ico('clock', 20)}<div><div class="s13 muted">Horari</div><b>${esc(timeRange(s) || '—')}</b></div></div><div class="igc">${ico('pin', 20)}<div><div class="s13 muted">Ubicació</div><b>${esc(s.place || 'Sense especificar')}</b></div></div>${extrasOf(s).map(e => `<div class="igc">${ico(e.k === 'sound' ? 'sound' : 'clock', 20)}<div><div class="s13 muted">${e.k === 'sound' ? 'Prova de so' : 'Convocatòria'}</div><b>${esc(e.t)}</b>${e.p ? `<div class="s13 muted">${esc(e.p)}</div>` : ''}</div></div>`).join('')}</div>
       ${myKey ? `<div class="dstate">${sdot(myKey)}<span style="flex:1">${myTxt}</span>${mine && mine.status === 'pending' ? `<button class="circb" data-act="inc-edit" data-id="${mine.id}" aria-label="Edita l’avís" style="width:40px;height:40px">${ico('pen', 18)}</button>` : ''}</div>` : ''}
       ${s.note ? `<div class="dnote"><div class="s13 muted">Nota</div>${esc(s.note)}</div>` : ''}
-      ${repOf(s).length ? `<div class="fl">Repertori</div>${isAllRep(s) ? `<div style="font-weight:600">${ps.length > 1 ? 'Tot el repertori dels projectes' : 'Tot el repertori del projecte'}</div>` : `<div class="pl rl">${repOf(s).map(r => `<div class="pc"><span class="pcn">${esc(repName(r))}${subt(noteOfPiece(r.projId, r.pid))}</span></div>`).join('')}</div>`}` : ''}
+      ${repOf(s).length ? `<div class="fl">Repertori</div>${isAllRep(s) ? `<div style="font-weight:600">${ps.length > 1 ? 'Tot el repertori dels projectes' : 'Tot el repertori del projecte'}</div>` : `<div class="pl rl">${repOf(s).map(r => `<div class="pc"><span class="pcn">${esc(repName(r))}${subt(noteOfPiece(r.projId, r.pid))}${r.note ? `<div class="s13" style="margin-top:2px;font-weight:500">📝 ${esc(r.note)}</div>` : ''}</span></div>`).join('')}</div>`}` : ''}
       ${(s.directorNote || '').trim() ? `<div class="dnote"><div class="s13 muted">Nota del director</div><div style="white-space:pre-wrap">${esc(s.directorNote)}</div></div>` : ''}
       ${relHTML}`,
     foot: acts.length ? `<div style="display:grid;gap:8px;width:100%">${acts.map((a, i) => `<button class="btn ${i === 0 ? 'p' : 's'}" data-act="${a[1]}" data-sid="${s.id}">${a[0]}</button>`).join('')}</div>` : `<button class="btn s" data-act="sheet-close">Tanca</button>`,
@@ -2036,11 +2126,60 @@ function memberDetail(mid) {
 /* ---------- Gestió ---------- */
 function viewManage() {
   const u = me(), lvl = level(u);
-  const isAdm = can.appConfig();
-  if (!isAdm || !['usuaris', 'config'].includes(ui.manage)) ui.manage = 'usuaris';
-  const bar = isAdm ? `<div class="seg" style="margin-top:14px"><button class="${ui.manage === 'usuaris' ? 'on' : ''}" data-act="manage" data-id="usuaris">Usuaris</button><button class="${ui.manage === 'config' ? 'on' : ''}" data-act="manage" data-id="config">Configuració</button></div>` : '';
-  const title = `<div style="display:flex;justify-content:space-between;align-items:center"><h1 class="title">${lvl >= 3 || ui.manage === 'config' ? 'Gestió' : 'La meva secció'}</h1>${can.createUsers() && ui.manage === 'usuaris' ? '<button class="btn p sm" data-act="new-user">+ Usuari</button>' : ''}</div>`;
-  return title + bar + (ui.manage === 'config' ? manageConfig() : manageUsers());
+  const isAdm = can.appConfig(), canBk = lvl >= 4;
+  const tabs = [['usuaris', 'Usuaris']]; if (canBk) tabs.push(['copies', 'Còpies']); if (isAdm) tabs.push(['config', 'Configuració']);
+  if (!tabs.some(t => t[0] === ui.manage)) ui.manage = 'usuaris';
+  const bar = tabs.length > 1 ? `<div class="seg" style="margin-top:14px">${tabs.map(([k, n]) => `<button class="${ui.manage === k ? 'on' : ''}" data-act="manage" data-id="${k}">${n}</button>`).join('')}</div>` : '';
+  const title = `<div style="display:flex;justify-content:space-between;align-items:center"><h1 class="title">${lvl >= 3 || ui.manage !== 'usuaris' ? 'Gestió' : 'La meva secció'}</h1>${can.createUsers() && ui.manage === 'usuaris' ? '<button class="btn p sm" data-act="new-user">+ Usuari</button>' : ''}</div>`;
+  return title + bar + (ui.manage === 'config' ? manageConfig() : ui.manage === 'copies' ? manageBackups() : manageUsers());
+}
+/* ---------- Còpies de seguretat (servidor) ---------- */
+let BK = { list: null, loading: false, err: false };
+async function loadBackups(force) {
+  if (BK.loading || (BK.list && !force)) return;
+  BK.loading = true; BK.err = false;
+  try { const r = await sb.rpc('app_backup_list', { p_token: TOKEN }); if (r.error) throw r.error; BK.list = Array.isArray(r.data) ? r.data : []; }
+  catch (e) { console.warn(e); BK.err = true; BK.list = BK.list || []; }
+  BK.loading = false; if (ui.tab === 'gestio' && ui.manage === 'copies') render();
+}
+const bkWhen = iso => { const d = new Date(iso); return `${d.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · ${d.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })}`; };
+function manageBackups() {
+  loadBackups();
+  const row = (t, d, right) => `<div class="set"><div style="flex:1;min-width:0"><div class="t">${t}</div><div class="d">${d}</div></div>${right || ''}</div>`;
+  const btn = (act, txt, extra = '') => `<button class="btn s sm" data-act="${act}" ${extra} style="height:40px;padding:0 16px">${txt}</button>`;
+  const l = BK.list;
+  const items = !l ? '<div class="muted" style="padding:14px 0">Carregant…</div>'
+    : !l.length ? `<div class="muted" style="padding:14px 0">${BK.err ? 'No s’han pogut carregar les còpies.' : 'Encara no hi ha cap còpia.'}</div>`
+    : l.slice(0, 12).map((b, i) => `<div class="set" style="${i ? '' : 'border-top:0'}"><div style="flex:1;min-width:0"><div class="t" style="font-size:16px">${esc(bkWhen(b.createdAt))}</div><div class="d">${b.kind === 'manual' ? 'Manual' : 'Automàtica'} · ${b.rows} registres · ${Math.max(1, Math.round(b.bytes / 1024))} kB</div></div>${btn('bk-get', 'Descarrega', `data-id="${b.id}"`)}</div>`).join('');
+  return `<div style="margin-top:14px">${hh('Còpia de seguretat', '', 20)}
+    ${row('Còpia automàtica setmanal', 'Cada dilluns de matinada el servidor desa una còpia completa de la banda (usuaris, sessions, projectes, assistència i avisos; sense contrasenyes). No se n’esborra mai cap.')}
+    ${row('Fes una còpia ara', 'Desa una còpia nova al servidor i et descarrega el fitxer.', btn('bk-now', 'Fes-la i descarrega'))}
+    ${hh('Còpies desades', l ? String(l.length) : '', 20)}${items}
+    ${l && l.length > 12 ? `<div class="s13 muted" style="margin-top:8px">Es mostren les 12 més recents.</div>` : ''}
+    ${hh('Assistència en CSV', '', 20)}
+    ${row('Assistència del curs', 'Una fila per músic i una columna per sessió, per obrir-la en un full de càlcul.', btn('export-csv', 'Descarrega'))}</div>`;
+}
+function saveJsonFile(data, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+async function backupGet(id, el) {
+  if (el) el.disabled = true;
+  try {
+    const r = await sb.rpc('app_backup_get', { p_token: TOKEN, p_id: Number(id) }); if (r.error || !r.data) throw r.error || new Error('buit');
+    saveJsonFile(r.data, `banda-terrassa-copia-${String(r.data.taken_at || TODAY).slice(0, 10)}-${id}.json`); toast('Còpia descarregada');
+  } catch (e) { console.warn(e); toast('No s’ha pogut descarregar la còpia.'); }
+  if (el) el.disabled = false;
+}
+async function backupNow(el) {
+  if (el) el.disabled = true;
+  try {
+    const r = await sb.rpc('app_backup_now', { p_token: TOKEN }); if (r.error) throw r.error;
+    await backupGet(r.data); await loadBackups(true);
+  } catch (e) { console.warn(e); toast('No s’ha pogut fer la còpia.'); }
+  if (el) el.disabled = false;
 }
 function manageUsers() {
   const u = me(), lvl = level(u);
@@ -2296,7 +2435,9 @@ function projSheet(p) {
   const pcs = piecesOf(p).map(x => ({ ...x }));
   sheet({
     title: isNew ? 'Nou projecte' : 'Edita el projecte',
-    body: `<div class="field"><span>Títol</span><input class="inp" id="p-name" value="${esc(p.name || '')}" placeholder="Concert de Nadal, 25è aniversari…"></div>
+    cls: 'psh',
+    body: `<div class="seg ptabs" role="tablist"><button type="button" class="on" role="tab" aria-selected="true" data-tp="d">Dades</button><button type="button" role="tab" aria-selected="false" data-tp="r">Repertori</button><button type="button" role="tab" aria-selected="false" data-tp="m">Músics</button></div>
+      <div class="tpan g2" data-pan="d" role="tabpanel"><div class="field"><span>Títol</span><input class="inp" id="p-name" value="${esc(p.name || '')}" placeholder="Concert de Nadal, 25è aniversari…"></div>
       <div class="field"><span>Color del projecte</span><div class="swatches-sm" id="p-color">
         ${PROJECT_COLORS.map(c => `<button type="button" class="swatch-sm" data-v="${c.v}" title="${c.name}" style="background:${c.v}" aria-pressed="${color === c.v}"></button>`).join('')}</div>
         <small>Identifica el projecte al calendari i a les llistes.</small></div>
@@ -2304,19 +2445,31 @@ function projSheet(p) {
         <div class="field"><span>Fins a</span><input class="inp" type="date" id="p-to" value="${esc(p.to || '')}"></div></div>
       <div class="field"><span>Informació complementària</span><textarea class="inp" id="p-info" placeholder="Vestuari, notes de producció…">${esc(p.info || '')}</textarea></div>
       <div class="field"><span>Enllaç a les partitures (Box)</span><input class="inp" id="p-rep" type="url" value="${esc(p.repertoire || '')}" placeholder="Enllaç al Box amb les partitures"></div>
-      ${piecesBlock('p-pieces')}
-      <div class="field"><span>No fan el projecte</span>
+      </div>
+      <div class="tpan" data-pan="r" role="tabpanel" hidden>${piecesBlock('p-pieces')}${isNew ? '' : '<p class="phint">Si treus una peça del projecte, continua apareixent a les sessions on ja s\'ha treballat.</p>'}</div>
+      <div class="tpan" data-pan="m" role="tabpanel" hidden><div class="field"><span>No fan el projecte</span>
         <div class="scroll-list" style="max-height:260px" id="p-excluded">${SECTIONS.map(sec => {
           const members = membersOf(sec.id);
           if (!members.length) return '';
           return `<div class="pick-group"><div class="pick-group-title">${sec.name}</div><div class="pickers">${members.map(m => `<button type="button" class="pick" data-mid="${m.id}" aria-pressed="${excluded.has(m.id)}">${esc(m.name)}</button>`).join('')}</div></div>`;
         }).join('')}</div>
-        <small>Toca per marcar els músics que no toquen en aquest projecte.</small></div>`,
+        <small>Toca per marcar els músics que no toquen en aquest projecte.</small></div></div>`,
     foot: `${isNew ? '' : `<button class="btn btn-sm btn-danger-ghost" data-act="del-proj" data-pid="${p.id}">Elimina</button>`}
       <span class="spacer"></span><button class="btn" data-act="sheet-close">Cancel·la</button>
       <button class="btn btn-primary" data-act="sheet-save">${isNew ? 'Crea' : 'Desa'}</button>`,
   });
+  let tab = 'd';
+  const primary = () => $('.sheet .foot [data-act="sheet-save"]');
+  const setTab = t => {
+    tab = t;
+    $$('.sheet .ptabs [data-tp]').forEach(b => { const on = b.dataset.tp === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+    $$('.sheet .tpan').forEach(el => { el.hidden = el.dataset.pan !== t; });
+    const pb = primary(); if (pb) pb.textContent = isNew ? (t === 'd' ? 'Continua' : 'Crea') : 'Desa';
+    const bd = $('.sheet .bd'); if (bd) bd.scrollTop = 0;
+  };
+  $('.sheet .ptabs').addEventListener('click', e => { const b = e.target.closest('[data-tp]'); if (b) setTab(b.dataset.tp); });
   wirePieces('p-pieces', pcs);
+  if (isNew) { const pb = primary(); if (pb) pb.textContent = 'Continua'; }
   $('#p-color').addEventListener('click', e => {
     const b = e.target.closest('[data-v]'); if (!b) return;
     color = b.dataset.v;
@@ -2338,7 +2491,8 @@ function projSheet(p) {
       save(); return true;
     }
     const name = $('#p-name').value.trim();
-    if (!name) { toast('Falta el títol'); return false; }
+    if (!name) { setTab('d'); toast('Falta el títol'); const n = $('#p-name'); if (n) n.focus(); return false; }
+    if (isNew && tab === 'd') { setTab('r'); return false; }
     const rec = { id: p.id || newId(), name, color, from: $('#p-from').value, to: $('#p-to').value,
       repertoire: $('#p-rep').value.trim(), excludedIds: [...excluded], info: $('#p-info').value.trim(),
       pieces: pcs.map(x => ({ id: x.id, name: x.name, ...(x.note ? { note: x.note } : {}) })) };
@@ -2349,6 +2503,7 @@ function projSheet(p) {
   if (dirP) {   // la direcció només edita les dates i l'ordre del repertori
     ['#p-name', '#p-color', '#p-rep', '#p-info', '#p-excluded'].forEach(q => { const f = $(q) && $(q).closest('.field'); if (f) f.remove(); });
     const dl = $('.sheet .foot [data-act="del-proj"]'); if (dl) dl.remove();
+    const mt = $('.sheet .ptabs [data-tp="m"]'); if (mt) mt.remove();
     $('.sheet .bd').insertAdjacentHTML('afterbegin', `<div class="dpills" style="margin-bottom:6px">${pj(p, 'lg')}</div>`);
   }
 }
@@ -2370,6 +2525,11 @@ function projectPickerSheet(scope) {
   });
 }
 /** Detall d'un projecte en mode visualització (qui el pot editar té el botó «Edita el projecte»). */
+function pieceCount(p, pid) {
+  const ss = sessionsOfProj(p.id).filter(s => isRehearsalType(s) && repOf(s).some(r => r.pid === pid));
+  const d = ss.filter(sessionIsDone).length, q = ss.length - d;
+  return `<span class="rcnt${d === 0 ? ' low' : ''}">${d === 0 ? 'cap assaig' : d + (d === 1 ? ' assaig' : ' assajos')}${q ? ` (+${q})` : ''}</span>`;
+}
 function projectInfo(pid) {
   const p = S.projects.find(x => x.id === pid); if (!p) return;
   const u = me(), st = projectStatus(p), canP = can.manageProjects();
@@ -2386,7 +2546,7 @@ function projectInfo(pid) {
       <div class="pbx${tot > 0 ? '' : ' one'}"><div><div class="s13 muted">Assajos</div><b>${done} de ${tot} fets</b></div>${tot > 0 ? `<div><div class="s13 muted">Límit de faltes</div><b>${inCensus(u) ? limVal : (allow > 0 ? `${allow} ${allow === 1 ? 'assaig' : 'assajos'}` : 'Cap falta permesa')}</b></div>` : ''}</div>
       ${p.info ? `<div class="dnote"><div class="s13 muted">Informació del projecte</div>${esc(p.info)}</div>` : ''}
       ${p.repertoire ? `<a class="dlink" href="${esc(p.repertoire)}" target="_blank" rel="noopener">${ico('link', 20)}<span><b>Partitures</b><br><span class="s13 muted">Obre l’enllaç del Box</span></span>${ico('r', 18, 'margin-left:auto;color:var(--ink3)')}</a>` : ''}
-      ${piecesOf(p).length ? `<div class="fl">Ordre del repertori</div><div class="pl rl">${piecesOf(p).map((x, i) => `<div class="pc"><b>${i + 1}</b><span class="pcn">${esc(x.name)}${subt(x.note)}</span></div>`).join('')}</div>` : ''}<div style="height:calc(env(safe-area-inset-bottom,0px) + 22px)"></div>`,
+      ${piecesOf(p).length ? `<div class="fl">Ordre del repertori</div><div class="pl rl">${piecesOf(p).map((x, i) => `<div class="pc"><b>${i + 1}</b><span class="pcn">${esc(x.name)}${subt(x.note)}</span>${level(u) >= 3 ? pieceCount(p, x.id) : ''}</div>`).join('')}</div>${level(u) >= 3 ? '<div class="s13 muted" style="margin-top:6px">Assajos fets amb la peça al repertori de la sessió (entre parèntesis, els que queden).</div>' : ''}` : ''}<div style="height:calc(env(safe-area-inset-bottom,0px) + 22px)"></div>`,
     foot: canP ? `<div style="display:grid;gap:8px;width:100%"><button class="btn p" data-act="edit-proj" data-pid="${p.id}">Edita el projecte</button><button class="btn s" data-act="list-sessions" data-pid="${p.id}">Edita les sessions</button></div>` : '',
   });
 }
@@ -2473,7 +2633,7 @@ function dragList(host, itemSel, onDone) {
 /** Xips amb les peces triades. Amb `sid`, les accions viatgen pel gestor general (Perfil); sense, es gestionen dins del full. */
 const repChips = (rep, sid) => {
   const at = sid ? `data-sid="${sid}"` : '';
-  return `<div class="xps">${rep.map((r, i) => `<span class="xp">${esc(repName(r))}<button type="button" class="xpx" ${sid ? `data-act="prep-rm" ${at}` : 'data-a="rm"'} data-i="${i}" aria-label="Treu ${esc(r.name)}">✕</button></span>`).join('')}<button type="button" class="xp add" ${sid ? `data-act="prep-add" ${at}` : 'data-a="add"'}>+ Afegeix</button></div>`;
+  return `<div class="xps">${rep.map((r, i) => `<span class="xp">${esc(repName(r))}<button type="button" class="xpx" ${sid ? `data-act="prep-rm" ${at}` : 'data-a="rm"'} data-i="${i}" aria-label="Treu ${esc(r.name)}">✕</button></span>`).join('')}<button type="button" class="xp add" ${sid ? `data-act="prep-add" ${at}` : 'data-a="add"'}>+ Afegeix</button></div>${rep.length ? `<div class="pnl"><div class="s13 muted" style="margin:10px 0 4px">Nota per peça (opcional)</div>${rep.map((r, i) => `<label class="pnr"><span>${esc(repName(r))}</span><input class="pnin pnp" data-pn="${i}" ${sid ? `data-sid="${sid}"` : ''} maxlength="200" value="${esc(r.note || '')}" placeholder="Ex.: només el final, repassar tempo…" aria-label="Nota de ${esc(repName(r))}"></label>`).join('')}</div>` : ''}`;
 };
 
 /** Selector de peces (full): llista de comprovació dels projectes de la sessió. `rep` es modifica en lloc; en tancar es crida `done`. */
@@ -2538,6 +2698,7 @@ function wirePrep(prep, onAdd) {
     if (b.dataset.a === 'rm') { prep.rep.splice(Number(b.dataset.i), 1); box.innerHTML = repChips(prep.rep); $('#pb-cnt').textContent = prep.rep.length ? `${prep.rep.length} ${prep.rep.length === 1 ? 'triada' : 'triades'}` : ''; }
     else { prep.note = $('#pb-note').value; onAdd(); }
   });
+  box.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.pn != null) { const r = prep.rep[Number(t.dataset.pn)]; if (r) r.note = t.value; } });
 }
 const prepHead = '<div class="psec">Prepara l’assaig</div>';
 /** Edició de la sessió pel director: el projecte i la preparació; res de l'horari, el lloc ni la convocatòria. */
@@ -2560,13 +2721,13 @@ function prepSheet(sid, st) {
   wirePrep(prep, () => { const note = $('#pb-note').value; piecePicker({ id: sid, date: s.date, projIds: [...chosen] }, prep.rep, () => prepSheet(sid, { projIds: [...chosen], rep: prep.rep, note })); });
   sheetSave = () => {
     if (!chosen.size) { toast('Tria almenys un projecte'); return false; }
-    s.projIds = [...chosen]; s.rep = prep.rep.map(r => ({ pid: r.pid, name: r.name, projId: r.projId })); s.directorNote = $('#pb-note').value.trim();
+    s.projIds = [...chosen]; s.rep = prep.rep.map(r => ({ pid: r.pid, name: r.name, projId: r.projId, ...((r.note || '').trim() ? { note: r.note.trim().slice(0, 200) } : {}) })); s.directorNote = $('#pb-note').value.trim();
     delete PREP[sid]; save(); toast('Sessió actualitzada'); return true;
   };
 }
 function prepSave(sid) {
   const s = S.sessions.find(x => x.id === sid), d = PREP[sid]; if (!s || !d || !can.prepare()) return;
-  s.rep = d.rep.map(r => ({ pid: r.pid, name: r.name, projId: r.projId })); s.directorNote = (d.note || '').trim();
+  s.rep = d.rep.map(r => ({ pid: r.pid, name: r.name, projId: r.projId, ...((r.note || '').trim() ? { note: r.note.trim().slice(0, 200) } : {}) })); s.directorNote = (d.note || '').trim();
   delete PREP[sid]; save(); render(); toast('Preparació desada');
 }
 const prepFields = s => { const d = prepDraft(s); return `<div class="pfld"><span>Repertori${d.rep.length ? `<small>${d.rep.length} ${d.rep.length === 1 ? 'triada' : 'triades'}</small>` : ''}</span>${repChips(d.rep, s.id)}</div>
@@ -2575,30 +2736,36 @@ const prepFields = s => { const d = prepDraft(s); return `<div class="pfld"><spa
 
 /** «Ordre del repertori» d'un projecte: llista numerada, reordenable, amb ✕ i «+ Afegeix una peça». */
 function piecesBlock(id, pcs) {
-  return `<div class="field" id="${id}"><span>Ordre del repertori<small class="cnt" style="display:inline;margin-left:8px;font-weight:400"></small></span><div class="pl" data-r="list"></div><div data-r="add" style="margin-top:8px"></div></div>`;
+  return `<div class="field" id="${id}"><div class="phd"><b>Ordre del repertori</b><small class="cnt"></small></div><div class="pl" data-r="list"></div><div data-r="add" class="padd3"></div></div>`;
 }
 function wirePieces(id, pcs) {
   const root = $('#' + id); if (!root) return;
   const list = $('[data-r="list"]', root), add = $('[data-r="add"]', root), cnt = $('.cnt', root);
-  let adding = false;
   const draw = focus => {
     cnt.textContent = pcs.length ? `${pcs.length} ${pcs.length === 1 ? 'peça' : 'peces'}` : '';
-    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><input class="pnin pnin-t" data-r="name" data-i="${i}" maxlength="80" value="${esc(x.name)}" aria-label="Títol de la peça ${i + 1}"><input class="pnin" data-r="note" data-i="${i}" maxlength="${Math.max(20, (x.note || '').length)}" value="${esc(x.note || '')}" placeholder="Descripció" aria-label="Descripció de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted">Encara no hi ha cap peça.</div>';
-    add.innerHTML = adding ? `<div class="padd2"><input class="inp" maxlength="80" placeholder="Nom de la peça" data-r="inp"><input class="pnin" maxlength="20" placeholder="Descripció (màx. 20 caràcters)" data-r="sub" style="margin:4px 2px 6px"><div class="padd2b"><button type="button" class="btn s sm" data-r="cancel">Cancel·la</button><button type="button" class="btn p sm" data-r="ok">Afegeix</button></div></div>` : '<button type="button" class="btn s sm" data-r="open" style="width:auto">+ Afegeix una peça</button>';
-    if (adding) { const i = $('[data-r="inp"]', add); if (i) i.focus(); }
+    list.innerHTML = pcs.length ? pcs.map((x, i) => `<div class="pc" data-i="${i}"><button type="button" class="gr" aria-label="Reordena ${esc(x.name)}">⋮⋮</button><span class="num">${i + 1}</span><span class="pcn"><input class="pnin pnin-t" data-r="name" data-i="${i}" maxlength="80" value="${esc(x.name)}" aria-label="Títol de la peça ${i + 1}"><input class="pnin" data-r="note" data-i="${i}" maxlength="${Math.max(40, (x.note || '').length)}" value="${esc(x.note || '')}" placeholder="Compositor" aria-label="Compositor de ${esc(x.name)}"></span><button type="button" class="rm" data-r="rm" data-i="${i}" aria-label="Treu ${esc(x.name)}">✕</button></div>`).join('') : '<div class="s13 muted pempty">Encara no hi ha cap peça. Afegeix la primera aquí sota.</div>';
     if (focus != null) { const g = $(`.pc[data-i="${focus}"] .gr`, list); if (g) g.focus(); }
   };
+  add.innerHTML = `<div class="padd2"><div class="padd2h">Afegeix una peça</div><input class="inp" maxlength="80" placeholder="Títol de la peça" data-r="inp" aria-label="Títol de la nova peça"><input class="inp" maxlength="40" placeholder="Compositor (opcional)" data-r="sub" aria-label="Compositor de la nova peça"><button type="button" class="btn p" data-r="ok">Afegeix al repertori</button></div>`;
   draw();
   dragList(list, '.pc', (order, focus) => { const nr = order.map(i => pcs[i]); const nf = focus != null ? order.indexOf(focus) : null; pcs.splice(0, pcs.length, ...nr); draw(nf); });
-  const addOne = () => { const i = $('[data-r="inp"]', add), sb = $('[data-r="sub"]', add), name = i && i.value.trim(), note = sb ? sb.value.trim() : ''; if (!name) { toast('Escriu el nom de la peça'); return; } pcs.push({ id: newId().slice(0, 8), name, ...(note ? { note } : {}) }); draw(); const n = $('[data-r="inp"]', add); if (n) n.focus(); };
+  const addOne = () => {
+    const i = $('[data-r="inp"]', add), sb = $('[data-r="sub"]', add), name = i && i.value.trim(), note = sb ? sb.value.trim() : '';
+    if (!name) { toast('Escriu el títol de la peça'); if (i) i.focus(); return; }
+    pcs.push({ id: newId().slice(0, 8), name, ...(note ? { note } : {}) });
+    i.value = ''; if (sb) sb.value = ''; draw(); i.focus();
+    const last = $('.pc:last-child', list); if (last) last.scrollIntoView({ block: 'nearest' });
+  };
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-r]'); if (!b) return;
     if (b.dataset.r === 'rm') { pcs.splice(Number(b.dataset.i), 1); draw(); }
-    else if (b.dataset.r === 'open') { adding = true; draw(); }
     else if (b.dataset.r === 'ok') addOne();
-    else if (b.dataset.r === 'cancel') { adding = false; draw(); }
   });
-  root.addEventListener('input', e => { const t = e.target; if (!t.matches) return; if (t.matches('[data-r="note"]')) pcs[Number(t.dataset.i)].note = t.value.trim().slice(0, 60); else if (t.matches('[data-r="name"]') && t.value.trim()) pcs[Number(t.dataset.i)].name = t.value.trim(); });
+  root.addEventListener('input', e => {
+    const t = e.target; if (!t.matches) return;
+    if (t.matches('[data-r="note"]')) pcs[Number(t.dataset.i)].note = t.value.trim().slice(0, 60);
+    else if (t.matches('[data-r="name"]') && t.value.trim()) pcs[Number(t.dataset.i)].name = t.value.trim();
+  });
   root.addEventListener('focusout', e => { const t = e.target; if (t.matches && t.matches('[data-r="name"]') && !t.value.trim()) t.value = pcs[Number(t.dataset.i)].name; });
   root.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-r="inp"],[data-r="sub"]')) { e.preventDefault(); addOne(); } });
 }
@@ -2692,7 +2859,7 @@ function sessionSheet(s, pid, st) {
     const rec = { id: s.id || newId(), projIds: [...chosen], date, time: $('#s-time').value, end: $('#s-end').value,
       type: stype, place: $('#s-place').value, note: $('#s-note').value.trim(),
       callTime: ext.call, callPlace: ext.call ? ext.cplace : '', soundTime: ext.sound,
-      rep: prep.rep.map(r => ({ pid: r.pid, name: r.name, projId: r.projId })), directorNote: $('#pb-note') ? $('#pb-note').value.trim() : (s.directorNote || '') };
+      rep: prep.rep.map(r => ({ pid: r.pid, name: r.name, projId: r.projId, ...((r.note || '').trim() ? { note: r.note.trim().slice(0, 200) } : {}) })), directorNote: $('#pb-note') ? $('#pb-note').value.trim() : (s.directorNote || '') };
     const i = S.sessions.findIndex(x => x.id === rec.id);
     if (i >= 0) S.sessions[i] = rec; else S.sessions.push(rec);
     ui.sessionId = rec.id; save(); return true;
@@ -2765,7 +2932,7 @@ function sessionPicker() {
   }
   sheet({ title: 'Tria una sessió', body: `<div class="scroll-list" style="max-height:60vh"><ul class="picklist">${rows || '<li class="muted" style="padding:14px 0">Encara no hi ha sessions.</li>'}</ul></div>` });
   const curBtn = cur && document.querySelector(`[data-act="pick-sess"][data-sid="${cur.id}"]`);
-  if (curBtn) curBtn.scrollIntoView({ block: 'center' });
+  if (curBtn) scrollInto(curBtn, 'center');
 }
 function listSessionsSheet(pid) {
   const p = S.projects.find(x => x.id === pid); if (!p) return;
@@ -3214,17 +3381,19 @@ function sheet({ title, body, foot, cls }) {
 function wireSheetDrag(root) {
   const sh = root.querySelector('.sheet'), dim = root.querySelector('.dim'), bd = sh && sh.querySelector('.bd');
   if (!sh) return;
-  let y0 = 0, t0 = 0, ok = false, drag = false, dy = 0;
+  let y0 = 0, t0 = 0, ok = false, drag = false, dy = 0, inner = null;
   const reset = anim => { sh.style.transition = anim ? 'transform .22s ease' : ''; sh.style.transform = ''; if (dim) { dim.style.transition = anim ? 'opacity .22s' : ''; dim.style.opacity = ''; } };
   sh.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) { ok = false; return; }
     const t = e.target, top = !!t.closest('.grab, .hd');
-    ok = top || !bd || bd.scrollTop <= 0;
+    inner = null; for (let x = t; x && x !== sh; x = x.parentElement) { if (x !== bd && x.scrollHeight > x.clientHeight + 1) { const o = getComputedStyle(x).overflowY; if (o === 'auto' || o === 'scroll') { inner = x; break; } } }
+    ok = (top || !bd || bd.scrollTop <= 0) && !(inner && inner.scrollTop > 0);
     drag = false; dy = 0; y0 = e.touches[0].clientY; t0 = Date.now();
     sh.style.transition = ''; sh.style.animation = 'none';
   }, { passive: true });
   sh.addEventListener('touchmove', e => {
     if (!ok) return;
+    if (!drag && inner && inner.scrollTop > 0) { ok = false; return; }   // la llista interior s'està desplaçant: el full no s'ha de moure
     dy = e.touches[0].clientY - y0;
     if (!drag) { if (dy < -4) { ok = false; return; } if (dy < 8) return; drag = true; }
     e.preventDefault();
@@ -3324,6 +3493,7 @@ document.addEventListener('click', async e => {
     case 'keep': { const L = loginState; L.user = $('#lg-user').value; L.pass = $('#lg-pass').value; L.keep = !L.keep; render(); return; }
     case 'logout': {
       if (t1) { clearTimeout(t1); await flush(); }   // no es perd cap canvi fet just abans de sortir
+      if (LOAD_OK && buildChanges().ch) { await flush(true); if (buildChanges().ch) { toast('Hi ha canvis sense enviar. Connecta’t abans de sortir perquè no es perdin.', { err: true }); return; } }
       if (TOKEN) { await pushForget(); try { sb.rpc('app_logout', { p_token: TOKEN }); } catch {} }
       pushSynced = false; PUSH_ON = null;
       ME = null; REAL_ADMIN = null; TOKEN = null; saveSession();
@@ -3416,6 +3586,8 @@ document.addEventListener('click', async e => {
     case 'member-detail': return memberDetail(el.dataset.mid);
 
     /* gestió */
+    case 'bk-get': return backupGet(el.dataset.id, el);
+    case 'bk-now': return backupNow(el);
     case 'manage': ui.manage = el.dataset.id; ui.search = ''; save(); render(); return;
     case 'fee-filter': ui.feeFilter = el.dataset.v; render(); return;
     case 'fee-reset': return feeResetSheet();
@@ -3556,31 +3728,35 @@ document.addEventListener('input', e => {
     save();
   }
 });
-document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('pnote')) { const s = S.sessions.find(x => x.id === t.dataset.sid); if (s) prepDraft(s).note = t.value; } });
+document.addEventListener('input', e => { const t = e.target; if (t.dataset && t.dataset.pn != null && t.dataset.sid) { const s = S.sessions.find(x => x.id === t.dataset.sid); if (s) { const r = prepDraft(s).rep[Number(t.dataset.pn)]; if (r) r.note = t.value; } return; } if (t.classList && t.classList.contains('pnote')) { const s = S.sessions.find(x => x.id === t.dataset.sid); if (s) prepDraft(s).note = t.value; } });
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));   // sense pinça-zoom a iOS
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches && e.target.matches('textarea.rsn')) { e.preventDefault(); e.target.blur(); } if (e.key === 'Escape' && $('#sheet-root .sheet')) closeSheet(); if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.tap[role=button]')) { e.preventDefault(); e.target.click(); } });
+document.addEventListener('focusout', () => setTimeout(() => { if (!typing() && (window.scrollX || window.scrollY)) window.scrollTo(0, 0); }, 120));
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (!typing()) setTimeout(() => window.scrollTo(0, 0), 60); });
 window.addEventListener('online', () => { if (ME && OFFLINE) flush(true); });
 window.addEventListener('offline', () => { if (ME) setOffline(true); });
 
 /* ================= Init ================= */
 let nextSig = null;
+const typing = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
 setInterval(() => {
   if (!ME) return;
   const n = allSessions().find(x => !sessionIsDone(x)); const sig = TODAY + '|' + (n ? n.id : '');
-  if (nextSig !== null && sig !== nextSig && !$('#sheet-root .sheet')) render();
+  if (nextSig !== null && sig !== nextSig && !$('#sheet-root .sheet') && !typing()) render();
   nextSig = sig;
 }, 30000);
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && ME && !$('#sheet-root .sheet')) render();
+  if (document.visibilityState === 'visible' && ME && !$('#sheet-root .sheet') && !typing()) render();
   if (document.visibilityState === 'hidden') { if (t1) { clearTimeout(t1); flush(); } return; }
   // En tornar a l'app: si fa estona que no s'ha actualitzat i no hi ha res pendent ni cap full obert, es baixen les dades noves.
-  if (!ME || !LOAD_OK || saving || t1 || Date.now() - LAST_LOAD < 60000 || $('#sheet-root .sheet')) return;
+  if (!ME || !LOAD_OK || saving || t1 || Date.now() - LAST_LOAD < 60000 || $('#sheet-root .sheet') || typing()) return;
   if (buildChanges().ch) return;
   if (await fetchAll()) {
     if (ME && !S.users.some(u => u.id === ME && u.active !== false)) { ME = null; TOKEN = null; saveSession(); }
-    render();
+    OFFLINE = false; render();
   } else if (LAST_EXPIRED) sessionExpired();
 });
+try { if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {}); } catch {}   // memòria cau de l'aplicació (obrir-la sense connexió)
 (async () => {
   await load();
   if (ME) splash(() => { render(); const u = me(); if (u && u.mustChangePassword) changePasswordSheet(true); }); else render();
