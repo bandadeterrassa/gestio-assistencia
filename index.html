@@ -292,6 +292,7 @@ select.inp{appearance:none;-webkit-appearance:none;background:#fff url("data:ima
 .kt .n{font:700 40px/1 var(--sf);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .kt .l{font-size:15px;color:var(--ink2);margin-top:6px;display:flex;align-items:center;gap:7px}
 .kt.g{background:linear-gradient(135deg,#CFE8DA 0%,#fff 90%);border-color:#8FC3A5} .kt.bl{background:linear-gradient(135deg,#D0E4F3 0%,#fff 90%);border-color:#8DB9DA} .kt.r{background:linear-gradient(135deg,#F5D3D5 0%,#fff 90%);border-color:#DE9CA2}
+.kt.wide{grid-column:1/-1}.kt .ksub{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px;font-size:14px;color:var(--ink2)}.kt .ksub span{display:inline-flex;align-items:center;gap:7px}
 .kt.sm{padding:12px 14px;border-radius:20px} .kt.sm .n{font-size:30px} .kt.sm .l{font-size:14px;margin-top:4px}
 .panel{background:#fff;border-radius:26px;padding:6px 18px;border:1px solid rgba(15,34,54,.08)}
 .pb{display:flex;align-items:center;gap:12px;height:48px;border-top:1px solid var(--rule)} .pb:first-child{border-top:0}
@@ -2070,6 +2071,14 @@ function selfTiles(u, sessions, compact) {
   }
   return tiles + det + attd;
 }
+/** Mitjana de faltes per músic (justificades + no justificades) dels membres amb alguna sessió marcada. */
+function avgFaltes(mem, sessions) {
+  let n = 0, fj = 0, fnj = 0;
+  for (const m of mem) { const c = userStats(m, sessions).c; if (!c.total) continue; n++; fj += c.FJ; fnj += c.FNJ; }
+  if (!n) return `<div class="kt wide sm"><div class="n">—</div><div class="l">Mitjana de faltes per músic</div></div>`;
+  const tot = fj + fnj, pj = tot ? Math.round(fj / tot * 100) : null, pn = tot ? 100 - pj : null;   // la mitjana s'arrodoneix a l'enter més proper
+  return `<div class="kt wide sm"><div class="n">${Math.round(tot / n)}</div><div class="l">Mitjana de faltes per músic</div><div class="ksub"><span>${sdot('F')}${pj == null ? '—' : pj + '%'} justificades</span><span>${sdot('X')}${pn == null ? '—' : pn + '%'} no justificades</span></div></div>`;
+}
 function viewStats() {
   const u = me(), scope = statsScope(), proj = ui.statsProj, sessions = doneSessions(proj);
   const min = Math.round((1 - maxFaltesRate()) * 100);
@@ -2081,11 +2090,11 @@ function viewStats() {
   let h = head + (census ? hh('Les meves dades', '', 20) + selfTiles(u, sessions, true) : '');
   if (scope === 'section') {
     const mem = membersOf(u.section), a = aggCounts(mem, sessions), fj = a.FJ + a.FNJ;
-    h += hh('La meva secció', esc((SEC[u.section] || {}).name || ''), 22) + `<div class="kgrid">${kt(toneCls(rate(a)) + ' sm', pctH(rate(a)), 'Assistència')}${kt(blc(punctualityRate(a))+ ' sm', pctH(punctualityRate(a)), 'Puntualitat')}${kt('sm', fj ? pcn(Math.round(a.FJ / fj * 100)) : '—', 'justificades', sdot('F'))}${kt('sm', fj ? pcn(Math.round(a.FNJ / fj * 100)) : '—', 'no justificades', sdot('X'))}</div>`;
+    h += hh('La meva secció', esc((SEC[u.section] || {}).name || ''), 22) + `<div class="kgrid">${kt(toneCls(rate(a)) + ' sm', pctH(rate(a)), 'Assistència')}${kt(blc(punctualityRate(a))+ ' sm', pctH(punctualityRate(a)), 'Puntualitat')}${avgFaltes(mem, sessions)}</div>`;
     return h + perMusic(mem, sessions, false);
   }
   const all = censusUsers(), g = aggCounts(all, sessions), fj = g.FJ + g.FNJ;
-  h += hh('General', `mínim ${min}%`, 24) + `<div class="kgrid">${kt(toneCls(rate(g)), pctH(rate(g)), 'Assistència')}${kt(blc(punctualityRate(g)), pctH(punctualityRate(g)), 'Puntualitat')}${kt('', fj ? pcn(Math.round(g.FJ / fj * 100)) : '—', 'justificades', sdot('F'))}${kt('', fj ? pcn(Math.round(g.FNJ / fj * 100)) : '—', 'no justificades', sdot('X'))}</div>`;
+  h += hh('General', `mínim ${min}%`, 24) + `<div class="kgrid">${kt(toneCls(rate(g)), pctH(rate(g)), 'Assistència')}${kt(blc(punctualityRate(g)), pctH(punctualityRate(g)), 'Puntualitat')}${avgFaltes(all, sessions)}</div>`;
   h += hh('Per secció', 'assistència', 24) + `<div class="panel">${pbar('General', rate(g), true)}${SECTIONS.map(x => pbar(x.name, rate(aggCounts(membersOf(x.id), sessions)))).join('')}</div>`;
   return h + perMusic(all, sessions, true);
 }
