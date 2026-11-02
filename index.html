@@ -2071,13 +2071,20 @@ function selfTiles(u, sessions, compact) {
   }
   return tiles + det + attd;
 }
-/** Mitjana de faltes per músic (justificades + no justificades) dels membres amb alguna sessió marcada. */
+/** Mitjana de músics que falten per assaig (de qualsevol secció): faltes justificades + no justificades dividides pels assajos amb llista passada. */
 function avgFaltes(mem, sessions) {
   let n = 0, fj = 0, fnj = 0;
-  for (const m of mem) { const c = userStats(m, sessions).c; if (!c.total) continue; n++; fj += c.FJ; fnj += c.FNJ; }
-  if (!n) return `<div class="kt wide sm"><div class="n">—</div><div class="l">Mitjana de faltes per músic</div></div>`;
+  for (const s of sessions) {
+    if (!isRehearsalType(s)) continue;
+    let marked = 0, a = 0, b = 0;
+    for (const m of mem) { if (!inSession(s, m)) continue; const mk = mark(s.id, m.id); if (!mk) continue; marked++; if (mk.s === 'FJ') a++; else if (mk.s === 'FNJ') b++; }
+    if (!marked) continue;
+    n++; fj += a; fnj += b;
+  }
+  const lab = 'Mitjana de músics que falten per assaig';
+  if (!n) return `<div class="kt wide sm"><div class="n">—</div><div class="l">${lab}</div></div>`;
   const tot = fj + fnj, pj = tot ? Math.round(fj / tot * 100) : null, pn = tot ? 100 - pj : null;   // la mitjana s'arrodoneix a l'enter més proper
-  return `<div class="kt wide sm"><div class="n">${Math.round(tot / n)}</div><div class="l">Mitjana de faltes per músic</div><div class="ksub"><span>${sdot('F')}${pj == null ? '—' : pj + '%'} justificades</span><span>${sdot('X')}${pn == null ? '—' : pn + '%'} no justificades</span></div></div>`;
+  return `<div class="kt wide sm"><div class="n">${Math.round(tot / n)}</div><div class="l">${lab}</div><div class="ksub"><span>${sdot('F')}${pj == null ? '—' : pj + '%'} justificades</span><span>${sdot('X')}${pn == null ? '—' : pn + '%'} no justificades</span></div></div>`;
 }
 function viewStats() {
   const u = me(), scope = statsScope(), proj = ui.statsProj, sessions = doneSessions(proj);
