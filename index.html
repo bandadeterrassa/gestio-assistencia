@@ -1033,7 +1033,7 @@ async function fetchAll() {
     const { data: d, error } = await sb.rpc('app_load', { p_token: TOKEN });
     if (error) throw error;
     applyData(d);
-    FROM_CACHE = false;
+    FROM_CACHE = false; EXEMPT_TRIED = false;
     try { localStorage.setItem(LS_CACHE, JSON.stringify({ token: TOKEN, t: Date.now(), d })); } catch {}   // còpia local per poder obrir l'app sense connexió
     LOAD_ERR = false; LAST_LOAD = Date.now();
     pushSync();
@@ -1240,7 +1240,17 @@ function excludedFrom(s, u) {
 const beforeStart = (s, u) => !!u.countsFrom && s.date < u.countsFrom;
 /** La quota la veuen i la canvien només la Junta i l'administració, i només té sentit per als músics (no per a direcció/administració sense secció). */
 const canFee = () => level(me()) >= 4;
-const hasFee = x => canFee() && typeof x.feePaid === 'boolean' && x.active !== false && !rolesOf(x).every(r => r === 'admin' || r === 'director');
+/** Exempcions de quota (userId → motiu). Només les carrega la Junta/administració. */
+let EXEMPT = {}, EXEMPT_TRIED = false;
+const isExempt = x => !!x && Object.prototype.hasOwnProperty.call(EXEMPT, x.id);
+async function loadExempt() {
+  try {
+    const r = await sb.rpc('app_fee_exempt_list', { p_token: TOKEN }); if (r.error) throw r.error;
+    const m = {}; (Array.isArray(r.data) ? r.data : []).forEach(e => { if (e && e.userId) m[e.userId] = e.note || ''; });
+    const changed = JSON.stringify(m) !== JSON.stringify(EXEMPT); EXEMPT = m; if (changed) render();
+  } catch (e) { console.warn(e); }
+}
+const hasFee = x => canFee() && !isExempt(x) && typeof x.feePaid === 'boolean' && x.active !== false && !rolesOf(x).every(r => r === 'admin' || r === 'director');
 const feeCounts = () => { const l = S.users.filter(hasFee); return { pending: l.filter(x => !x.feePaid).length, paid: l.filter(x => x.feePaid).length }; };
 const inSession = (s, u) => inCensus(u) && !excludedFrom(s, u) && !beforeStart(s, u);
 const aKey = (sid, uidv) => `${sid}|${uidv}`;
@@ -1328,7 +1338,7 @@ function riskInfo(u, proj) {
   const den = c.P + c.R + c.FJ + c.FNJ; if (!den) return null;
   const left = allSessions().filter(s => (s.projIds || []).includes(proj)
     && !sessionIsDone(s) && isRehearsalType(s) && inSession(s, u) && (mark(s.id, u.id) || {}).s !== 'NP');
-  const avis = left.filter(s => { const mk = mark(s.id, u.id); return (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) || S.incidents.some(i => i.userId === u.id && i.sessionId === s.id && i.kind === 'absence' && i.status !== 'rejected'); }).length;
+  const avis = left.filter(s => { const mk = mark(s.id, u.id); if (mk && (mk.s === 'P' || mk.s === 'R')) return false; return (mk && (mk.s === 'FJ' || mk.s === 'FNJ')) || S.incidents.some(i => i.userId === u.id && i.sessionId === s.id && i.kind === 'absence' && i.status !== 'rejected'); }).length;
   const present = c.P + (S.config.countLateAsPresent ? c.R : 0);
   const best = (present + left.length - avis) / (den + left.length);
   const min = 1 - maxFaltesRate();
@@ -1514,6 +1524,7 @@ const scrollMem = {}; let lastKey = '';
 const scrKey = () => [ME ? 'm' : 'l', ui.tab, ui.llistaMode, ui.calMode, ui.manage, ui.rollSec || ''].join('|');
 function render() {
   refreshClock();
+  if (TOKEN && ME && !EXEMPT_TRIED && LOAD_OK && canFee()) { EXEMPT_TRIED = true; loadExempt(); }
   const view = $('#view'), tabbar = $('#tabbar'); if (!view) return;
   const sc = $('#view .scroll'); if (sc) scrollMem[lastKey] = sc.scrollTop;
   const key = scrKey(); const u = me();
@@ -1745,6 +1756,12 @@ function rollRow(cur, m) {
 }
 
 /* ---------- Avisos ---------- */
+/** Un avís d'absència que després no s'ha complert: la llista d'assistència mana (si ha vingut, l'avís ja no és una falta). */
+function incCame(i) {
+  if (i.kind !== 'absence' || i.status === 'pending') return null;
+  const mk = mark(i.sessionId, i.userId);
+  return mk && (mk.s === 'P' || mk.s === 'R') ? mk.s : null;
+}
 function incItem(i, review, hideName) {
   const t = userById(i.userId), s = sessionById(i.sessionId), rev = i.reviewedBy ? userById(i.reviewedBy) : null;
   const canAct = can.reviewIncident(i);
@@ -1755,7 +1772,7 @@ function incItem(i, review, hideName) {
   if (review && canAct) right.push(`<button class="circb del" data-act="inc-del" data-id="${i.id}" aria-label="Elimina l’avís de ${esc(t ? t.name : '')}" title="Elimina">${ico('trash', 20)}</button>`);
   const state = i.status === 'pending' ? '' : ` · llegit${rev ? ' per ' + esc(rev.name) : ''}`;
   return `<div class="inc"><div class="inch">${hideName ? '' : `<div style="display:flex;align-items:center;gap:8px"><span class="s17 mname">${esc(t ? t.name : '—')}</span>${t && t.instrument ? `<span class="badge">${esc(t.instrument)}</span>` : ''}</div>`}
-    <div style="display:flex;align-items:center;gap:9px;margin-top:${hideName ? 0 : 6}px">${sdot(incKey(i))}<span><b>${i.kind === 'late' ? 'Retard' + (i.min ? ' · ' + i.min + '′' : '') : 'Absència'}</b> · ${s ? shortDay(s.date) : 'sessió eliminada'}</span></div></div>
+    <div style="display:flex;align-items:center;gap:9px;margin-top:${hideName ? 0 : 6}px">${sdot(incCame(i) ? 'P' : incKey(i))}<span><b>${i.kind === 'late' ? 'Retard' + (i.min ? ' · ' + i.min + '′' : '') : incCame(i) === 'P' ? 'Absència avisada · finalment ha vingut' : incCame(i) === 'R' ? 'Absència avisada · ha vingut amb retard' : 'Absència'}</b> · ${s ? shortDay(s.date) : 'sessió eliminada'}</span></div></div>
     ${right.length ? `<span class="igb">${right.join('')}</span>` : ''}
     <div class="incr">${i.reason ? `<div style="margin-top:6px">${esc(i.reason)}</div>` : ''}${i.reviewNote ? `<div class="s13 muted" style="margin-top:3px">Nota: ${esc(i.reviewNote)}</div>` : ''}
     <div class="s13 muted">Comunicat el ${fmtStamp(i.createdAt)}${i.edited ? ' · editat' : ''}${state}</div></div>
@@ -2254,7 +2271,7 @@ function helpSheet() {
   const CAL = R('📅', 'Calendari', `Consulta el repertori, els assajos i concerts programats.`);
   const PERFIL = R('👤', 'Perfil', `Comunica una absència o un retard amb antelació. Mentre el teu cap de secció no l'hagi llegit, el pots editar o eliminar.`);
   const LATE = R('🗓️', `Qui s'incorpora més tard`, `A la fitxa del músic (Gestió → Usuaris) tria «Compta l'assistència des de» i les sessions anteriors deixen de comptar-li.`);
-  const QUOTA = R('💶', 'Quota', `A la fitxa del músic pots marcar si ha pagat la quota; a la llista surt com un € (verd si ha pagat, groc si no).`);
+  const QUOTA = R('💶', 'Quota', `A la fitxa del músic pots marcar si ha pagat la quota; a la llista surt com un € (verd si ha pagat, groc si no). Si algú n’està exempt, ho marques a la mateixa fitxa amb un breu motiu i el € desapareix del seu nom.`);
   const blocks = {
     musician: `<p class="help-intro">Consulta el calendari, comunica absències i segueix la teva assistència.</p>${CAL}${PERFIL}${R('📊', 'Estadístiques', `Consulta la teva assistència i puntualitat.`)}`,
     leader: `<p class="help-intro">Tot el que fa un músic i, a més, la gestió de la teva secció.</p>${CAL}${PERFIL}${R('📋', 'Llista', `Passa llista d'assistència als músics de la teva secció, i marca com a llegits els avisos d'absència o retard que et comuniquin (també els pots eliminar des d'Avisos).`)}${R('📊', 'Estadístiques', `Consulta la teva assistència i puntualitat, i les de tota la teva secció.`)}${LATE}`,
@@ -2347,8 +2364,11 @@ function userSheet(x) {
           : `<div style="display:flex;gap:8px;align-items:center"><input class="inp" value="••••••••" disabled style="flex:1;letter-spacing:3px;color:var(--muted)"><button type="button" class="btn btn-sm" data-act="unlock-pass">Edita</button></div>`}</div>
           ${isNew ? '' : '<small class="muted">Es manté igual tret que la canviïs expressament.</small>'}</div></fieldset>`
         : ''}
-      ${canFee() ? `<div class="toggle-row" id="u-fee-wrap" ${staffOnly ? 'hidden' : ''}><span><b>Quota pagada</b><br><span class="muted" style="font-size:12.5px">Només ho veuen la Junta i l'administració</span></span>
-        <label class="switch"><input type="checkbox" id="u-fee" ${x.feePaid ? 'checked' : ''}><span></span></label></div>` : ''}
+      ${canFee() ? `<div class="toggle-row" id="u-fee-wrap" ${staffOnly || isExempt(x) ? 'hidden' : ''}><span><b>Quota pagada</b><br><span class="muted" style="font-size:12.5px">Només ho veuen la Junta i l'administració</span></span>
+        <label class="switch"><input type="checkbox" id="u-fee" ${x.feePaid ? 'checked' : ''}><span></span></label></div>
+      <div class="toggle-row" id="u-ex-wrap" ${staffOnly ? 'hidden' : ''}><span><b>Exempt de quota</b><br><span class="muted" style="font-size:12.5px">No surt el € al seu nom. Cal explicar-ne el motiu.</span></span>
+        <label class="switch"><input type="checkbox" id="u-ex" ${isExempt(x) ? 'checked' : ''}><span></span></label></div>
+      <div class="field" id="u-exn-wrap" ${isExempt(x) && !staffOnly ? '' : 'hidden'}><span>Motiu de l’exempció</span><input class="inp" id="u-exn" maxlength="140" value="${esc(EXEMPT[x.id] || '')}" placeholder="Ex.: membre honorari, beca, acord amb la Junta…"></div>` : ''}
       ${editActive ? `<div class="toggle-row"><span><b>Actiu</b><br><span class="muted" style="font-size:12.5px">Els inactius no surten a les llistes ni poden entrar</span></span>
         <label class="switch"><input type="checkbox" id="u-active" ${x.active !== false ? 'checked' : ''}><span></span></label></div>` : ''}`,
     foot: `${!isNew && can.createUsers() && x.id !== ME ? `<button class="btn btn-sm btn-danger-ghost" data-act="del-user" data-uid="${x.id}">Elimina</button>` : ''}
@@ -2396,9 +2416,18 @@ function userSheet(x) {
     if ($('#u-sec-wrap')) $('#u-sec-wrap').hidden = staffOnly;
     if ($('#u-inst-wrap')) $('#u-inst-wrap').hidden = staffOnly;
     if ($('#u-from-wrap')) $('#u-from-wrap').hidden = staffOnly;
-    if ($('#u-fee-wrap')) $('#u-fee-wrap').hidden = staffOnly;
+    const exOn = !!($('#u-ex') && $('#u-ex').checked);
+    if ($('#u-fee-wrap')) $('#u-fee-wrap').hidden = staffOnly || exOn;
+    if ($('#u-ex-wrap')) $('#u-ex-wrap').hidden = staffOnly;
+    if ($('#u-exn-wrap')) $('#u-exn-wrap').hidden = staffOnly || !exOn;
     if ($('#u-staff-note')) $('#u-staff-note').hidden = !staffOnly;
     if (staffOnly && !wasStaffOnly) { draft.section = ''; draft.instruments = []; }
+  });
+  const exBox = $('#u-ex');
+  if (exBox) exBox.addEventListener('change', () => {
+    if ($('#u-fee-wrap')) $('#u-fee-wrap').hidden = exBox.checked;
+    if ($('#u-exn-wrap')) $('#u-exn-wrap').hidden = !exBox.checked;
+    if (exBox.checked && $('#u-exn')) $('#u-exn').focus();
   });
   sheetSave = async () => {
     const name = $('#u-name').value.trim();
@@ -2437,6 +2466,17 @@ function userSheet(x) {
       catch (e) { console.warn(e); }
       if (!ok) { toast('No s\'han pogut actualitzar les credencials'); return false; }
       rec.username = un;
+    }
+    if (canFee() && $('#u-ex') && !staffOnly) {   // exempció de quota (es desa a part, amb el seu motiu)
+      const ex = $('#u-ex').checked, nt = ($('#u-exn').value || '').trim().slice(0, 140), was = isExempt(rec);
+      if (ex && !nt) { toast('Explica breument el motiu de l’exempció'); $('#u-exn').focus(); return false; }
+      if (ex !== was || (ex && nt !== (EXEMPT[rec.id] || ''))) {
+        let ok = false;
+        try { const r = await sb.rpc('app_fee_exempt_set', { p_token: TOKEN, p_user: rec.id, p_exempt: ex, p_note: ex ? nt : '' }); ok = !r.error; if (r.error && errMsg(r.error).includes('sessio_caducada')) { sessionExpired(); return false; } }
+        catch (e) { console.warn(e); }
+        if (!ok) { toast('No s’ha pogut desar l’exempció de quota', { err: true }); return false; }
+        if (ex) EXEMPT[rec.id] = nt; else delete EXEMPT[rec.id];
+      }
     }
     if (rec.roles.includes('leader') && rec.section) S.users.forEach(o => { if (o.id !== rec.id && o.section === rec.section && hasRole(o, 'leader')) o.roles = rolesOf(o).filter(r => r !== 'leader'); });
     const i = S.users.findIndex(o => o.id === rec.id);
